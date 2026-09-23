@@ -1,0 +1,103 @@
+WP5 G-U5 end-to-end round — 2026-09-23T14:35:11Z
+sandbox: /var/folders/v9/y1jy41kj5mq8ly6fxbzwjxzc0000gn/T//crib-wp5-e2e-aJggyk   (HOME sandboxed; no user state read or written)
+cli under test: packages/cli/dist/bin.js (rebuilt from source with pnpm run build this session)
+
+
+===== 0. Target: a two-package monorepo with a real cross-package import =====
+target: 27ab7a8 — 6 tracked file(s)
+
+
+===== 1. crib index — the derived graph a recall will be checked against =====
+indexed 6 files → 11 nodes, 6 edges (0 describes, 0 references) in 277ms
+9 target(s) pending LLM graph generation (next: symbol) — run `/crib-enrich` or `crib enrich --next` to drive the loop.
+index head recorded: "27ab7a8226c48f6d75092af6d641880e914bddd3|1|11|6|2026-09-23T14:35:12.062Z"
+
+
+===== 2. A grounded memory — the admission gate, not a write =====
+recallable:  true
+trust:       active
+nextAction:  admitted to local trust — recallable now via `crib memory recall`.
+
+
+===== 3. Recall in a NEW process — does the admitted claim come back? =====
+recall hits:            1
+first hit evidence:     "valid"
+
+
+===== 4. crib viz — start the REAL server and read the SERVED Home payload =====
+server: http://127.0.0.1:61298
+--- BASELINE ---
+configured:            true
+retrieval.mode:        lexical-fallback
+codeIndex:             {"lastSuccessfulAt":"2026-09-23T14:35:12.062Z","behindHead":false,"workerRunning":false}
+capture:               {"lastSuccessfulAt":"2026-09-23T14:35:13.256Z","pending":0,"dead":0}
+sync:                  {"configured":false}
+recovery:              {"retrieval":"On-device semantic retrieval is unavailable, so recall is running lexical-only — run `crib embed status` to repair the installed tier, or continue lexical-only."}
+nextAction:            On-device semantic retrieval is unavailable, so recall is running lexical-only — run `crib embed status` to repair the installed tier, or continue lexical-only.
+
+
+===== 5. The ledger — and the same read with the re-check explicitly OFF =====
+top-level keys:        configured,revalidated,total,offset,limit,counts,conflicts,errors,rows
+total / counts:        1 {"stale":0,"moved":0,"current":1,"unanchored":0,"retracted":0,"conflicts":0}
+revalidated (default): true
+revalidated (=0):      false
+row ids (default):     ["mem:d859615c8ffec585de4240494b86285ea19c6a627355b754d86b3d5c59ac7016"]
+row ids (=0):          ["mem:d859615c8ffec585de4240494b86285ea19c6a627355b754d86b3d5c59ac7016"]
+row reasons (default): [[]]
+bad literal rejected:  400 (expect 400)
+
+
+===== 6. INDUCE state 1/4 — STALE INDEX =====
+freshness mode set to auto
+freshness: mode auto, enqueued fq:75fbf3c707a862dda5670ea8
+after publish at A:      last-known-good: 2:1:0|none|none|… @ 27ab7a8226c4
+HEAD at publish:       27ab7a8
+HEAD now:              e69b7a4
+status behind HEAD:      behind HEAD: yes — run `crib freshness worker` (or `crib update`)
+codeIndex:             {"lastSuccessfulAt":"2026-09-23T14:35:12.062Z","behindHead":true,"workerRunning":false}
+recovery.codeIndex:    The code index is behind HEAD, so evidence is being re-checked against a graph that no longer matches your working tree — run `crib update` to catch it up.
+nextAction:            The code index is behind HEAD, so evidence is being re-checked against a graph that no longer matches your working tree — run `crib update` to catch it up.
+
+
+===== 7. state 2/4 — UNAVAILABLE MODEL (fired already, at baseline) =====
+No induction needed in a sandboxed HOME: with no embedder installed, installedEmbedder is falsy,
+so health.retrieval.mode is lexical-fallback by construction.
+observed at baseline:  lexical-fallback
+baseline recovery:     On-device semantic retrieval is unavailable, so recall is running lexical-only — run `crib embed status` to repair the installed tier, or continue lexical-only.
+ORDERING, observed not assumed: at baseline (behindHead false) the model branch was the top step.
+In §6 (behindHead true) nextAction became the stale-index line instead, demoting the model line —
+the ladder's documented precedence, seen firing in both directions.
+
+
+===== 8. state 4/4 — FAILED PERSISTENCE (structurally unreachable on this surface) =====
+sync tile as served:   {"configured":false}
+sync vs its declared shape — the API type allows pending/dead, but cli.ts populates
+  sync with {configured, lastSuccessfulAt} ONLY. Observed keys above carry NO pending/dead, so
+  there is nothing for the ladder to read and recoveryFor emits no sync line:
+recovery.sync present: NO — absent by construction
+This is a GAP in U3's coverage, recorded as such — not scored as a pass.
+
+
+===== 9. state 3/4 — BLOCKED EXTRACTION / dead captures (NOT INDUCED) =====
+capture tile:          {"lastSuccessfulAt":"2026-09-23T14:35:13.256Z","pending":0,"dead":0}
+the tile's reachable keys: lastSuccessfulAt,pending,dead
+handoff counts:        {"openWork":0,"pendingCaptures":0,"needsAttention":0,"active":1}
+No dead-letter is reachable without a provider that exhausts its retries. This round does NOT
+claim the state was induced. Reported as NOT INDUCED — the one of U3's four states still unproven.
+
+
+===== 10. Does the ladder step back DOWN when the cause is removed? =====
+changed: .crib/.gitignore, .crib/crib.json, .crib/dossiers/ee/sym_packages_acme-core_src_units.ts_normalizeUnit_L1.json, .crib/dossiers/fc/sym_packages_acme-web_src_render.ts_renderLabel_L3.json, .crib/graph/extracted/edges/16/0000.jsonl, .crib/graph/extracted/edges/c4/0000.jsonl, .crib/graph/extracted/nodes/16/0000.jsonl, .crib/graph/extracted/nodes/1d/0000.jsonl, .crib/graph/extracted/nodes/9d/0000.jsonl, .crib/graph/extracted/nodes/b4/0000.jsonl, .crib/graph/extracted/nodes/c4/0000.jsonl, .crib/graph/extracted/nodes/db/0000.jsonl, .crib/graph/extracted/nodes/f3/0000.jsonl, .crib/graph/manifest.json, .crib/intelligence/intelligence-events.jsonl, .crib/intelligence/projection-checkpoints.json, .crib/schema/edge.schema.json, .crib/schema/manifest.schema.json, .crib/schema/node.schema.json
+AFTER the action the recovery line recommends ('crib update'):
+  codeIndex.behindHead: true   <-- STILL TRUE
+  recovery.codeIndex:   The code index is behind HEAD, so evidence is being re-check...
+NOW the action that actually clears it (enqueue, then let the worker publish):
+freshness: mode auto, enqueued fq:51f1f8e68368a6e1d1a7b0e6
+  codeIndex.behindHead: false   <-- cleared
+  recovery.codeIndex:   (absent - fault cleared)...
+  nextAction:           On-device semantic retrieval is unavailable, so recall is ru...
+  ^ the top step falls back to the model line: the ladder IS a live ranking, not a set flag.
+  BUT the repair text names a command that does not clear the fault. That is finding B16.
+
+
+===== round complete =====

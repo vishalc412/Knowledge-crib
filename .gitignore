@@ -77,6 +77,12 @@ playwright-report/
 # locally must not dirty the checkout it certifies (WP0's evidence-outside-tracked-source rule).
 release-evidence.json
 
+# `node scripts/sbom.mjs` writes the CycloneDX SBOM to the repo root by default (release-verify
+# generates it before the evidence manifest; CI uploads it as an artifact). Same rule as
+# release-evidence.json: the artifact is OUTPUT, and running the gate locally must not dirty the
+# checkout it certifies. The artifact is what gets published; this file is only where it lands.
+sbom.cdx.json
+
 # `crib memory export` output — a generated VIEW of the ledger, never a source of it.
 # Committing it would create exactly the second source of truth the one-way design avoids: the file
 # would age against `.crib/memory/` and a reader could not tell which was current. Regenerate with

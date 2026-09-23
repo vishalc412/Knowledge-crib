@@ -145,16 +145,26 @@ describe('migration must not resurrect invalid evidence (R02)', () => {
     store.upsertEntry('active', v1Record(repoId));
     const api = makeApi(store, env, vanishedSource);
 
-    // Pre-migration: the freshness engine already gets this right.
+    // Both halves are evidence-driven, and `considered` is what proves it. This is NOT the principal
+    // boundary: an unstamped memory-1 record in a private store is ADMITTED by default, because WP1
+    // item 13 resolves `strictPrincipal` from an explicit opt-in rather than flipping it on — see
+    // `resolveStrictPrincipal` for the measurement that forced that (local admission writes
+    // memory-1, which has no ownership column, so strict-by-default refuses every record this device
+    // writes). `considered: 1` says the projection SAW the record and dropped it on its own merits:
+    // the anchor symbol is gone, so live evaluation invalidates the evidence.
     const before = api.search('Deployment');
     expect(before.hits).toHaveLength(0);
+    expect(before.provenance.counts.considered).toBe(1);
 
     const migration = store.migrateToV2({});
     expect(migration.migrated).toHaveLength(1);
 
-    // Post-migration: the audited regression returned one hit here, valid/current/fresh.
+    // The audited regression returned one hit here — valid/current/fresh (R02). Still excluded, and
+    // still `considered: 1`, so this empty result is the freshness engine revalidating a vanished
+    // anchor rather than a filter that never looked at the record.
     const after = api.search('Deployment');
     expect(after.hits).toHaveLength(0);
+    expect(after.provenance.counts.considered).toBe(1);
   });
 
   it('still recalls the SAME migrated record while its source is intact', ({ task }) => {
@@ -164,11 +174,19 @@ describe('migration must not resurrect invalid evidence (R02)', () => {
     store.upsertEntry('active', v1Record(repoId));
     const api = makeApi(store, env, livingSource());
 
-    expect(api.search('Deployment').hits).toHaveLength(1);
+    // With a LIVING source the record ranks BOTH before and after migration — which is what makes
+    // the sibling test's empty result attributable to the evidence being gone rather than to
+    // migration breaking recall for migrated records. `considered: 1` on both sides pins that the
+    // record was actually SEEN each time (not filtered out by the principal boundary, which is off
+    // by default — see `resolveStrictPrincipal`).
+    const before = api.search('Deployment');
+    expect(before.provenance.counts.considered).toBe(1);
+    expect(before.hits).toHaveLength(1);
+
     expect(store.migrateToV2({}).migrated).toHaveLength(1);
-    // The negative case above must come from the evidence being gone, NOT from migration
-    // breaking recall for every migrated record.
+
     const after = api.search('Deployment');
+    expect(after.provenance.counts.considered).toBe(1);
     expect(after.hits).toHaveLength(1);
     expect(after.hits[0]!.verdicts.evidence).toBe('valid');
     expect(after.hits[0]!.freshness.state).toBe('fresh');

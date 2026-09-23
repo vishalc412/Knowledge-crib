@@ -91,6 +91,17 @@ const VECTOR_BODY_CAP = 1200;
 const VECTOR_TEXT_VERSION = 2;
 
 /**
+ * How many texts are handed to {@link Embedder.embedBatch} at once.
+ *
+ * Bounded so a large delta never materializes one enormous array, and large enough that per-call
+ * overhead disappears against the model's forward passes (which dominate: the vector build measured
+ * 1,444 s against the lexical build's 86 s on this repository's own 185K LOC). A delta that changes
+ * fewer nodes than this never flushes more than once — the chunk size is an upper bound, not a
+ * batch that has to be filled.
+ */
+const VECTOR_EMBED_CHUNK = 64;
+
+/**
  * The text embedded per node for the vector retriever.
  *
  * v1 was surface fields only (name + qualifiedName + signature + heading + file), which capped
@@ -318,17 +329,12 @@ export class SqliteIndexStore implements IndexStore {
       // then rank that arbitrary subset as if it were the corpus. A partially-vectorized index is
       // worse than an unvectorized one, because it looks like it works.
       if (this.builtEmbedderId !== null && this.embedder) {
-        const upsertVec = this.db.prepare(
-          'INSERT OR REPLACE INTO vectors (id, vec, dim) VALUES (?, ?, ?)',
-        );
-        // Same two rules as the full build, for the same reasons: detail kinds are not embedded
-        // (discovery never ranks them), and `repoRoot`/`fileCache` are passed so a delta writes a
-        // v2 surface+body vector. Embedding v1 text here would poison a v2 index one delta at a time.
-        for (const node of changed.nodes) {
-          if (isDetailNodeKind(node.kind)) continue;
-          const v = this.embedder.embed(vectorText(node, repoRoot, fileCache));
-          upsertVec.run(node.id, Buffer.from(encodeVec(v)), v.length);
-        }
+        // The SAME helper the full build uses, so the delta inherits the detail-kind rule, the v2
+        // `vectorText` surface+body text, and `embedBatch` equivalence by construction rather than by
+        // a comment promising they match. Embedding v1 text here would poison a v2 index one delta at
+        // a time — and the two loops were previously kept in agreement by hand, which is exactly the
+        // drift the embedder adapter's own 8-point recall scar came from.
+        this.embedNodes(changed.nodes, repoRoot);
       } else if (this.indexHasVectors) {
         // The index HAS vectors but this store cannot recompute them (no embedder, or a different
         // one). The changed nodes' existing vectors now describe the PREVIOUS version of each
@@ -479,27 +485,80 @@ export class SqliteIndexStore implements IndexStore {
    * deterministic, and aligned with the conceptual-query mechanism (paraphrases match the *name*
    * surface). The body is already in FTS5 for exact-content matches.
    */
-  private buildVectors(soul: SoulStore, repoRoot: string): void {
-    if (!this.embedder) return;
-    const e = this.embedder;
+  /**
+   * Embed `nodes` and write their vectors, in chunks, through ONE code path.
+   *
+   * Shared by the full build and the incremental delta deliberately. Those two loops previously
+   * duplicated the same three rules by hand — skip detail kinds, embed `vectorText(node, repoRoot,
+   * fileCache)`, upsert `encodeVec(v)` — with a comment in the delta asserting it matched the build.
+   * Hand-maintained agreement is the drift hazard this repository has already paid for: an adapter
+   * that applied E5's `query:` prefix in `embed()` and `passage:` in `embedBatch()` made ranking
+   * depend on which method a caller reached for, and switching a record loop from one to the other
+   * silently cost 8 points of paraphrase recall (`packages/cli/src/embed-setup.ts`).
+   *
+   * The interface contract is `embedBatch(texts)[i] === embed(texts[i])` — batching is a PERFORMANCE
+   * variant, never a semantic one. Routing both callers through this single site is what makes the
+   * batched and per-node results identical by construction rather than by inspection, and
+   * `vector-batch-equivalence.test.ts` asserts the written vectors are byte-for-byte the same.
+   *
+   * The caller owns the transaction: this writes into whichever one is open, so the full build still
+   * commits `vector_meta` in the same transaction as the vectors, and a delta still commits its
+   * vectors with its nodes and edges.
+   *
+   * @returns the number of vectors written — an exact count, so a test can assert that a delta
+   *   vectorized only the nodes that changed rather than the whole corpus.
+   */
+  private embedNodes(nodes: Iterable<Node>, repoRoot: string): number {
+    const embedder = this.embedder;
+    if (!embedder) return 0;
     const upsert = this.db.prepare(
       'INSERT OR REPLACE INTO vectors (id, vec, dim) VALUES (?, ?, ?)',
     );
     // One line cache for the whole pass, so each source file is read ONCE rather than once per node
     // in it — a symbol-dense file would otherwise be re-read hundreds of times.
     const fileCache: FileLineCache = new Map();
+    let pending: Array<{ id: string; text: string }> = [];
+    let written = 0;
+    const flush = (): void => {
+      if (pending.length === 0) return;
+      const vectors = embedder.embedBatch(pending.map((p) => p.text));
+      // A short return is a CONTRACT VIOLATION, not a shortfall to paper over: skipping the missing
+      // entries would write vectors for an arbitrary subset of the corpus, and a partially
+      // vectorized index is worse than an unvectorized one because it looks like it works (see the
+      // gate in `applyDelta`). Fail loudly instead — the contract is asserted in
+      // `vector-batch-equivalence.test.ts` and in the adapter's own drift check.
+      if (vectors.length !== pending.length) {
+        throw new Error(
+          `embedBatch returned ${vectors.length} vectors for ${pending.length} texts — the Embedder contract requires \`embedBatch(texts)[i] === embed(texts[i])\``,
+        );
+      }
+      for (let i = 0; i < pending.length; i++) {
+        const vec = vectors[i]!;
+        upsert.run(pending[i]!.id, Buffer.from(encodeVec(vec)), vec.length);
+        written++;
+      }
+      pending = [];
+    };
+    for (const node of nodes) {
+      // Detail kinds are never ranked by discovery (soul-schema DETAIL_NODE_KINDS), so embedding them
+      // buys nothing and costs most of the build: on the crib's own index they are 38,286 of 48,459
+      // nodes — 79%. Skipping them is what makes body text affordable.
+      if (isDetailNodeKind(node.kind)) continue;
+      pending.push({ id: node.id, text: vectorText(node, repoRoot, fileCache) });
+      if (pending.length >= VECTOR_EMBED_CHUNK) flush();
+    }
+    flush();
+    return written;
+  }
+
+  private buildVectors(soul: SoulStore, repoRoot: string): void {
+    if (!this.embedder) return;
+    const e = this.embedder;
     // The vectors and the metadata that authorizes reading them are written in ONE transaction, so
     // an interrupted build can never leave `vector_meta` claiming a channel the `vectors` table does
     // not fully back. Setting the in-memory fields afterwards keeps the same rule for this process.
     const insertMany = this.transaction(() => {
-      for (const node of soul.iterate()) {
-        // Detail kinds are never ranked by discovery (soul-schema DETAIL_NODE_KINDS), so embedding
-        // them buys nothing and costs most of the build: on the crib's own index they are 38,286 of
-        // 48,459 nodes — 79%. Skipping them is what makes body text affordable.
-        if (isDetailNodeKind(node.kind)) continue;
-        const v = e.embed(vectorText(node, repoRoot, fileCache));
-        upsert.run(node.id, Buffer.from(encodeVec(v)), v.length);
-      }
+      this.embedNodes(soul.iterate(), repoRoot);
       this.writeVectorMeta(e);
     });
     insertMany();

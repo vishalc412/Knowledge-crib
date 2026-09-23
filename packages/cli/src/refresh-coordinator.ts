@@ -58,8 +58,11 @@ export interface SourceCapture {
   dirtyPaths: string[];
   /** 'unavailable' when `changedFilesSince(indexedHead)` could not resolve (history rewritten). */
   anchor: 'available' | 'unavailable';
-  /** Durable memory-graph source position. A change requires a new reader generation even when
-   * the code source is unchanged. Null means memory graph publication is not configured. */
+  /**
+   * Durable memory-graph source position. A change makes the candidate differ from the one being
+   * served (so a rebuild and a new graph publication happen), but NOT a new CODE-reader generation:
+   * it is an input to candidate equality, not to {@link bundleGeneration} (D2-a).
+   */
   graphSourcePosition: string | null;
 }
 
@@ -69,6 +72,19 @@ export interface DerivedGraphReader {
   readonly generation: string;
   /** Durable memory-journal position represented by this graph projection. */
   readonly sourcePosition: string | null;
+  /**
+   * The graph's OWN identity: the monotonic publication counter of the projection that built it
+   * (D2-b). Independent of {@link generation} on purpose.
+   *
+   * `generation` says which CODE the projection describes, and a bundle must not publish a graph
+   * describing different code. `publication` says WHICH projection this is, and it moves on every
+   * rebuild — including the rebuild a memory-only mutation causes, which does not move `generation`
+   * (D2-a). Without it the freshness report could only ever restate `readerGeneration` as
+   * `graphGeneration` (`graphGeneration === readerGeneration` by construction), so an agreement
+   * check between the two could never fail and would prove nothing. With it the two CAN disagree,
+   * and the memory-graph half of an answer has an identity a caller can actually cite.
+   */
+  readonly publication: number;
   close(): void;
 }
 
@@ -108,7 +124,8 @@ export interface RefreshCoordinatorOpts {
   /** TEST SEAM — invoked between candidate build and source re-check; write to the tree from here to
    *  reproduce "the source changed during refresh" deterministically (WP4.4 scenario). */
   onCandidateBuilt?: (bundle: ReaderBundle) => void | Promise<void>;
-  /** Durable graph-source position. It participates in candidate equality and generation IDs. */
+  /** Durable graph-source position. It participates in candidate EQUALITY (so a memory-only change
+   *  still rebuilds and republishes), but not in the code-reader generation id (D2-a). */
   graphSourcePosition?: () => string | null;
   /** Builds a memory graph before a candidate can publish. A throw rejects the whole candidate. */
   buildGraph?: (input: GraphBuildInput) => Promise<DerivedGraphReader> | DerivedGraphReader;
@@ -173,15 +190,28 @@ function captureEquals(a: SourceCapture, b: SourceCapture): boolean {
   );
 }
 
+/**
+ * The CODE-reader generation: a content id over the code capture alone.
+ *
+ * `graphSourcePosition` — the durable memory-ledger position — is deliberately NOT an input (D2-a).
+ * It used to be, which priced a memory-only mutation as a code change: one appended memory line
+ * moved the code-reader generation and forced a full overlay + FTS + graph candidate rebuild
+ * (`refresh-coordinator.ts:410-441`), re-parsing code that had not changed.
+ *
+ * Removing it does NOT make a memory change invisible, and that is the point of doing the two parts
+ * together. `captureEquals` still compares the position, so the coordinator still rebuilds and still
+ * publishes; what no longer moves is the CODE identity. The memory side is covered by the two things
+ * that genuinely describe it: the graph reader's own publication counter ({@link DerivedGraphReader})
+ * and the evaluation cache's `ledger` slot (WP1 item 8), which reads `store.readStoreGeneration()`.
+ * A memory-only change therefore shows up as a new graph publication against an unchanged reader
+ * generation — two fields that CAN disagree, which is what makes an agreement row evidence rather
+ * than a tautology (D2-b).
+ */
 function bundleGeneration(capture: SourceCapture): string {
   return `reader:${blake3Hex(
-    [
-      capture.canonicalFp ?? 'none',
-      capture.head ?? 'none',
-      capture.dirtyFp,
-      capture.anchor,
-      capture.graphSourcePosition ?? 'none',
-    ].join('\\0'),
+    [capture.canonicalFp ?? 'none', capture.head ?? 'none', capture.dirtyFp, capture.anchor].join(
+      '\\0',
+    ),
   )}`;
 }
 
@@ -281,6 +311,20 @@ export class RefreshCoordinator {
     return this.current?.graph;
   }
 
+  /**
+   * WP1 item 8 — the generation of the bundle THIS process is currently SERVING reads through. O(1)
+   * and side-effect free, unlike {@link freshness}, which recomputes a source capture to report
+   * staleness right now and is a diagnostic, not a per-query accessor.
+   *
+   * This is what a memory read pins its verdicts against: they move when — and only when — this
+   * string moves. `null` while no bundle is adopted (the serve process is still starting, or this is
+   * a one-shot command with no reader at all); a caller that has a reader but cannot name it must
+   * express that as `UNVERSIONED`, never as `null`.
+   */
+  get currentReaderGeneration(): string | null {
+    return this.current?.generation ?? null;
+  }
+
   /** The serving bundle's dirty scope — surfaced for the serve startup banner. */
   get currentDirtyPaths(): readonly string[] {
     return this.current?.capture.dirtyPaths ?? [];
@@ -330,12 +374,14 @@ export class RefreshCoordinator {
     // The generation invariant, checked as IDENTITY rather than inferred from content: a bundle
     // published while a request was pinned is not what the reader serves, and a source that has
     // meanwhile returned to the reader's own state makes every content comparison agree again. The
-    // reader is still behind, and only comparing the two generations can see it (A05).
-    if (
-      served !== undefined &&
-      this.published !== undefined &&
-      this.published.generation !== served.generation
-    ) {
+    // reader is still behind, and only comparing the two bundles can see it (A05).
+    //
+    // Bundle identity, NOT generation equality. The generation was only ever a proxy for "these are
+    // different bundles", and since D2-a took the memory position out of it, two bundles CAN now
+    // share a generation while differing in their graph publication: a memory-only mutation
+    // published behind a pinned request would have gone unreported (the reader still serving the
+    // old graph, with nothing in the report saying so). Identity is the exact test and cannot drift.
+    if (served !== undefined && this.published !== undefined && this.published !== served) {
       stale = true;
       staleReasons.push(STALE_REASONS.ADOPTION_PENDING);
     }
@@ -358,7 +404,11 @@ export class RefreshCoordinator {
         served?.capture.canonicalFp ??
         null,
       codeRevision: served?.capture.head ?? null,
-      graphGeneration: served?.graph?.generation ?? served?.generation ?? null,
+      // The graph's OWN publication, never the bundle generation (D2-b). The old `?? served.generation`
+      // tail was a fabricated agreement: with no graph in the bundle it answered "the graph generation
+      // is the reader's generation", which is not a weaker statement than the truth — it is a
+      // different one, and a false one. A graph that does not exist has no generation.
+      graphGeneration: served?.graph === undefined ? null : String(served.graph.publication),
       // The FTS projection is NOT optional on a bundle: it is built from the same overlay, in the
       // same cycle, and disposed with it. So a served bundle's search generation IS its generation
       // — reported explicitly rather than left to be inferred, because the WP-G3 exit is that a

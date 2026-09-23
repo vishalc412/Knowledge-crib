@@ -15,11 +15,32 @@
  *
  * DEPENDENCY SLOTS (every input that could flip a verdict is one):
  *   code      — the soul node/code generation (`MemorySoulPort.generation()`; absent ⇒ UNVERSIONED)
+ *   reader    — the CODE-READER generation of the code snapshot the request is pinned to (§7.4/D2-c):
+ *               a working-tree edit that the canonical soul has not seen moves THIS and not `code`
+ *   ledger    — the MEMORY-LEDGER position (the durable graph source position / store generations):
+ *               a ledger change invisible to the `decisions`/`feedback` entry sets moves THIS
  *   policy    — the trusted-base policy hash (`MemoryPolicyPort.policyHash()`; undefined ⇒ UNVERSIONED)
  *   receipts  — the receipt-store generation (`MemoryReceiptPort.generation()`; absent ⇒ UNVERSIONED)
  *   decisions — append-only decision set fingerprint (count + max content-addressed id)
  *   feedback  — append-only feedback set fingerprint (count + max content-addressed id)
  *   embedder/index — reserved ranking-side slots (default `none`; a scorer change busts via code)
+ *
+ * WHY `reader` AND `ledger` ARE SEPARATE FROM `code`. Before WP1 the fingerprint had no slot for
+ * either, and the two were collapsed into one bundle generation (`refresh-coordinator.ts`
+ * `bundleGeneration`), which is hash of the code capture AND the memory-ledger position. The
+ * consequence was a constructed stale read (§7.4): the user edits a file in the working tree, the
+ * coordinator republishes, code verbs see the edit through the overlay — but the canonical soul has
+ * not moved, so `code` is unchanged, no slot can move, and the memoized verdict `valid/current` is
+ * served for evidence whose anchored span HAS changed. Two slots, fed by two DIFFERENT generations,
+ * are what make that unreachable.
+ *
+ * THEIR DEFAULT IS `none`, NOT `UNVERSIONED`, AND THE DIFFERENCE IS LOAD-BEARING. `none` means
+ * "this pass has no such dependency" — a caller with no working overlay has no code reader to be
+ * pinned to, so its verdicts genuinely cannot depend on one, and a value appearing later still
+ * busts the cache. `UNVERSIONED` means "the pass HAS that dependency and cannot version it", which
+ * refuses caching outright. A caller that adopts snapshots passes the adopted generation; a caller
+ * that has adopted none passes `UNVERSIONED`, because a reader that exists but cannot be named
+ * cannot be proven current.
  *
  * SCOPE: per-process, in memory. A durable (cross-process) cache is deliberately OUT of scope — a
  * durable verdict would need its own trust story, and this gate's law is only that a query never
@@ -35,10 +56,28 @@ import type { EvaluationCachePort, RecordEvaluation } from './evaluator.js';
 /** Marker for a dependency that cannot be versioned — caching is REFUSED, never risked. */
 export const UNVERSIONED = 'unversioned';
 
-/** The six dependency slots a record evaluation may read. All are inputs to the fingerprint. */
+/**
+ * Marker for a dependency this pass does NOT have (the default for every optional slot). Distinct
+ * from {@link UNVERSIONED}: absent ⇒ nothing to be stale against ⇒ cacheable; unversionable ⇒ a real
+ * dependency with no name ⇒ not cacheable. Exported so a serving layer that resolves a pin at bind
+ * time can answer "there is no reader in this process" with the same token the defaults use.
+ */
+export const NO_DEPENDENCY = 'none';
+
+/** The eight dependency slots a record evaluation may read. All are inputs to the fingerprint. */
 export interface DependencyGenerations {
   /** soul node/code generation (node bodies + manifest extracted/semantic counters). */
   code: string;
+  /**
+   * The pinned code-READER generation — the working-tree snapshot the request reads through
+   * (`ReaderFreshness.readerGeneration`). `none` when this pass has no reader to be pinned to.
+   */
+  reader: string;
+  /**
+   * The memory-LEDGER position — the durable graph source position, i.e. where the memory store's
+   * own generations stand. `none` when this pass reads no ledger.
+   */
+  ledger: string;
   /** trusted-base policy hash (drift detection for committed-policy evidence). */
   policy: string;
   /** receipt-store generation (execution-assertion / receipt-pair resolution). */
@@ -61,17 +100,29 @@ export interface DependencyGenerations {
  */
 const DEFAULT_GENERATIONS: DependencyGenerations = {
   code: UNVERSIONED,
-  policy: 'none',
-  receipts: 'none',
-  decisions: 'none',
-  feedback: 'none',
-  embedder: 'none',
-  index: 'none',
+  reader: NO_DEPENDENCY,
+  ledger: NO_DEPENDENCY,
+  policy: NO_DEPENDENCY,
+  receipts: NO_DEPENDENCY,
+  decisions: NO_DEPENDENCY,
+  feedback: NO_DEPENDENCY,
+  embedder: NO_DEPENDENCY,
+  index: NO_DEPENDENCY,
 };
 
 /** The whole-cache fingerprint: every slot joined — ANY slot changing re-fingerprints the cache. */
 export function fingerprintGenerations(g: DependencyGenerations): string {
-  return [g.code, g.policy, g.receipts, g.decisions, g.feedback, g.embedder, g.index].join('|');
+  return [
+    g.code,
+    g.reader,
+    g.ledger,
+    g.policy,
+    g.receipts,
+    g.decisions,
+    g.feedback,
+    g.embedder,
+    g.index,
+  ].join('|');
 }
 
 /**

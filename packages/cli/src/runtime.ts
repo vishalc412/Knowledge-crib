@@ -364,8 +364,20 @@ export function sweepStaleBuilds(indexDir: string, now = Date.now()): number {
  * Open the derived IndexStore WITHOUT rebuilding from the soul (M6 incremental path). Used by
  * `crib update`, which mutates the soul then applies an `IndexDelta` to the existing index. Throws if
  * no index exists yet (run `crib index` first).
+ *
+ * `allowStale` exists because "stale relative to the soul" is not always an error — for a caller
+ * about to apply a delta it is the PRECONDITION. `cmdUpdate` commits the updated soul (which rewrites
+ * `.crib/graph/manifest.json`) and only afterwards rewrites the index, so at any point in between the
+ * index IS older than the manifest it projects and the staleness check below fires by construction,
+ * on every `crib update` in every repository. Reading commands must keep refusing (`crib query` on a
+ * stale index would answer from the previous revision), so the default stays strict and the single
+ * caller that means "I am about to close this gap" opts in.
  */
-export function openIndexOnly(rt: Runtime, embedder?: Embedder | null): IndexStore {
+export function openIndexOnly(
+  rt: Runtime,
+  embedder?: Embedder | null,
+  opts: { allowStale?: boolean } = {},
+): IndexStore {
   const manifest = rt.soul.getManifest();
   const rel = manifest.stores.index.path;
   const path = resolveIndexPath(rel, rt.repoRoot, rt.cribDir);
@@ -376,7 +388,11 @@ export function openIndexOnly(rt: Runtime, embedder?: Embedder | null): IndexSto
   const manifestPath = existsSync(canonicalManifest)
     ? canonicalManifest
     : join(rt.cribDir, MANIFEST_FILE);
-  if (existsSync(manifestPath) && statSync(path).mtimeMs + 1 < statSync(manifestPath).mtimeMs) {
+  if (
+    !opts.allowStale &&
+    existsSync(manifestPath) &&
+    statSync(path).mtimeMs + 1 < statSync(manifestPath).mtimeMs
+  ) {
     throw new Error('derived index missing or stale — run `crib index .`');
   }
   return openIndex(manifest.stores.index.backend, { path, embedder });

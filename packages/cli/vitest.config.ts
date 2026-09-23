@@ -14,8 +14,15 @@ export default defineConfig({
   // locally. Raising the ceiling fixes the real defect (an under-provisioned budget) rather than
   // the symptom; 30s still catches a genuinely hung spawn instead of hanging the job forever.
   //
-  // Only this package needs it today — the next slowest package is `pipeline` at ~1.0s, which keeps
-  // ~5x headroom under the default. Revisit if that number climbs.
+  // CORRECTED 2026-09-23 — "only this package needs it" did not hold, and the failure signature
+  // above (N tests, every one "Test timed out in 5000ms", green when run locally) recurred in the
+  // packages that had no budget of their own. Running the default `pnpm -r run test` — pnpm's 4-way
+  // workspace concurrency, since this repo has no `.npmrc` — put `memory`, `pipeline` and `mcp` over
+  // the 5s default: 10 timeouts, 9 of them in `pipeline`, plus an `onTaskUpdate` worker-IPC timeout
+  // in `mcp` that exited 1 while reporting 490/490 passed. Every one of them passed when run alone;
+  // the only variable was what else was on the CPU. The `~1.0s` above is a quiet-box measurement of
+  // the slowest *test* and says nothing about a package under four-way load, which is why the budget
+  // now lives in those three configs too. See docs/program/logs/test-suite-2026-09-23.log.
   //
   // NOTE: these MUST live under `test:` — Vitest reads its options from that key, and a top-level
   // `testTimeout` is silently swallowed by Vite as an unknown root option. Putting them at the root

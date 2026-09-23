@@ -31,6 +31,7 @@ const CALLER = [
 ].join('\n');
 
 let repo: string;
+let registryDir: string;
 const tempDirs: string[] = [];
 
 function tempDir(prefix: string): string {
@@ -46,8 +47,17 @@ beforeEach(() => {
   writeFileSync(join(repo, 'src', 'caller.ts'), CALLER, 'utf8');
   // Index through the CLI itself: `rename` reads the derived index (openVerbs), so the fixture
   // must be indexed exactly the way a user would — soul AND derived index on disk.
+  //
+  // `KCRIB_REGISTRY_DIR` relocates the registry for the SPAWNED process, the documented test override
+  // (`registry.ts` header) that 20+ sibling suites already set. Without it this fixture indexed against
+  // the developer's REAL `~/.crib/registry.json`, which had two consequences: the suite mutated user
+  // state, and — because cli's vitest runs test files in parallel — concurrent `crib index` children
+  // raced on the global registry's temp file and one died `ENOENT`, failing this setup block rather
+  // than any `rename` assertion. The fixture now owns its registry like every sibling does.
+  registryDir = tempDir('crib-rename-registry-');
   const res = spawnSync(process.execPath, [CLI, 'index', '.'], {
     cwd: repo,
+    env: { ...process.env, KCRIB_REGISTRY_DIR: registryDir },
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
     maxBuffer: 32 * 1024 * 1024,

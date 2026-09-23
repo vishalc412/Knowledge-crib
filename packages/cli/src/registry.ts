@@ -21,6 +21,7 @@
  * Test override: set `KCRIB_REGISTRY_DIR=<dir>` to relocate the registry file (used by the test suite
  * to point at a tmpdir instead of `~/.crib`).
  */
+import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
@@ -94,7 +95,16 @@ export function readRegistry(env: NodeJS.ProcessEnv = process.env): Registry {
 export function writeRegistry(reg: Registry, env: NodeJS.ProcessEnv = process.env): void {
   const path = registryPath(env);
   mkdirSync(dirname(path), { recursive: true });
-  const tmp = `${path}.tmp`;
+  // A UNIQUE temp name, deliberately NOT the shared `${path}.tmp` the per-project stores use.
+  // `atomic-write.ts` documents the shared name as safe only where a "single writer per path" is
+  // guaranteed. That guarantee does not hold here: the registry is GLOBAL (`~/.crib`), so it has many
+  // writers — every `crib index` in every repo at once, plus the background freshness service
+  // (`freshness.ts` calls this through `setFreshnessMode`). With a shared name two writers collide:
+  // the first rename removes the temp, the second dies `ENOENT`. Observed, not theorised —
+  // `rename.test.ts` lost its fixture index to `ENOENT: rename '~/.crib/registry.json.tmp' ->
+  // '~/.crib/registry.json'`. The pid+uuid suffix matches what the other multi-writer paths in this
+  // package already do (freshness-service.ts, stop-nudge.ts, memory/identity-directory.ts).
+  const tmp = `${path}.${process.pid}.${randomUUID()}.tmp`;
   writeFileSync(tmp, `${JSON.stringify(reg, null, 2)}\n`, 'utf8');
   renameSync(tmp, path);
 }

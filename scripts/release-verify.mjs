@@ -46,6 +46,15 @@ pnpm(['soul-refresh:check']);
 pnpm(['onboarding:check']);
 pnpm(['docs-site:check']);
 pnpm(['capabilities:check']);
+// WP3 bullet 6 — the dependency-hygiene gates. `credential:check` and `license:check` ride inside
+// `pnpm verify` above, so a secret or a newly-copyleft dependency is caught at build time as well as
+// at release; they are not repeated here.
+//
+// `dep-risk:check` is wired WITHOUT `--allow-unavailable`, deliberately: the flag exists for local
+// runs where the registry may be unreachable, and passing it here would let this gate go green
+// without having checked anything — the false green the three-outcome model exists to prevent. A
+// registry that cannot be reached must fail the release, not pass it.
+pnpm(['dep-risk:check']);
 run('node', ['scripts/client-certification-evidence.test.mjs']);
 run('node', ['scripts/client-certification-matrix.test.mjs']);
 run('node', ['scripts/client-certification-matrix.mjs', '--check']);
@@ -84,6 +93,12 @@ run('node', ['scripts/collect-acceptance-receipts.test.mjs']);
 // WP9.1 — the release-evidence manifest builder's own invariants (dirty/red/certification
 // legs, tamper/omission/duplicate) were previously orphaned: nothing ran this file.
 run('node', ['scripts/release-evidence.test.mjs']);
+// WP3 bullet 6 — the SBOM for the release artifacts. It is generated BEFORE the evidence manifest so
+// the artifact exists when the manifest is written, and it is written to a gitignored path
+// (sbom.cdx.json) under the same rule as release-evidence.json: running the gate locally must not
+// dirty the checkout it certifies. The generator FAILS on any structural-invariant violation and
+// writes nothing when it fails, so a broken document cannot be mistaken for a release artifact.
+pnpm(['sbom:generate']);
 // F07: this writes the receipt even when a frozen quality gate is red, then fails the release.
 pnpm(['release:evidence']);
 pnpm(['publish:dry-run']);

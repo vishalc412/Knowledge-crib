@@ -250,3 +250,21 @@ export function pendingCaptures(store: MemoryStore): CaptureOutboxEntry[] {
     .filter((e) => e.status === 'pending' && !deadIds.has(e.id))
     .sort((a, b) => a.id.localeCompare(b.id));
 }
+
+/**
+ * WP5 §7.3 — the dead-letter view: captures that exhausted their retry budget (or were dismissed)
+ * and will never be distilled automatically. The terminal counterpart of {@link pendingCaptures}, and
+ * the signal the memory Home's recovery ladder needs: a non-empty list means the ledger is silently
+ * missing observations the agent already made, which is a state a person has to decide about — the
+ * drain loop has already stopped trying on its own.
+ *
+ * Sorted by id, like the pending view, so a count and a listing can never disagree about order.
+ */
+export function deadCaptures(store: MemoryStore): CaptureOutboxEntry[] {
+  // COPIED before sorting. `readCollection` hands back the live entries array, so an in-place
+  // `.sort()` would reorder the store's own collection as a side effect of a READ — the same trap
+  // `pendingCaptures` avoids only incidentally, by filtering (which copies) before it sorts.
+  return [...(store.readCollection('dead').entries as CaptureOutboxEntry[])].sort((a, b) =>
+    a.id.localeCompare(b.id),
+  );
+}

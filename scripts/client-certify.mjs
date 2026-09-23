@@ -9,9 +9,9 @@
  *
  * ONE harness, seven drivers. The clients differ in what they are CALLED, how they report a version,
  * how they report being signed in, where their MCP config lives, and how one non-interactive turn is
- * issued. Those differences are a table ({@link CLIENT_SPECS}); the eleven behaviours the promise
+ * issued. Those differences are a table ({@link CLIENT_SPECS}); the thirteen behaviours the promise
  * requires are {@link CERTIFICATION_BEHAVIOURS}, verified once, for every client. Seven bespoke
- * implementations of the same eleven checks would be eleven chances to forget one — the failure this
+ * implementations of the same thirteen checks would be thirteen chances to forget one — the failure this
  * shape removes structurally rather than by review.
  *
  * Usage:
@@ -62,10 +62,10 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, '..');
 
 /** Bumped when a driver's behaviour changes, so a receipt names the driver that produced it. */
-export const DRIVER_VERSION = '1.1.0';
+export const DRIVER_VERSION = '1.2.0';
 
 /**
- * The eleven behaviours every driver must attempt, in the order they are attempted.
+ * The thirteen behaviours every driver must attempt, in the order they are attempted.
  *
  * The harness verifies this list against the driver — a driver that silently stops attempting one
  * fails at the checklist rather than shipping a receipt that is quietly narrower than the promise.
@@ -107,6 +107,12 @@ export const CERTIFICATION_BEHAVIOURS = [
     requirement: 'the vendor client records a uniquely tagged authorized intake',
   },
   {
+    id: 'connectedMemoryRecorded',
+    phase: 'invoke',
+    requirement:
+      'the vendor client links the recorded intake into the memory graph and records a supersession through graph_propose',
+  },
+  {
     id: 'vendorProcessInterrupted',
     phase: 'interrupt',
     requirement: 'the VENDOR CLIENT process is killed mid-session — not merely its MCP subprocess',
@@ -126,10 +132,16 @@ export const CERTIFICATION_BEHAVIOURS = [
     phase: 'restartAndResume',
     requirement: "another principal's durable work never reaches the owner",
   },
+  {
+    id: 'connectedMemoryResumed',
+    phase: 'restartAndResume',
+    requirement:
+      'the restarted client retrieves the connection and its supersession through memory_graph history',
+  },
 ];
 
 /**
- * The eight legs, mapped from the eleven behaviours. The legs are what the RECEIPT carries, because
+ * The nine legs, mapped from the thirteen behaviours. The legs are what the RECEIPT carries, because
  * they are the promise; the behaviours are how the harness checks itself, because they are finer.
  * `vendorProcessInterrupted` covers two legs, which is exactly the pair a version-1 receipt recorded
  * as one fact and therefore could never certify.
@@ -143,6 +155,7 @@ export const LEG_BEHAVIOURS = {
   restart: ['vendorProcessRestarted'],
   authorizedResume: ['authorizedSessionResumed'],
   foreignPrincipalExclusion: ['foreignPrincipalExclusion'],
+  connectedMemory: ['connectedMemoryRecorded', 'connectedMemoryResumed'],
 };
 
 function flag(argv, name, fallback) {
@@ -774,6 +787,7 @@ function createDriver(
             'handshakeThroughVendorClient',
             'toolInvocationThroughVendorClient',
             'authorizedRecordThroughVendorClient',
+            'connectedMemoryRecorded',
           ],
           reason,
         );
@@ -812,6 +826,32 @@ function createDriver(
       });
       const recordWords = record.status === 0 && /intake:/.test(`${record.stdout ?? ''}`);
       const recordOk = recordWords && recordEvidence;
+
+      // Connected memory: the SAME client links that intake into the graph and records a
+      // supersession. Correlated like every leg: the client's word AND completed graph_propose
+      // operations on the wire — the v2 link's request carrying its topic, the supersession's request
+      // carrying the predicate — each result reporting the admission.
+      const connectFloor = recordEvidence ? recordEvidence.operation + 1 : 0;
+      const connect = ctx.turn(
+        'invoke: link the intake into the memory graph and record a supersession',
+        `Use the knowledge-crib MCP memory tool with op="graph_propose" three times. INTAKE is the id of the intake whose original is "${ctx.tag}" (call op="intake_list" to find it if you need to). First predicate="about" subject=INTAKE object="topic:${ctx.tag}-v1" supportedBy=[INTAKE]. Second predicate="about" subject=INTAKE object="topic:${ctx.tag}-v2" supportedBy=[INTAKE]. Third predicate="supersedes" subject="topic:${ctx.tag}-v2" object="topic:${ctx.tag}-v1" supportedBy=[INTAKE]. Use actor="${spec.id}-certification" each time. Reply with ONLY the word CONNECTED if all three returned admitted true, otherwise REFUSED.`,
+      );
+      const linkEvidence = protocolMatch(ctx, 'owner', {
+        method: 'tools/call',
+        tool: 'memory',
+        fromIndex: connectFloor,
+        requestMarker: `topic:${ctx.tag}-v2`,
+        resultMarker: 'admitted',
+      });
+      const supersedeEvidence = protocolMatch(ctx, 'owner', {
+        method: 'tools/call',
+        tool: 'memory',
+        fromIndex: connectFloor,
+        requestMarker: 'supersedes',
+        resultMarker: 'admitted',
+      });
+      const connectWords = connect.status === 0 && /\bCONNECTED\b/.test(`${connect.stdout ?? ''}`);
+      const connectOk = connectWords && linkEvidence && supersedeEvidence;
       return {
         handshakeThroughVendorClient: handshakeOk
           ? { status: 'pass', protocol: [handshakeEvidence] }
@@ -827,6 +867,14 @@ function createDriver(
         toolInvocationThroughVendorClient: handshakeOk
           ? { status: 'pass', protocol: [handshakeEvidence] }
           : failed(handshake, 'no tool result returned to the vendor client'),
+        connectedMemoryRecorded: connectOk
+          ? { status: 'pass', protocol: [linkEvidence, supersedeEvidence] }
+          : failed(
+              connect,
+              connectWords
+                ? 'the client reported CONNECTED, but the protocol recording shows no admitted graph_propose for both the link and the supersession — a printed word is not a recorded connection'
+                : `connect exit ${connect.status}; the client did not report every proposal admitted`,
+            ),
         authorizedRecordThroughVendorClient: recordOk
           ? { status: 'pass', protocol: [recordEvidence] }
           : failed(
@@ -943,7 +991,12 @@ function createDriver(
     restartAndResume(ctx) {
       if (ctx.blockedBecause) {
         return blocked(
-          ['vendorProcessRestarted', 'authorizedSessionResumed', 'foreignPrincipalExclusion'],
+          [
+            'vendorProcessRestarted',
+            'authorizedSessionResumed',
+            'foreignPrincipalExclusion',
+            'connectedMemoryResumed',
+          ],
           ctx.blockedBecause,
         );
       }
@@ -988,6 +1041,24 @@ function createDriver(
       const restartedWords = restartedOk && answered;
       const restartOk = restartedWords && distinctProcess && restartEvidence;
       const resumeOk = found && resumeEvidence;
+
+      // Connected memory survives the restart: the fresh process asks for the v1 topic's history
+      // and the completed memory_graph operation's RESULT must carry the v2 topic that superseded
+      // it. Captured before the foreign plant, so its floor is this process's own traffic.
+      const graphFloor = operationCount(protocolRead(ctx, 'owner'));
+      const connectedTurn = ctx.turn(
+        'restartAndResume: the restarted client retrieves the connection history',
+        `Use the knowledge-crib MCP memory_graph tool with op="history" and refs=["topic:${ctx.tag}-v1"]. Reply with ONLY the word SUPERSEDED if the timeline contains a supersedes assertion from "topic:${ctx.tag}-v2", otherwise MISSING.`,
+      );
+      const connectedEvidence = protocolMatch(ctx, 'owner', {
+        method: 'tools/call',
+        tool: 'memory_graph',
+        fromIndex: graphFloor,
+        resultMarker: `topic:${ctx.tag}-v2`,
+      });
+      const connectedWords =
+        connectedTurn.status === 0 && /\bSUPERSEDED\b/.test(`${connectedTurn.stdout ?? ''}`);
+      const connectedOk = connectedWords && connectedEvidence;
 
       // The floor for the exclusion check: captured AFTER the restarted turn and BEFORE the
       // exclusion turn, so the owner operation that must NOT carry the foreign marker is the
@@ -1064,6 +1135,14 @@ function createDriver(
               found
                 ? 'the restarted client reported FOUND, but the protocol recording shows no completed handoff whose result carried the run tag — a printed word is not a recovered session'
                 : 'the restarted client did not recover the tagged intake',
+            ),
+        connectedMemoryResumed: connectedOk
+          ? { status: 'pass', protocol: [connectedEvidence] }
+          : failed(
+              connectedTurn,
+              connectedWords
+                ? 'the restarted client reported SUPERSEDED, but the protocol recording shows no completed memory_graph operation whose result carried the superseding topic'
+                : 'the restarted client did not retrieve the recorded connection history',
             ),
         foreignPrincipalExclusion: exclusionOk
           ? { status: 'pass', protocol: [createEvidence, confirmEvidence, exclusionEvidence] }
@@ -1522,7 +1601,15 @@ export async function certifyCell(options) {
     workspace,
     `${spec.id}-${process.platform}-${process.arch}-foreign-recording.json`,
   );
-  const protocolMarkers = [tag, foreignMarker, 'certifiedSymbol', 'intake:'];
+  const protocolMarkers = [
+    tag,
+    foreignMarker,
+    'certifiedSymbol',
+    'intake:',
+    `topic:${tag}-v2`,
+    'supersedes',
+    'admitted',
+  ];
 
   // Everything of crib's is isolated; the vendor client runs under the OPERATOR's real profile,
   // because a client with an empty HOME has no credentials and exits in 100ms — an unauthenticated
@@ -1810,7 +1897,7 @@ export async function certifyCell(options) {
 
     const receipt = {
       format: 'knowledge-crib-client-certification',
-      formatVersion: 3,
+      formatVersion: 4,
       generatedAt: new Date().toISOString(),
       policySha256,
       product: { commit: candidateCommit, packageSha256 },
@@ -1982,7 +2069,7 @@ function gitDirty() {
 }
 
 /**
- * Map the eleven behaviours onto the eight legs the receipt carries.
+ * Map the thirteen behaviours onto the nine legs the receipt carries.
  *
  * A leg passes only when EVERY behaviour behind it passed. A leg with any blocked behaviour is
  * `blocked` rather than `fail` — "we could not sign in" and "the client rejected the handshake" are

@@ -1,0 +1,749 @@
+WP4 R3 deciding pair — 2026-09-23T15:48:37Z
+repo   : /Users/vishalchawla/Documents/personal/Knowledge-crib
+HEAD   : b4615721e6a352aa9f89edc0f9f4094d28e113a6
+branch : program/developer-trust
+C0 (incumbent, vectorless) : /tmp/crib-wp4-base-c0
+C1 (hybrid, --vectors)     : /tmp/crib-wp4-base
+Both trees at corpus base d872789840b47e2a2b2b9a5f0751288b6ad0a050; the pair runs back-to-back
+with nothing else running (§10.8(5)). locate-eval checks the base independently of this script.
+
+$ node scripts/bench/locate-eval.mjs --base-tree /tmp/crib-wp4-base-c0 --arm c0 --json  > docs/program/logs/wp4-r3-wp4-r3-quality-c0.json
+warning: exhaustive rename detection was skipped due to too many files.
+warning: you may want to set your diff.renameLimit variable to at least 1836 and retry the command.
+{
+  "corpus": {
+    "base": "d872789840b47e2a2b2b9a5f0751288b6ad0a050",
+    "tasks": 61
+  },
+  "k": 10,
+  "arm": "c0-lexical-only",
+  "index": {
+    "db": "/tmp/crib-wp4-base-c0/.crib/index/crib.sqlite",
+    "carriesVectors": false,
+    "vectorNote": null,
+    "servedLexically": false
+  },
+  "table": [
+    {
+      "method": "crib",
+      "variant": "full",
+      "recall1": 0.16530054644808745,
+      "recall5": 0.3565573770491803,
+      "recall10": 0.4729508196721311,
+      "mrr": 0.3231329690346084,
+      "medianTokens": 1902
+    },
+    {
+      "method": "crib",
+      "variant": "subject",
+      "recall1": 0.13524590163934427,
+      "recall5": 0.3825136612021857,
+      "recall10": 0.49098360655737705,
+      "mrr": 0.2987184491282851,
+      "medianTokens": 1889
+    },
+    {
+      "method": "crib",
+      "variant": "no-scope",
+      "recall1": 0.10245901639344263,
+      "recall5": 0.3693989071038251,
+      "recall10": 0.4745901639344262,
+      "mrr": 0.2650468384074941,
+      "medianTokens": 1890
+    },
+    {
+      "method": "grep-bm25",
+      "variant": "full",
+      "recall1": 0.24836065573770497,
+      "recall5": 0.3688524590163934,
+      "recall10": 0.5092896174863387,
+      "mrr": 0.47812906583398385,
+      "medianTokens": 24062
+    },
+    {
+      "method": "grep-bm25",
+      "variant": "subject",
+      "recall1": 0.2073770491803279,
+      "recall5": 0.45737704918032784,
+      "recall10": 0.5508196721311476,
+      "mrr": 0.4665755919854281,
+      "medianTokens": 68963
+    },
+    {
+      "method": "grep-bm25",
+      "variant": "no-scope",
+      "recall1": 0.2073770491803279,
+      "recall5": 0.4355191256830601,
+      "recall10": 0.5193989071038251,
+      "mrr": 0.4571493624772313,
+      "medianTokens": 62663
+    },
+    {
+      "method": "churn",
+      "variant": "full",
+      "recall1": 0.27076502732240443,
+      "recall5": 0.34726775956284156,
+      "recall10": 0.42513661202185793,
+      "mrr": 0.5012295081967213,
+      "medianTokens": 0
+    },
+    {
+      "method": "churn",
+      "variant": "subject",
+      "recall1": 0.27076502732240443,
+      "recall5": 0.34726775956284156,
+      "recall10": 0.42513661202185793,
+      "mrr": 0.5012295081967213,
+      "medianTokens": 0
+    },
+    {
+      "method": "churn",
+      "variant": "no-scope",
+      "recall1": 0.27076502732240443,
+      "recall5": 0.34726775956284156,
+      "recall10": 0.42513661202185793,
+      "mrr": 0.5012295081967213,
+      "medianTokens": 0
+    },
+    {
+      "method": "recency",
+      "variant": "full",
+      "recall1": 0,
+      "recall5": 0,
+      "recall10": 0,
+      "mrr": 0,
+      "medianTokens": 0
+    },
+    {
+      "method": "recency",
+      "variant": "subject",
+      "recall1": 0,
+      "recall5": 0,
+      "recall10": 0,
+      "mrr": 0,
+      "medianTokens": 0
+    },
+    {
+      "method": "recency",
+      "variant": "no-scope",
+      "recall1": 0,
+      "recall5": 0,
+      "recall10": 0,
+      "mrr": 0,
+      "medianTokens": 0
+    }
+  ]
+}
+(node:57062) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+[exit 0]
+
+$ node scripts/bench/locate-eval.mjs --base-tree /tmp/crib-wp4-base --arm c1 --json  > docs/program/logs/wp4-r3-wp4-r3-quality-c1.json
+warning: exhaustive rename detection was skipped due to too many files.
+warning: you may want to set your diff.renameLimit variable to at least 1836 and retry the command.
+{
+  "corpus": {
+    "base": "d872789840b47e2a2b2b9a5f0751288b6ad0a050",
+    "tasks": 61
+  },
+  "k": 10,
+  "arm": "c1-hybrid-rrf-rerank",
+  "index": {
+    "db": "/tmp/crib-wp4-base/.crib/index/crib.sqlite",
+    "carriesVectors": true,
+    "vectorNote": "index carries multilingual-e5-large-1024-sym vectors; this reader loaded no embedder, so code search is lexical here",
+    "servedLexically": false
+  },
+  "table": [
+    {
+      "method": "crib",
+      "variant": "full",
+      "recall1": 0.21775956284153009,
+      "recall5": 0.40874316939890704,
+      "recall10": 0.5478142076502732,
+      "mrr": 0.41693989071038257,
+      "medianTokens": 1806
+    },
+    {
+      "method": "crib",
+      "variant": "subject",
+      "recall1": 0.1789617486338798,
+      "recall5": 0.3101092896174863,
+      "recall10": 0.46448087431693985,
+      "mrr": 0.29387197501951595,
+      "medianTokens": 1812
+    },
+    {
+      "method": "crib",
+      "variant": "no-scope",
+      "recall1": 0.16120218579234974,
+      "recall5": 0.29644808743169404,
+      "recall10": 0.4057377049180328,
+      "mrr": 0.25839188134270097,
+      "medianTokens": 1813
+    },
+    {
+      "method": "grep-bm25",
+      "variant": "full",
+      "recall1": 0.24836065573770497,
+      "recall5": 0.3743169398907103,
+      "recall10": 0.5147540983606557,
+      "mrr": 0.4794951860525631,
+      "medianTokens": 24062
+    },
+    {
+      "method": "grep-bm25",
+      "variant": "subject",
+      "recall1": 0.2073770491803279,
+      "recall5": 0.4628415300546448,
+      "recall10": 0.5508196721311476,
+      "mrr": 0.46712204007285973,
+      "medianTokens": 68963
+    },
+    {
+      "method": "grep-bm25",
+      "variant": "no-scope",
+      "recall1": 0.2073770491803279,
+      "recall5": 0.4355191256830601,
+      "recall10": 0.524863387978142,
+      "mrr": 0.4585154826958105,
+      "medianTokens": 62663
+    },
+    {
+      "method": "churn",
+      "variant": "full",
+      "recall1": 0.27076502732240443,
+      "recall5": 0.34726775956284156,
+      "recall10": 0.42513661202185793,
+      "mrr": 0.5012295081967213,
+      "medianTokens": 0
+    },
+    {
+      "method": "churn",
+      "variant": "subject",
+      "recall1": 0.27076502732240443,
+      "recall5": 0.34726775956284156,
+      "recall10": 0.42513661202185793,
+      "mrr": 0.5012295081967213,
+      "medianTokens": 0
+    },
+    {
+      "method": "churn",
+      "variant": "no-scope",
+      "recall1": 0.27076502732240443,
+      "recall5": 0.34726775956284156,
+      "recall10": 0.42513661202185793,
+      "mrr": 0.5012295081967213,
+      "medianTokens": 0
+    },
+    {
+      "method": "recency",
+      "variant": "full",
+      "recall1": 0,
+      "recall5": 0,
+      "recall10": 0,
+      "mrr": 0,
+      "medianTokens": 0
+    },
+    {
+      "method": "recency",
+      "variant": "subject",
+      "recall1": 0,
+      "recall5": 0,
+      "recall10": 0,
+      "mrr": 0,
+      "medianTokens": 0
+    },
+    {
+      "method": "recency",
+      "variant": "no-scope",
+      "recall1": 0,
+      "recall5": 0,
+      "recall10": 0,
+      "mrr": 0,
+      "medianTokens": 0
+    }
+  ]
+}
+(node:67401) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+[exit 0]
+
+$ wp4-r3-apply.mjs --c0 ...-c0.json --c1 ...-c1.json
+§10.5 applied to {C0, C1} on d872789840b47e2a2b2b9a5f0751288b6ad0a050 (61 tasks)
+  C0 0.3231  docs/program/logs/wp4-r3-wp4-r3-quality-c0.json  [c0-lexical-only]
+  C1 0.4169  docs/program/logs/wp4-r3-wp4-r3-quality-c1.json  [c1-hybrid-rrf-rerank]
+  churn control 0.5012
+
+  1. discrimination guard — FAIL
+     rule : MRR(C1) > churn MRR
+     value: MRR(C1) 0.4169 vs churn 0.5012
+     via  : locate-eval.mjs (this pair)
+     The control is query-blind — same files, same order, every task — so this is the whole of clause
+     1 and no reading of it is available.
+
+  2. minimum effect — PASS
+     rule : MRR(C1) >= MRR(C0) + 0.05
+     value: MRR(C1) 0.4169 vs MRR(C0) + 0.05 = 0.3731
+     via  : locate-eval.mjs (this pair)
+     On this corpus the control (0.5012) already exceeds MRR(C0)+0.05 (0.3731), so clause 2 is
+     strictly dominated by clause 1 and cannot bind — clearing clause 1 clears it (register
+     §5.6(F)(i)).
+
+  3. exact guard — UNPROVEN
+     rule : exact R@1(C1) >= exact R@1(C0)
+     via  : code-retrieval-eval.mjs --category exact (§8.1)
+     NOT MEASURABLE WITH THIS RUN’S INSTRUMENTS. The named harness cannot open a hybrid arm (it
+     constructs SqliteIndexStore with no embedder, `:208`), so `exact R@1(C1)` is not representable
+     in it and its own guard field is computed `null` by construction (`:552`). This clause is an
+     outright disqualifier, so it cannot be *cleared* — only left unmet. See register §5.6(G) and
+     P-8.
+
+  4. latency guard — PENDING
+     rule : query p95(C1) <= 2x query p95(C0), same machine same run
+     via  : scale-bench.mjs (step 6)
+     A DIFFERENT RUN. locate-eval.mjs measures no latency at all; clause 4 reads scale-bench.mjs’s
+     lexical-vs-hybrid p50/p95 table, which satisfies "same machine same run" internally, on
+     synthetic LOC slices rather than on the corpus base commit. No number from this pair may be
+     quoted as clause 4.
+
+  5. resource budgets — PENDING
+     rule : cold index <= 20x lexical; peak RSS <= 2x; disk <= 8 KB/vector; incremental writes exactly the changed nodes; perf-gates unchanged with vectors
+     via  : scale-bench.mjs (step 6)
+     Same instrument and same run as clause 4; not measured by this pair.
+
+  tie-break: NOT APPLICABLE — clauses 1-5 are not all cleared
+
+  FAILS clause(s) 1 — the candidate is not promoted.
+[exit 1]
+
+=== 2. vector channel presence + the H-6 honesty gate ===
+NOTE ON ORDER: steps 2, 3 and 5 are appended AFTER step 4/4b, not before. The run script's
+canonical order is 0-6; here the pair (step 4) ran first because the deciding comparison was
+the critical path and the main repo's own vectorised index was found already present, so
+step 2's prerequisite (a hybrid-capable index) needed no new build. A reader must not read
+this log as a scripted 0-6 run; it is the same steps in a different order, and the pair was
+measured back-to-back with nothing else running, which is what §10.8(5) requires.
+
+$ node scripts/eval/code-vector-eval.mjs --require-hybrid --json
+{
+  "db": "/Users/vishalchawla/Documents/personal/Knowledge-crib/.crib/index/crib.sqlite",
+  "reranker": null,
+  "rerankedOver": null,
+  "rerankDepth": null,
+  "cases": 20,
+  "limit": 10,
+  "embedder": {
+    "id": "multilingual-e5-large-1024-sym",
+    "dim": 1024
+  },
+  "vectorChannel": true,
+  "vectorNote": null,
+  "vectorUnavailable": null,
+  "lexical": {
+    "n": 20,
+    "top1": 0,
+    "top3": 0,
+    "found": 6,
+    "mrr": 0.053253968253968255,
+    "top1Pct": 0,
+    "top3Pct": 0,
+    "foundPct": 30,
+    "ranks": [
+      {
+        "q": "how do I debug a parser that hangs",
+        "rank": 0
+      },
+      {
+        "q": "why is there no native hashing dependency",
+        "rank": 0
+      },
+      {
+        "q": "what stops two indexing runs corrupting each other",
+        "rank": 0
+      },
+      {
+        "q": "how do I add a new language",
+        "rank": 4
+      },
+      {
+        "q": "what stops a secret being indexed",
+        "rank": 5
+      },
+      {
+        "q": "how is a claim proven against real code",
+        "rank": 0
+      },
+      {
+        "q": "what makes re-indexing byte identical",
+        "rank": 0
+      },
+      {
+        "q": "how does a memory survive a refactor",
+        "rank": 0
+      },
+      {
+        "q": "what decides which memory the team trusts",
+        "rank": 0
+      },
+      {
+        "q": "how does blast radius cross repositories",
+        "rank": 9
+      },
+      {
+        "q": "why is a response never unbounded",
+        "rank": 4
+      },
+      {
+        "q": "how are business rules derived from branches",
+        "rank": 7
+      },
+      {
+        "q": "what keeps uncommitted edits queryable",
+        "rank": 0
+      },
+      {
+        "q": "how is a cross file reference resolved without guessing",
+        "rank": 0
+      },
+      {
+        "q": "what decides which symbols get described first",
+        "rank": 0
+      },
+      {
+        "q": "how does an unchanged answer avoid resending",
+        "rank": 0
+      },
+      {
+        "q": "how is documentation joined to code",
+        "rank": 0
+      },
+      {
+        "q": "what groups related code into modules",
+        "rank": 0
+      },
+      {
+        "q": "how is only the changed part re-indexed",
+        "rank": 0
+      },
+      {
+        "q": "what proves parallel and serial produce the same graph",
+        "rank": 9
+      }
+    ]
+  },
+  "hybrid": {
+    "n": 20,
+    "top1": 3,
+    "top3": 8,
+    "found": 10,
+    "mrr": 0.26874999999999993,
+    "top1Pct": 15,
+    "top3Pct": 40,
+    "foundPct": 50,
+    "ranks": [
+      {
+        "q": "how do I debug a parser that hangs",
+        "rank": 3
+      },
+      {
+        "q": "why is there no native hashing dependency",
+        "rank": 4
+      },
+      {
+        "q": "what stops two indexing runs corrupting each other",
+        "rank": 0
+      },
+      {
+        "q": "how do I add a new language",
+        "rank": 1
+      },
+      {
+        "q": "what stops a secret being indexed",
+        "rank": 3
+      },
+      {
+        "q": "how is a claim proven against real code",
+        "rank": 1
+      },
+      {
+        "q": "what makes re-indexing byte identical",
+        "rank": 0
+      },
+      {
+        "q": "how does a memory survive a refactor",
+        "rank": 0
+      },
+      {
+        "q": "what decides which memory the team trusts",
+        "rank": 1
+      },
+      {
+        "q": "how does blast radius cross repositories",
+        "rank": 0
+      },
+      {
+        "q": "why is a response never unbounded",
+        "rank": 0
+      },
+      {
+        "q": "how are business rules derived from branches",
+        "rank": 2
+      },
+      {
+        "q": "what keeps uncommitted edits queryable",
+        "rank": 0
+      },
+      {
+        "q": "how is a cross file reference resolved without guessing",
+        "rank": 0
+      },
+      {
+        "q": "what decides which symbols get described first",
+        "rank": 8
+      },
+      {
+        "q": "how does an unchanged answer avoid resending",
+        "rank": 0
+      },
+      {
+        "q": "how is documentation joined to code",
+        "rank": 0
+      },
+      {
+        "q": "what groups related code into modules",
+        "rank": 3
+      },
+      {
+        "q": "how is only the changed part re-indexed",
+        "rank": 0
+      },
+      {
+        "q": "what proves parallel and serial produce the same graph",
+        "rank": 2
+      }
+    ]
+  },
+  "reranked": null,
+  "graded": "hybrid"
+}
+[exit ]
+
+$ node scripts/eval/code-vector-eval.mjs --require-hybrid --json  > docs/program/logs/wp4-r3-wp4-r3-quality-step2.json
+[exit 0]
+
+=== 3. per-category arms — exact, nl, cross-file, rename (D-a numbers) ===
+
+$ node scripts/bench/code-retrieval-eval.mjs --category exact,nl,cross-file,rename --decide --json  > docs/program/logs/wp4-r3-wp4-r3-quality-step3.json
+{
+  "generatedAt": "2026-09-23T16:02:38.217Z",
+  "repo": "/Users/vishalchawla/Documents/personal/Knowledge-crib",
+  "db": "/Users/vishalchawla/Documents/personal/Knowledge-crib/.crib/index/crib.sqlite",
+  "k": 10,
+  "limit": 50,
+  "index": {
+    "vector": false,
+    "cypher": false,
+    "vectorNote": "index carries multilingual-e5-large-1024-sym vectors; this reader loaded no embedder, so code search is lexical here"
+  },
+  "arms": {
+    "C0": {
+      "name": "lexical-only",
+      "status": "measured"
+    },
+    "C1": {
+      "name": "hybrid-rrf-rerank",
+      "status": "unavailable",
+      "reason": "index carries multilingual-e5-large-1024-sym vectors; this reader loaded no embedder, so code search is lexical here"
+    },
+    "C2": {
+      "name": "hybrid-rrf",
+      "status": "unavailable",
+      "reason": "index carries multilingual-e5-large-1024-sym vectors; this reader loaded no embedder, so code search is lexical here"
+    },
+    "C3": {
+      "name": "semantic-only",
+      "status": "not-measurable",
+      "reason": "no public switch: `semantic:false` turns the vector channel off, and `vectorQuery` is private, so cosine-alone has no entry point. Measuring it would require reaching past the API into a configuration production does not have."
+    }
+  },
+  "categories": {
+    "exact": {
+      "category": "exact",
+      "universe": {
+        "symbols": 7495,
+        "distinctNames": 5578,
+        "namesBorneByMultipleSymbols": 628,
+        "symbolsSharingAName": 2545,
+        "sampled": 400,
+        "stride": 18,
+        "deterministic": "stride over the id-sorted symbol list — identical on every run and every arm"
+      },
+      "variants": {
+        "name": {
+          "selfR1Ceiling": 0.7442294863242161,
+          "queryStringsBorneByMultipleSymbols": 628,
+          "arms": {
+            "C0": {
+              "n": 400,
+              "selfR1": 0.3675,
+              "selfRAtK": 0.735,
+              "fileR1": 0.615,
+              "mrr": 0.4980456464279277
+            }
+          }
+        },
+        "qualifiedName": {
+          "selfR1Ceiling": 0.8368245496997999,
+          "queryStringsBorneByMultipleSymbols": 451,
+          "arms": {
+            "C0": {
+              "n": 400,
+              "selfR1": 0.4375,
+              "selfRAtK": 0.805,
+              "fileR1": 0.7075,
+              "mrr": 0.5659881208192019
+            }
+          }
+        }
+      }
+    },
+    "nl": {
+      "category": "nl",
+      "corpus": {
+        "name": "CASES (20 labelled questions)",
+        "role": "arm-split view; the primary 61-task arm is locate-eval.mjs"
+      },
+      "arms": {
+        "C0": {
+          "n": 20,
+          "r1": 0.1,
+          "rAtK": 0.19166666666666668,
+          "mrr": 0.16543345543345545
+        }
+      }
+    },
+    "cross-file": {
+      "category": "cross-file",
+      "grain": "file — hits deduped by file before scoring",
+      "arms": {
+        "C0": {
+          "n": 20,
+          "rAtK": 0.2625,
+          "mrr": 0.1860930735930736,
+          "allFilesCoveredRate": 0.1
+        }
+      }
+    },
+    "rename": {
+      "category": "rename",
+      "status": "underpowered",
+      "n": 0,
+      "minTasks": 8,
+      "reason": "fewer qualifying renames than the corpus minimum, so §8.4 step 5 applies: reported as underpowered rather than scored",
+      "window": {
+        "base": "a8a5c121a11390131c804427840255bc59ca9635",
+        "head": "b4615721e6a352aa9f89edc0f9f4094d28e113a6",
+        "depth": 400,
+        "commitsInWindow": 353
+      },
+      "indexRev": "b4615721e6a352aa9f89edc0f9f4094d28e113a6",
+      "composition": {
+        "derived": 1188,
+        "docs": 3,
+        "other": 1,
+        "source": 0
+      },
+      "limits": [
+        "One repository, and this one has no source-file renames in its history — see counts.byPathClass.",
+        "A file-level rename is a proxy for the declaration-level rename §8.4 describes; a declaration that moves between files without the file itself moving is invisible to `--diff-filter=R`.",
+        "The commit subject is a post-hoc description written after the move, so it is a better proxy for \"an agent is told what moved\" than for \"an agent asks where something went\"."
+      ]
+    }
+  },
+  "decision": {
+    "rule": "docs/program/wp4-implementation-spec.md §10.5",
+    "verdict": "no-change — the hybrid arms were not measurable, and §10.5 step 6 biases a tie toward no change; step 7: a negative result ships as a negative result",
+    "criteria": [
+      {
+        "arm": "C1",
+        "discriminable": false,
+        "minimumEffect": null,
+        "exactGuard": null,
+        "mrrDelta": null
+      },
+      {
+        "arm": "C2",
+        "discriminable": false,
+        "minimumEffect": null,
+        "exactGuard": null,
+        "mrrDelta": null
+      }
+    ],
+    "note": "criteria 1-3 are reported as null rather than false: they are NOT CHECKABLE here, and a null read as a pass would be the failure §8.6 exists to prevent"
+  },
+  "limits": [
+    "The nl and cross-file arms reuse a corpus DUPLICATED from scripts/eval/code-vector-eval.mjs, which cannot be imported because it evaluates on import. CASES.length is asserted at 20 so the size cannot drift silently; the entries themselves are not mechanically compared.",
+    "The exact arm samples the id-sorted symbol list at a fixed stride. The stride, the eligible count and the ambiguity ceiling are all reported so a low R@1 is attributable rather than mysterious.",
+    "The primary natural-language arm (§8.2, the 61-task corpus) is scored by `locate-eval.mjs`, not here — this harness scores the 20-case corpus so the ARMS can be compared on one corpus."
+  ]
+}
+[exit 0]
+
+=== 5. dependency arm + churn control (§8.5) ===
+
+$ node scripts/bench/cochange-eval.mjs --base-tree /tmp/crib-wp4-base --json  > docs/program/logs/wp4-r3-wp4-r3-quality-step5.json
+warning: exhaustive rename detection was skipped due to too many files.
+warning: you may want to set your diff.renameLimit variable to at least 1836 and retry the command.
+warning: exhaustive rename detection was skipped due to too many files.
+warning: you may want to set your diff.renameLimit variable to at least 1836 and retry the command.
+{
+  "tasks": 75,
+  "unseeded": 0,
+  "k": 10,
+  "table": [
+    {
+      "method": "crib-impact",
+      "queryBlind": false,
+      "recall1": 0.15,
+      "recall5": 0.20333333333333337,
+      "recall10": 0.24111111111111114,
+      "mrr": 0.3573333333333332,
+      "liftOverBlind": 0.5583333333333331,
+      "medianTokens": 64225
+    },
+    {
+      "method": "cochange",
+      "queryBlind": false,
+      "recall1": 0.11222222222222224,
+      "recall5": 0.33111111111111113,
+      "recall10": 0.3433333333333333,
+      "mrr": 0.44111111111111106,
+      "liftOverBlind": 0.689236111111111,
+      "medianTokens": 0
+    },
+    {
+      "method": "same-dir",
+      "queryBlind": true,
+      "recall1": 0,
+      "recall5": 0.014444444444444444,
+      "recall10": 0.014444444444444444,
+      "mrr": 0.01,
+      "liftOverBlind": 0.015625,
+      "medianTokens": 0
+    },
+    {
+      "method": "churn",
+      "queryBlind": true,
+      "recall1": 0.25333333333333335,
+      "recall5": 0.4266666666666666,
+      "recall10": 0.4533333333333333,
+      "mrr": 0.64,
+      "liftOverBlind": 1,
+      "medianTokens": 0
+    }
+  ]
+}
+(node:85993) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+[exit 0]

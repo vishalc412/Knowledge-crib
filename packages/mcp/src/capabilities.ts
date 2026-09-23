@@ -89,6 +89,8 @@ export const CAPABILITIES: readonly Capability[] = [
       // Session handoff — the "where was I?" projection a returning agent (new context window,
       // different IDE, different vendor) calls FIRST, before it can phrase a question.
       { op: 'handoff', verb: 'memoryHandoff' },
+      // WP-G4 — explicit agent graph proposals, admitted only on server-side checks.
+      { op: 'graph_propose', verb: 'memoryGraphPropose' },
       { op: 'intake_create', verb: 'memoryIntakeCreate' },
       { op: 'intake_checkpoint', verb: 'memoryIntakeCheckpoint' },
       { op: 'intake_list', verb: 'memoryIntakeList' },

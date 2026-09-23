@@ -1,0 +1,385 @@
+# Full-suite run and the re-baseline against WP0
+
+Run 2026-09-23, darwin 25.6.0, Node v22.23.1, pnpm 9.15.0, branch `program/developer-trust`,
+uncommitted working tree, HEAD `b4615721`. Box load 5.40–7.36 during this work (9.34 observed earlier).
+
+Purpose: replace the explicitly-partial §9.4 figure in `evidence-register.md` with a complete
+8-package run, and characterize what the default invocation reports.
+
+## 1. The default invocation is NOT green — and it is NOT a correctness failure
+
+    $ corepack pnpm@9.15.0 -C <repo> -r --no-bail run test
+    TEST_EXIT=1
+    Summary: 3 fails, 5 passes
+
+| Package | Files | Tests | Package exit |
+| --- | --- | --- | --- |
+| soul-schema | 1 passed | 18 passed | 0 |
+| core | 34 passed | 426 passed | 0 |
+| ui | 3 passed | 25 passed | 0 |
+| parsers | 30 passed | 506 passed | 0 |
+| memory | 1 failed \| 71 passed | **1 failed** \| 1,158 passed (1,159) | 1 |
+| pipeline | 5 failed \| 28 passed | **9 failed** \| 277 passed (286) | 1 |
+| mcp | 26 passed | 490 passed | 1 |
+| cli | 43 passed | 654 passed | 0 |
+| **total** | **242** | **3,554 passed / 10 failed (3,564)** | **3 fail, 5 pass** |
+
+**Every one of the 10 failures is `Error: Test timed out in 5000ms`. There is not a single
+assertion failure anywhere in the run** (verified by extracting every `Error:`-shaped line from the
+log: 10 × `Test timed out in 5000ms`, 0 × `AssertionError`, 0 × `expected … to be/equal`).
+
+`mcp` is the instructive case: it reports `Test Files 26 passed (26)` / `Tests 490 passed (490)` and
+still exits 1. Its failure is not a test at all:
+
+    ⎯⎯ Unhandled Errors ⎯⎯
+    Vitest caught 1 unhandled error during the test run.
+    Error: [vitest-worker]: Timeout calling "onTaskUpdate"
+     Test Files  26 passed (26)
+          Tests  490 passed (490)
+         Errors  1 error
+
+with vitest's own caveat: *"This might cause false positive tests."* A worker-IPC timeout, not a
+test result — so the package's exit code is not a signal about its correctness.
+
+The 9 pipeline timeouts are all full-index / re-index tests, and pointedly several are the
+determinism gates:
+
+    src/parse-concurrent.test.ts          a full indexRepo via the concurrent path commits a byte-identical soul …
+    src/parse-concurrent.test.ts          parallel:false forces the serial loop … and still matches the concurrent soul
+    src/parse-concurrent.test.ts          a Mule 4 fixture indexes to a byte-identical soul via serial and concurrent paths
+    src/update.test.ts                    returns null when the indexed anchor was rebased away — full re-index, never a crash
+    src/parity/parity.test.ts             the C# AssessApplication port reproduces the 5 structurally-comparable PL/SQL rules
+    src/parity/parity.test.ts             reports equal=false — full parity is NOT achievable … (honest)
+    src/parity/parity.test.ts             is deterministic — re-running yields the same report
+    src/resolve/csharp-resolver.test.ts   is id-stable: re-indexing yields byte-identical nodes + edges
+    src/resolve/java-resolver.test.ts     is id-stable: re-indexing yields byte-identical nodes + edges
+
+This is worth naming: **a determinism gate that times out under load is exactly the shape that gets
+misread as a determinism failure.** The failure text is unambiguous (`timed out`, not `expected X to
+equal Y`), but the test *name* says "byte-identical soul" and "is deterministic" — a reader skimming
+the summary would draw the opposite conclusion from the one the evidence supports.
+
+## 2. The cause is package concurrency, and the log timestamps prove it
+
+There is **no `.npmrc`** in the repo and no `workspace-concurrency` setting anywhere, so pnpm's
+default (4) is in effect. The `Start at` timestamps in one log show packages overlapping directly:
+
+    02:22:53   soul-schema, core
+    02:23:07   ui, parsers, memory          ← 3 concurrent (core ended ~02:23:06)
+    02:23:49   pipeline, mcp                ← starting as memory (41.55s from 02:23:07) ends
+    02:25:03   cli
+
+So up to four package runs are live at once, each of them itself running multiple vitest workers —
+and the index-heavy tests contend for the same CPU.
+
+## 3. Running the packages one at a time removes it — measured, not assumed
+
+    $ corepack pnpm@9.15.0 -C packages/memory  run test      → EXIT_memory=0
+    $ corepack pnpm@9.15.0 -C packages/mcp     run test      → EXIT_mcp=0
+    $ corepack pnpm@9.15.0 -C packages/pipeline run test     → EXIT_pipeline=1
+
+| Package | Under 4-way concurrency | Alone |
+| --- | --- | --- |
+| memory | 1 timed out \| 1,158 passed | **72/72 files, 1,159/1,159, exit 0** |
+| mcp | 490 passed, 1 IPC error, exit 1 | **26/26 files, 490/490, no `Errors` line, exit 0** |
+| pipeline | 9 timed out \| 277 passed | 32 passed \| 1 failed, 285/286, exit 1 |
+
+Same code, same tests, same box — the only variable is what else was running. `memory` is the
+cleanest instance: the identical 1,159 tests that produced one timeout produced zero in isolation.
+
+## 4. The one test that still failed alone is ALSO not over budget
+
+`pipeline` alone kept exactly one timeout (`parity.test.ts > is deterministic`). Giving that file
+room, with the reporter printing real durations:
+
+    $ corepack pnpm@9.15.0 -C packages/pipeline exec vitest run src/parity/parity.test.ts \
+        --testTimeout=120000 --reporter=verbose
+     ✓ the C# AssessApplication port reproduces the 5 structurally-comparable PL/SQL rules   736ms
+     ✓ reports equal=false — full parity is NOT achievable … (honest)                        689ms
+     ✓ is deterministic — re-running yields the same report                                 1384ms
+     Test Files 1 passed (1) · Tests 3 passed (3)
+    PARITY_EXIT=0
+
+**1,384 ms against a 5,000 ms budget** — it passes, with 3.6× headroom, when it is not sharing the
+CPU with the rest of its own package's test files. So it is not a budget defect either; "alone"
+still means vitest running many of that package's files at once, and the heavy ones contend.
+
+**Conclusion: all 10 timeouts and the IPC error are contention artifacts. None is an assertion
+failure. None exceeds its budget in isolation.** The suite is green when contention is removed.
+
+## 5. The in-repo assumption this run falsifies
+
+`packages/cli/vitest.config.ts` carries a deliberate raised budget, with its reasoning written down:
+
+    // Only this package needs it today — the next slowest package is `pipeline` at ~1.0s, which keeps
+    // ~5x headroom under the default. Revisit if that number climbs.
+    test: {
+      testTimeout: 30_000,
+      hookTimeout: 30_000,   // `beforeEach` in the memory/e2e suites runs a full indexRepo + index build
+
+`cli` is one of the five packages that passed. `memory`, `pipeline` and `mcp` carry **no**
+`testTimeout` — verified by grepping all eight configs — and they are exactly the three that failed.
+The quoted assumption ("pipeline at ~1.0s, ~5x headroom under the default") was measured on a quiet
+box and **does not survive the default `pnpm -r` invocation**. The remedy is already prototyped
+in-repo, in the same file that states the assumption: carry the `testTimeout`/`hookTimeout` block —
+and its note that these MUST sit under the `test:` key, because a top-level `testTimeout` is silently
+swallowed by Vite — to the three packages that lack it, or pin `workspace-concurrency`.
+
+## 6. Re-baseline against WP0 (3,460 tests / 8 packages)
+
+| Package | WP0 | Now | Δ |
+| --- | --- | --- | --- |
+| soul-schema | 18 | 18 | 0 |
+| core | 417 | 426 | **+9** |
+| memory | 1,109 | 1,159 | **+50** |
+| parsers | 506 | 506 | 0 |
+| pipeline | 286 | 286 | 0 |
+| mcp | 468 | 490 | **+22** |
+| cli | 631 | 654 | **+23** |
+| ui | 25 | 25 | 0 |
+| **total** | **3,460** | **3,564** | **+104** |
+
+Both sums reconcile exactly (18+417+1,109+506+286+468+631+25 = 3,460; 18+426+1,159+506+286+490+654+25
+= 3,564). The growth lands entirely in `core`, `memory`, `mcp` and `cli` — the four packages this
+program's WP1/WP2/WP3 work touched — and nowhere else. That coherence is the strongest thing this
+re-baseline has: +104 tests whose distribution matches where the work went.
+
+Per-package counts above are the `Tests` line (collected), so the 10 timeouts are counted *in* the
+per-package figures rather than dropped — 3,564 is collected, 3,554 passed.
+
+## 7. What this run does NOT license
+
+- **It does not license "the suite is green."** The default invocation exits 1 on this tree. The
+  green result is only reachable by running packages serially or by raising the budgets; that is a
+  statement about the harness, and it is recorded in the register as such.
+- **It does not license "WP0's baseline is superseded and everything is fine."** The count is a
+  re-baseline of *collected tests*, and the growth is explained, but the three failing packages mean
+  no single command currently demonstrates all 3,564 green.
+- **No performance conclusions.** These are single-shot timings on a box at load 5.4–7.4, with up to
+  4 packages concurrent. The 1,384 ms figure in §4 is the one number here measured with room around
+  it; the rest are contention-shaped.
+- **The 9 pipeline timeouts are not evidence the determinism gates are broken** — nor, on their own,
+  that they are sound. They did not run to completion in the failing configuration. §4's file-scope
+  run is the only place they actually executed, and it exercised one file, not the package.
+- **`--no-bail` matters.** Without it, `pnpm -r run test` stops at the first failing package, so a
+  single earlier run of this same suite never reached `mcp`, `pipeline` or `cli` at all and could
+  not have produced a baseline from any of them.
+
+## 8. The budget fix cleared every timeout — and the suite is STILL not green
+
+The only variable changed: a `test: { testTimeout: 30_000, hookTimeout: 30_000 }` block added to the
+`memory`, `pipeline` and `mcp` configs (mirroring `cli`), plus a comment correction in the `cli`
+config. **No source file was touched.** Same command as §1:
+
+    $ corepack pnpm@9.15.0 -C <repo> -r --no-bail run test
+    TEST_EXIT=1
+    Summary: 2 fails, 6 passes
+
+| Package | §1 (before) | §8 (after) |
+| --- | --- | --- |
+| soul-schema | 18 passed, exit 0 | 18 passed, exit 0 |
+| core | 426 passed, exit 0 | 426 passed, exit 0 |
+| ui | 25 passed, exit 0 | 25 passed, exit 0 |
+| parsers | 506 passed, exit 0 | 506 passed, exit 0 |
+| memory | 1 timed out \| 1,158 passed, exit 1 | **72/72 files, 1,159/1,159, exit 0** |
+| pipeline | 9 timed out \| 277 passed, exit 1 | **33/33 files, 286/286, exit 0** |
+| mcp | 490 passed + 1 IPC error, exit 1 | 490 passed + 1 IPC error, **exit 1** |
+| cli | 654 passed, exit 0 | **2 failed \| 652 passed, exit 1** |
+
+`Test timed out in 5000ms` occurrences: **10 → 0.** So the diagnosis in §2–§4 was right and the
+remedy in §5 works for what it targets. Two details worth keeping:
+
+- `pipeline` is now **286/286, completely green** — better than its serial "alone" run in §3, which
+  still kept one timeout (285/286). The raised budget cleared that last test even under concurrency.
+- `memory` is green under the *full* 4-way concurrency. The identical 1,159 tests that produced a
+  timeout in §1 produce none here.
+
+**But the invocation still exits 1, and the two remaining failures are not budget defects.**
+
+### 8.1 `mcp` — unchanged, and that is informative
+
+Still `Tests 490 passed (490)` with `Errors 1 error` and exit 1: the same
+`[vitest-worker]: Timeout calling "onTaskUpdate"`. A worker-RPC timeout is not governed by
+`testTimeout`, so raising the budget could not have fixed it — §4's reading of that error as "not a
+test result" is confirmed by the fact that changing the test budget left it bit-identical.
+
+### 8.2 `cli` — 654 passed → 2 failed, and these are a DIFFERENT class
+
+My `cli` edit was **comment-only**, so the config cannot have caused this; the pre-fix run's green
+`cli` was load-luck, not a property of the package. The two failures:
+
+    FAIL src/freshness-subprocess.test.ts > … WP5.4: after a mid-run SIGKILL the successor replays
+         the task and publishes — at-least-once, never lost
+    LockBusyError: crib is busy: another process (pid 0) holds …/freshness/.lease.lock. If that
+         process has exited, the lock will self-heal within 10 minutes, or run `crib reindex`.
+      ❯ CribLock.acquire ../core/src/lock.ts:124
+      ❯ withFreshnessLock src/freshness.ts:230
+      ❯ FreshnessWorker.start src/freshness.ts:591
+
+    FAIL src/freshness.test.ts > bounded commit overhead (red line: no MEASURABLE blocking work
+         added to git commit) > the post-commit path stays synchronous and cheap in auto mode
+    AssertionError: measured post-commit p95 37.98ms (max 48.90ms): expected 37.98 to be less than 25
+      ❯ src/freshness.test.ts:201
+
+The first is a stale-lock recovery window: `pid 0` is the process the test just SIGKILLed, and the
+lock's own self-heal window (10 minutes) is far longer than the test's patience — so the successor
+cannot acquire the lease and the replay never happens.
+
+**The second is the one that matters.** It is not a timeout at all: it is a **wall-clock performance
+assertion**, and *no timeout budget can help it*. Worse, it exits as an `AssertionError` reading
+`expected … to be less than 25`, so a reader sees a **performance regression** — the single most
+misleading possible presentation of a load artifact. And the obvious "fix" is unavailable on
+principle: raising 25 ms to 50 ms would make it pass *and* blind the gate to exactly the regression
+it was written to catch ("no MEASURABLE blocking work added to git commit"). That is a
+principal-level decision about a red-line gate, not a side effect of a config change — so it is
+recorded as a blocker (B12), not patched.
+
+**The obvious hypothesis — that `cli` was starved by the other packages — is CONTRADICTED by the
+timestamps, so it is recorded as refuted rather than left standing as a guess.** `cli` `Start at
+02:36:32`; `mcp` (started 02:35:16, `Duration 75.59s`) ended ~02:36:31, and `pipeline` (started
+02:35:16, `Duration 44.00s`) ended ~02:36:00. So `cli` ran with **no other crib package alive** — 0.4 s
+of clearance — and still failed both tests. Cross-package concurrency therefore did **not** cause these
+two failures; `cli`'s own intra-package worker pool over 43 files (many of which spawn real
+subprocesses against the real filesystem) was contention enough on its own. One caveat that keeps this
+from over-claiming: the box's ambient load was 5.4–7.4 during this work and not all of it need be
+crib's — if that load is external, these two tests are calibrated for a quieter machine than this one,
+which is a statement about the *environment*, not about the gate. §10 tests this directly.
+
+## 9. What §8 means for B11
+
+B11's remedy column read: *"carry the `testTimeout`/`hookTimeout` block to `memory`, `pipeline` and
+`mcp` (or pin `workspace-concurrency`), then re-record the baseline."* Measured: that clears all 10
+timeouts and returns **two** packages to green, and it is **not sufficient to make the default
+invocation green.** Two residual classes survive it, and neither is a budget defect:
+
+1. a **worker-IPC timeout inside `mcp`** — package-internal RPC, untouched by `testTimeout`; needs
+   intra-package worker limits or workspace-concurrency control;
+2. **load-sensitive assertions in `cli`** — a wall-clock p95 red-line gate, and a stale-lock recovery
+   window shorter than the lock's own self-heal period.
+
+So "make the net green-as-invoked" is not one config change. It is either (i) pin
+`workspace-concurrency` low enough that no package is starved **plus** a decision about the p95 red
+line, or (ii) accepting that the default recursive invocation is a smoke signal and defining the
+green gate as the per-package serial run. Option (ii) is honest but must be *stated*, because B6's
+extraction leans on this net.
+
+Counts, for the record: this run collects **3,564** and passes **3,562** (18+426+25+506+1,159+286+490
++652), so the +104 re-baseline of §6 stands unchanged — the budget fix moved failures around without
+adding or removing a test.
+
+## 10. At `workspace-concurrency=1`: 1 fail, 7 pass — and the one failure is a REAL defect
+
+`.npmrc` added with `workspace-concurrency=1` (pnpm honors it: `config get workspace-concurrency` → `1`).
+Same command:
+
+    $ corepack pnpm@9.15.0 -C <repo> -r --no-bail run test
+    TEST_EXIT=1
+    Summary: 1 fails, 7 passes
+
+| Package | Files / Tests | Exit |
+| --- | --- | --- |
+| soul-schema | 1 / 18 passed | 0 |
+| core | 34 / 426 passed | 0 |
+| memory | 72 / 1,159 passed | 0 |
+| parsers | 30 / 506 passed | 0 |
+| ui | 3 / 25 passed | 0 |
+| mcp | 26 / 490 passed — **zero `Errors` lines** | **0** |
+| pipeline | 33 / 286 passed | 0 |
+| cli | 42 passed \| **1 failed** (43) / 653 passed (654) | 1 |
+
+Three of the four classes are now resolved, and one is **not a harness artifact at all**:
+
+| Class | At concurrency 4 | After budget fix | At concurrency 1 |
+| --- | --- | --- | --- |
+| `Test timed out in 5000ms` | 10 | **0** | 0 |
+| `mcp` worker-IPC `onTaskUpdate` | 1 error, exit 1 | 1 error, exit 1 | **0 errors, exit 0** |
+| `cli` p95 red-line assertion | passed (load-luck) | **37.98 ms — FAILED** | **passed** |
+| unattributable-lock `LockBusyError` | — | failed (`freshness-subprocess`) | **failed (`freshness-election`)** |
+
+### 10.1 `mcp` — the IPC timeout was concurrency, and the budget could never have fixed it
+
+Confirmed the §8.1 prediction from the other side: at concurrency 1 the run contains **no `Errors` line
+at all** and `mcp` exits 0 with 490/490. So `onTaskUpdate` was cross-package starvation, and the remedy
+for it is concurrency control — `testTimeout` was structurally the wrong lever, as §8.1 argued.
+
+### 10.2 `cli`'s p95 red-line assertion — B12a is DOWNGRADED, not escalated
+
+The `37.98 ms vs 25 ms` failure did **not** recur here: the gate passed. Combined with §8.2's refutation
+of the cross-package-starvation hypothesis for that run, the honest reading is that the gate is
+**sound** and the earlier failure was scheduling/ambient-load — not a mis-calibrated red line. I had
+written B12a as a "principal must decide whether to re-calibrate" item; that framing was wrong and is
+corrected there. The gate remains wall-clock, so it stays *environment*-sensitive, which is a property
+to know about rather than a defect to fix — and emphatically **not** a reason to raise the bound.
+
+### 10.3 The one remaining failure is a genuine defect in `core/src/lock.ts`, not a test artifact
+
+    FAIL  src/freshness-election.test.ts > freshness lease election (R01) > loses NO acknowledged task
+          when every worker process is killed mid-refresh
+    LockBusyError: crib is busy: another process (pid 0) holds …/freshness/.lease.lock. If that process
+          has exited, the lock will self-heal within 10 minutes, or run `crib reindex`.
+      ❯ CribLock.acquire ../core/src/lock.ts:124:15
+      ❯ withFreshnessLock src/freshness.ts:230:12
+      ❯ FreshnessWorker.start src/freshness.ts:591:21
+      ❯ src/freshness-election.test.ts:190:20
+
+Note it is a **different test file** from §8's `freshness-subprocess.test.ts` — the same class failing
+in two different tests across two runs. That is what lifts it out of "flake".
+
+**The mechanism, and it is proved by the artifact rather than inferred from the code.** `lock.ts:202`
+decides staleness as:
+
+    const stale = Date.now() - st.mtimeMs > this.staleMs || (holder !== 0 && !pidAlive(holder));
+
+When `holder === 0` the second clause is *deliberately* skipped — the comment at 199-201 explains that a
+contender can observe the `O_EXCL` create before the holder pid write, and reclaiming then would let two
+writers into the critical section. So an unattributable lock is live until `staleMs` (10 minutes)
+elapses. And `acquire()` **throws** on `live` (123-127) rather than retrying.
+
+Therefore: an unattributable lock whose file is *young* is a **terminal hard failure**. The run proves
+the file was young — the error appeared seconds after the kill, so its mtime age cannot have exceeded
+`staleMs`. No extra test is needed to establish this; the failure is the demonstration.
+
+Why the holder reads `0`: `readHolder()` returns 0 for unreadable/non-integer content. Two routes reach
+the same empty file, and both are the same defect:
+- a contender observed another contender's **in-progress** `tryCreate` (`openSync` at 160 returned,
+  `writeSync` at 161 had not yet run) — exactly the window the code's own comment describes;
+- a process was SIGKILLed inside that same window.
+
+Either way the file is empty, `holder === 0`, mtime is fresh, and `acquire()` throws immediately with
+`pid 0` and a message telling the user to **wait ten minutes**.
+
+**Safety is intact; liveness is not.** No path unlinks a lock it cannot attribute, so mutual exclusion
+holds — this is a spurious-failure bug, *not* a double-entry or corruption bug, and it must not be
+described as one. The cost is that two racing `crib index`/`crib update` processes can, with small
+probability, make one fail instantly on an operation that is otherwise idempotent.
+
+The test is not being naive: `freshness-election.test.ts:98-101` SIGKILLs and then **awaits the exit**,
+explicitly because "a zombie still answers the `kill(pid, 0)` liveness probe", engineering precisely the
+takeover-from-a-dead-pid case the lock is *supposed* to handle.
+
+**Proposed fix direction — NOT applied, because it changes the mutual-exclusion path.** In `acquire()`,
+treat a **young** unattributable lock (`holder === 0` and mtime age under a short bound, tens of ms) as
+*retryable* — re-race the create with a tiny bounded backoff — while keeping the existing 10-minute rule
+for an *old* unattributable lock. That preserves "never unlink what you cannot attribute" and removes a
+terminal throw triggered by a microsecond window. It is recorded as **B13** for a decision rather than
+patched here: silently changing the semantics of the lock that guards the derived index is not a change
+a test-config fix should carry.
+
+### 10.4 What the four runs together establish
+
+The suite is **one genuine defect away from green-as-invoked**. The remaining work is B13 (a decision)
+and nothing else — and the fix path is now measured rather than guessed: `.npmrc` concurrency control
+plus the raised budgets cleared 3 of 4 classes.
+
+**Caveat I must not bury: the `memory` and `mcp` budget raises are NOT demonstrated to be necessary**
+once concurrency is pinned to 1. `memory` and `pipeline` were already green *alone* at the 5 s default in
+§3 for `memory` (and `pipeline` needed the raise even alone). So the minimal change set is plausibly
+`.npmrc` + `pipeline`'s budget only, leaving `memory`/`mcp` on the tighter default and with faster hang
+detection. Verifying it costs one full run:
+
+    $ corepack pnpm@9.15.0 -C <repo> -r --no-bail run test     # after removing the test:{} block from
+                                                                # memory and mcp only
+
+Until that is run, §8's changes are *sufficient but not shown to be minimal*.
+
+

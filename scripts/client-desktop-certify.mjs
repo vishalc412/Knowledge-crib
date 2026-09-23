@@ -150,6 +150,20 @@ export const DESKTOP_SCENARIOS = [
   },
 ];
 
+/**
+ * The connected-memory instruction the OWNER's scenario turn appends (format-4 `connectedMemory`
+ * leg). Kept out of `scenarioPrompt` because the foreign principal's plant reuses that prompt, and
+ * the foreign session has no business proposing edges about the owner's run tag.
+ */
+export function connectInstruction(tag) {
+  return `Then use the crib MCP memory tool with op="graph_propose" three times, each supportedBy the id of the intake you just recorded and using that intake id as INTAKE: predicate="about" subject=INTAKE object="topic:${tag}-v1"; predicate="about" subject=INTAKE object="topic:${tag}-v2"; predicate="supersedes" subject="topic:${tag}-v2" object="topic:${tag}-v1".`;
+}
+
+/** The reopened editor's connected-memory retrieval instruction. */
+export function historyInstruction(tag) {
+  return `Then use the crib MCP memory_graph tool with op="history" and refs=["topic:${tag}-v1"], and tell me what superseded it.`;
+}
+
 export function desktopScenario(mode) {
   return DESKTOP_SCENARIOS.find((scenario) => scenario.mode === mode);
 }
@@ -307,7 +321,15 @@ export async function certifyDesktopCell(options) {
     workspace,
     `${scenario.mode}-${platform}-${arch}-foreign-recording.json`,
   );
-  const protocolMarkers = [tag, foreignMarker, 'certifiedSymbol', 'intake:'];
+  const protocolMarkers = [
+    tag,
+    foreignMarker,
+    'certifiedSymbol',
+    'intake:',
+    `topic:${tag}-v2`,
+    'supersedes',
+    'admitted',
+  ];
   const configPath = join(fixtureRepo ?? '.', ...spec.configRelPath);
 
   const { CLAUDE_PROJECT_DIR: _inherited, ...cleanEnv } = process.env;
@@ -472,7 +494,7 @@ export async function certifyDesktopCell(options) {
 
     const receipt = {
       format: 'knowledge-crib-client-certification',
-      formatVersion: 3,
+      formatVersion: 4,
       generatedAt: new Date().toISOString(),
       policySha256,
       product: { commit: candidateCommit, packageSha256 },
@@ -857,7 +879,7 @@ async function driveScenario(env) {
       ...control('chatInput'),
       // The per-run tag rides IN the prompt, the same law as the headless harness: the vendor turn
       // must carry the marker into its memory operation, or the record leg has nothing to find.
-      text: `${scenario.scenarioPrompt} Original="${tag}".`,
+      text: `${scenario.scenarioPrompt} Original="${tag}". ${connectInstruction(tag)}`,
     });
     await invokeBackend(backend, 'invokeElement', { pid, ...control('chatSubmit') });
 
@@ -931,6 +953,57 @@ async function driveScenario(env) {
         },
       });
     }
+
+    // Connected memory: the same turn must have ADMITTED both the v2 link and the supersession.
+    // Polled within what is left of the vendor-turn budget — the proposals follow the record in
+    // the same turn — and judged only from completed operations whose results report admission.
+    let linkCall = null;
+    let supersedeCall = null;
+    const connectFloor = recordCall ? recordCall.index + 1 : 0;
+    for (;;) {
+      const recording = protocolRead(ownerRecordingPath);
+      linkCall = recording
+        ? findCompletedOperation(recording, {
+            method: 'tools/call',
+            tool: 'memory',
+            fromIndex: connectFloor,
+            requestMarker: `topic:${tag}-v2`,
+            resultMarker: 'admitted',
+          })
+        : null;
+      supersedeCall = recording
+        ? findCompletedOperation(recording, {
+            method: 'tools/call',
+            tool: 'memory',
+            fromIndex: connectFloor,
+            requestMarker: 'supersedes',
+            resultMarker: 'admitted',
+          })
+        : null;
+      if ((linkCall && supersedeCall) || !recordCall || Date.now() > turnDeadline) break;
+      await new Promise((resolve) => setTimeout(resolve, 1_000));
+    }
+    record({
+      connectedMemoryRecorded:
+        linkCall && supersedeCall
+          ? {
+              status: 'pass',
+              protocol: [
+                { recording: 'owner', operation: linkCall.index, request: linkCall.operation.id },
+                {
+                  recording: 'owner',
+                  operation: supersedeCall.index,
+                  request: supersedeCall.operation.id,
+                },
+              ],
+            }
+          : {
+              status: 'fail',
+              reason:
+                'the editor session shows no admitted graph_propose for both the link and the ' +
+                'supersession — the connection was not recorded',
+            },
+    });
 
     // The durable result: the tagged intake must exist in the ISOLATED journal the candidate
     // writes to — "the editor printed success" is not a durable result.
@@ -1041,7 +1114,7 @@ async function driveScenario(env) {
     await invokeBackend(backend, 'setText', {
       pid,
       ...control('chatInput'),
-      text: scenario.verifyPrompt,
+      text: `${scenario.verifyPrompt} ${historyInstruction(tag)}`,
     });
     await invokeBackend(backend, 'invokeElement', { pid, ...control('chatSubmit') });
     const resumeDeadline = Date.now() + DESKTOP_TIMEOUTS.VENDOR_TURN_MS;
@@ -1096,6 +1169,43 @@ async function driveScenario(env) {
               'the reopened editor did not recover the authorized session the killed one recorded',
           },
     });
+    // Connected memory after the restart: a completed memory_graph operation whose RESULT carries
+    // the superseding topic, produced by the reopened editor after the interruption floor.
+    let historyCall = null;
+    const historyDeadline = Date.now() + DESKTOP_TIMEOUTS.VENDOR_TURN_MS;
+    for (;;) {
+      const recording = protocolRead(ownerRecordingPath);
+      historyCall = recording
+        ? findCompletedOperation(recording, {
+            method: 'tools/call',
+            tool: 'memory_graph',
+            fromIndex: operationsBeforeRestart,
+            resultMarker: `topic:${tag}-v2`,
+          })
+        : null;
+      if (historyCall || !resumed || Date.now() > historyDeadline) break;
+      await new Promise((resolve) => setTimeout(resolve, 1_000));
+    }
+    record({
+      connectedMemoryResumed: historyCall
+        ? {
+            status: 'pass',
+            protocol: [
+              {
+                recording: 'owner',
+                operation: historyCall.index,
+                request: historyCall.operation.id,
+              },
+            ],
+          }
+        : {
+            status: 'fail',
+            reason:
+              'the reopened editor produced no completed memory_graph operation carrying the ' +
+              'superseding topic — the connection history was not recovered',
+          },
+    });
+
     // The boundary: the owner's retrieval must not surface the foreign principal's marker.
     const ownerView = run(
       log,

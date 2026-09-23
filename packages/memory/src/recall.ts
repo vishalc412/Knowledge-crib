@@ -5,10 +5,12 @@ import {
   type EffectiveVerdicts,
   type MemoryEvalContext,
   type MemoryEvaluator,
+  type RecallExclusionClause,
   conflictGroups,
   effectiveVerdicts,
   indexDecisionsBySubject,
   isRecallEligible,
+  recallExclusionClause,
   recordSortTime,
 } from './evaluator.js';
 /**
@@ -213,10 +215,47 @@ export interface RecallProvenance {
   generation?: string | null;
 }
 
+/**
+ * WP5 §7.2 — a record that was GATHERED and then dropped by the hard eligibility filter, with the one
+ * clause that dropped it.
+ *
+ * Why this exists: `provenance.counts` reports `considered: 8` beside `eligible: 3` and stops there.
+ * Five records disappear from the answer with no account of themselves, and the operator's only
+ * recourse is to read the stores by hand — which is precisely the U1 failure (exclusion reasons are
+ * computed, then discarded at the API boundary). These rows are the account.
+ *
+ * `excludedBy` is the FIRST failing clause, derived by {@link recallExclusionClause} — the same walk
+ * {@link isRecallEligible} is defined by, so the label cannot disagree with the decision that
+ * produced it. `verdicts` is carried whole (not just the failing axis) because it also carries
+ * `reasons`: "dropped for `evidence`" is a fact, and *which evidence item stopped grounding* is the
+ * explanation, in the evaluator's own vocabulary.
+ */
+export interface RecallExclusion {
+  id: string;
+  claim: string;
+  source: MemorySource;
+  /** the effective verdicts the decision was made on — including `reasons` when a pass ran. */
+  verdicts: EffectiveVerdicts;
+  /** which predicate clause excluded it — derived from verdicts, never re-implemented. */
+  excludedBy: RecallExclusionClause;
+}
+
 /** The recall projection: ranked eligible memories + conflict groups + provenance. */
 export interface RecallProjection {
   memories: ScoredRecord[];
   conflicts: ConflictGroup[];
+  /**
+   * WP5 §7.2 — every gathered record the eligibility filter dropped, one row per record, each named
+   * with the clause that dropped it. REQUIRED rather than optional: an absent field would be
+   * indistinguishable from "nothing was excluded", which is the confusion this list exists to end —
+   * so a caller building a projection by hand must say `[]` and mean it.
+   *
+   * Ordering is `(id, source)` ascending, NOT gather order, for the same reason the ranking is a
+   * defined comparator: this is a diagnostic surface a human reads, and gather order shifts with the
+   * set of stores present, so an unrelated change (a global store appearing) would silently reorder
+   * the panel. Deterministic → ifHash-stable.
+   */
+  excluded: RecallExclusion[];
   provenance: RecallProvenance;
 }
 
@@ -292,6 +331,52 @@ function resolveCallerPrincipal(opts: GatherRecallOptions): string {
   return resolved.trim().length === 0 ? DEFAULT_MIGRATION_PRINCIPAL_ID : resolved;
 }
 
+/**
+ * The env switch that ENGAGES the strict principal boundary at the private stores. Off unless set
+ * truthy — see {@link resolveStrictPrincipal} for why, measured.
+ */
+export const STRICT_PRINCIPAL_ENV = 'KCRIB_STRICT_PRINCIPAL';
+
+/**
+ * Resolve whether a production gather runs strict, from the environment. This is WP1 item 13's
+ * "resolve the default of `strictPrincipal`" half; the "pass it explicitly at the production
+ * gathers" half is every call site calling this function rather than hardcoding either value.
+ *
+ * §14 D-2 posed the choice as: flip it on by default, at the cost of "a one-time visibility change
+ * for users who never set `KCRIB_PRINCIPAL_ID`", or ship it behind an explicit opt-in. **The
+ * implementation round MEASURED the first branch's cost model and found it wrong in KIND.** It is
+ * not a one-time visibility change; it is a permanent blackout of every record this device writes:
+ *
+ *   - Local admission (`admitGrounded` → `buildRecord`, auto-admit.ts) mints a MEMORY-1 record.
+ *     Memory-1 carries no ownership column at all (`MemoryRecord`, types.ts), so a strict gather
+ *     refuses it. Measured on the live MCP write path: `memoryObserve` writes one record, then
+ *     `gatherRecall({strictPrincipal: true})` returns `[]` while the permissive gather returns that
+ *     same `mem:` id. Six MCP tests across four files failed on exactly this and no other cause.
+ *   - Memory-2 is not a way out. `MemoryRecordV2` has no `verdicts` field, so `effectiveVerdicts`
+ *     (evaluator.ts) projects a NATIVE v2 record at `candidate` trust and `isRecallEligible` drops
+ *     it; only the alias snapshot `migrateToV2` writes makes a twin rankable at all.
+ *   - So `crib memory migrate` (item 12) can never reach a steady state: it stamps what exists, and
+ *     the very next `memory_observe` mints a fresh unstamped record. The doctor's
+ *     "principal boundary enforceable" check would flap red forever after each write.
+ *
+ * On that evidence the honest branch is D-2's SECOND: the boundary stays implemented, reachable from
+ * production and tested THROUGH a production surface with this switch engaged, but it is not
+ * silently on. Closing D3-a by default is handed back to the principal, blocked on a native
+ * memory-2 LOCAL write path that no work package in `developer-trust-plan.md` covers.
+ *
+ * Both the gather's default and every production call site resolve through here, deliberately: the
+ * default means a NEW production surface cannot silently reopen the hole by omitting the option, and
+ * the explicit call site is what a reader sees when asking "is this merge point scoped?".
+ *
+ * Truthy = `1` / `true` / `yes`, trimmed and case-insensitive. Anything else, including unset, is off.
+ */
+export function resolveStrictPrincipal(env: NodeJS.ProcessEnv = process.env): boolean {
+  const raw = env[STRICT_PRINCIPAL_ENV];
+  if (typeof raw !== 'string') return false;
+  const normalized = raw.trim().toLowerCase();
+  return normalized === '1' || normalized === 'true' || normalized === 'yes';
+}
+
 // ─── id-prefix narrowing ─────────────────────────────────────────────────────
 //
 // `readCollection` returns the `MemoryEntry` union (a JSONL shard could in principle hold any line
@@ -329,20 +414,33 @@ export interface GatherRecallOptions {
    */
   principal?: string;
   /**
-   * Exclude records that carry NO principal stamp at all (every memory-1 record).
+   * Exclude records that carry NO principal stamp at all (every memory-1 record) from the PRIVATE
+   * stores — `local` and `global`.
    *
-   * Default `false`, deliberately. In the normal deployment each principal owns its own stores, so
-   * an unstamped record found in YOUR store is yours, and excluding it would silently empty the
-   * ledger of anyone who has not migrated to memory-2.
+   * When omitted it resolves through {@link resolveStrictPrincipal} — the `KCRIB_STRICT_PRINCIPAL`
+   * opt-in, OFF by default — so a production surface that forgets the option does not silently
+   * reopen the hole, and a test that forgets it is not silently scoped. Read that function for the
+   * measured reason strict is not the default: the local admission path writes memory-1, which
+   * carries no ownership column, so a strict gather refuses every record this device writes and
+   * `crib memory migrate` can never catch up. §14 D-2 priced that as a one-time visibility change;
+   * it is a permanent blackout.
    *
-   * Set it `true` whenever store sets from more than one principal can reach the same gather — a
-   * cross-device pull, a multi-principal audit, a shared daemon. There, "unstamped" means "owner
-   * unknown", and an unknown owner must not be treated as the caller. Measured before this existed:
-   * gathering principal A's team store together with principal B's local store returned all 15 of
-   * B's memory-1 records to A.
+   * Set it explicitly `true` where store sets from more than one principal can meet (a cross-device
+   * pull, a shared daemon, a multi-principal audit). There, "unstamped" means "owner unknown", and an
+   * unknown owner must not be treated as the caller. Measured before it existed: gathering principal
+   * A's team store together with principal B's local store returned all 15 of B's memory-1 records
+   * to A. It stays `true` for tests of the boundary itself.
+   *
+   * **It does NOT exclude unstamped TEAM records, and that is not an oversight.** The team ledger is
+   * committed and append-only, so `migrateToV2` can never stamp a memory-1 line in it — measured, not
+   * assumed (WP1 item 12: a team migration reports `retained: 1`, writes an alias, and leaves
+   * `schemaVersion: '1'` with no `provenance` on disk). Excluding them would therefore remove shared
+   * team memory from recall PERMANENTLY, with no repair available, and it would buy no confidentiality
+   * either: a team record is a file in the repository, readable by anyone who can read the repo. The
+   * boundary protects private records, which is exactly what it scopes.
    */
   strictPrincipal?: boolean;
-  /** env override (tests); defaults to `process.env`. Only read for the principal default. */
+  /** env override (tests); defaults to `process.env`. Read for the principal and strictness defaults. */
   env?: NodeJS.ProcessEnv;
 }
 
@@ -370,16 +468,21 @@ export interface GatherRecallOptions {
  * match or no stamp passes). A record that carries NO stamp (memory-1) passes: the v1 schema
  * pre-dates principals and has no column to compare — treating it as the caller's own is the
  * documented honest limitation, closed for a store by `migrateToV2` (the migration stamps the
- * migrating principal). The boundary scopes the RECORD pool only — decisions and feedback are
- * id-keyed retire/adjust events; they can never add foreign content to a projection, so they stay
- * un-scoped (a foreign tombstone on a shared content id suppresses, it never reveals).
+ * migrating principal). A strict gather ({@link GatherRecallOptions.strictPrincipal}) closes it for
+ * the private stores (`local`/`global`) instead of treating "unknown owner" as "the caller"; team
+ * records stay visible because that ledger is committed and append-only, so its memory-1 lines are
+ * un-stampable and shared by construction. The boundary scopes the RECORD pool only — decisions and
+ * feedback are id-keyed retire/adjust events; they can never add foreign content to a projection, so
+ * they stay un-scoped (a foreign tombstone on a shared content id suppresses, it never reveals).
  */
 export function gatherRecall(stores: RecallStores, opts: GatherRecallOptions = {}): GatheredRecall {
   const sources = opts.sources ?? DEFAULT_RECALL_SOURCES;
   const principal = resolveCallerPrincipal(opts);
-  // Defaults to false — see the option's own doc for why that is the safe default in the normal
-  // single-principal deployment, and why a multi-principal gather must set it.
-  const strictPrincipal = opts.strictPrincipal ?? false;
+  // An explicit option wins; otherwise the KCRIB_STRICT_PRINCIPAL opt-in (OFF by default). See
+  // `resolveStrictPrincipal` for the measured reason strict is not the default, and the option's own
+  // doc for why it scopes the PRIVATE stores only (an unstamped team line can never be stamped, so
+  // excluding it would be a permanent, unrepairable recall loss).
+  const strictPrincipal = opts.strictPrincipal ?? resolveStrictPrincipal(opts.env);
   const records: TaggedRecord[] = [];
   const decisions: MemoryDecision[] = [];
   const localDecisions: MemoryDecision[] = [];
@@ -395,8 +498,12 @@ export function gatherRecall(stores: RecallStores, opts: GatherRecallOptions = {
   ): boolean => {
     const ownedBy = recordPrincipalId(record);
     if (ownedBy === undefined) {
-      // unstamped (memory-1). Owner is UNKNOWN, not "the caller" — a strict gather refuses it.
-      if (strictPrincipal) {
+      // unstamped (memory-1). Owner is UNKNOWN, not "the caller" — a strict gather refuses it,
+      // but only where refusal protects something. A team record is committed to the repository and
+      // is readable by anyone who can read the repo, so excluding it protects no secret; and because
+      // that ledger is append-only it can never be stamped, so excluding it would hide it from
+      // recall forever. Private stores (local/global) are the ones the boundary is for.
+      if (strictPrincipal && source !== 'team') {
         principalExcluded += 1;
         return false;
       }
@@ -590,6 +697,8 @@ export function recallProjection(
     source: MemorySource;
     evaluated: boolean;
   }[] = [];
+  // WP5 §7.2 — the dropped records, in gather order here and sorted into a stable order below.
+  const exclusions: RecallExclusion[] = [];
 
   for (const { record, source } of gathered.records) {
     consideredBySource[source] += 1;
@@ -635,7 +744,14 @@ export function recallProjection(
       bridged ? undefined : decisionIndexFor(source),
     );
     consideredEntries.push({ record, verdicts, source, evaluated });
-    if (!isRecallEligible(verdicts)) continue;
+    // WP5 §7.2 — the SAME walk as the eligibility decision (`isRecallEligible` is defined as "fails no
+    // clause"), so every record here is either eligible or carries the clause that dropped it: the
+    // two lists partition `considered`, which is the invariant T14 asserts rather than assumes.
+    const excludedBy = recallExclusionClause(verdicts);
+    if (excludedBy !== undefined) {
+      exclusions.push({ id: record.id, claim: record.claim, source, verdicts, excludedBy });
+      continue;
+    }
     eligibleEntries.push({ record, verdicts, source, evaluated });
   }
 
@@ -691,7 +807,16 @@ export function recallProjection(
     ...(lexical?.versionId !== undefined ? { scorerVersion: lexical.versionId } : {}),
   };
 
-  return { memories, conflicts, provenance };
+  return {
+    memories,
+    conflicts,
+    // Stable order for a human-read diagnostic (see {@link RecallProjection.excluded}): `id` first,
+    // then `source`, so two records sharing an id across stores stay adjacent and ordered.
+    excluded: exclusions.sort(
+      (a, b) => a.id.localeCompare(b.id) || a.source.localeCompare(b.source),
+    ),
+    provenance,
+  };
 }
 
 /**

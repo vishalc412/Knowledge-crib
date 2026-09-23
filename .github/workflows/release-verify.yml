@@ -526,6 +526,18 @@ jobs:
           --receipt "${{ runner.temp }}/evidence/global/fuzz-deep.json"
           --package "$CANDIDATE_PACKAGE"
 
+      # Policy v5 — the connected memory graph receipt. It runs the deterministic graph suites and
+      # the frozen-corpus evaluation, writes the report beside the receipt (relative path, so the
+      # digest verifies from the judge's evidence/global root), and never judges its own numbers:
+      # the launch decision re-reads the report and applies the policy's graph floors.
+      - name: Execute the connected memory graph evaluation
+        if: always()
+        shell: bash
+        run: >-
+          node scripts/graph-receipt.mjs
+          --package "$CANDIDATE_PACKAGE"
+          --out "${{ runner.temp }}/evidence/global"
+
       # Unconditional, for the same reason as the nightly's: a FAILED sweep's receipt is how the run
       # says WHICH extractor broke, and it is written on the failing path. The upload path is the
       # global evidence DIRECTORY, so the artifact carries the receipt and its transcript together —

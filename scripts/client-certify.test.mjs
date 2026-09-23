@@ -103,11 +103,11 @@ check('every advertised client has exactly one driver spec', () => {
   }
 });
 
-check('the eleven required behaviours are present and uniquely named', () => {
+check('the thirteen required behaviours are present and uniquely named', () => {
   assert.equal(
     CERTIFICATION_BEHAVIOURS.length,
-    11,
-    `the plan requires 11 behaviours; found ${CERTIFICATION_BEHAVIOURS.length}`,
+    13,
+    `the plan requires 13 behaviours; found ${CERTIFICATION_BEHAVIOURS.length}`,
   );
   const ids = CERTIFICATION_BEHAVIOURS.map((b) => b.id);
   assert.equal(new Set(ids).size, ids.length, 'behaviour ids must be unique');
@@ -490,6 +490,8 @@ function writeWordEchoVendor(dir, name) {
       '  *"status tool"*) echo waiting; exit 0;;',
       '  *"query tool"*) echo "certifiedSymbol"; exit 0;;',
       '  *twice*) echo "PRESENT"; exit 0;;',
+      '  *graph_propose*) echo "CONNECTED"; exit 0;;',
+      '  *memory_graph*) echo "SUPERSEDED"; exit 0;;',
       '  *"intake_create"*) echo "intake:never-created"; exit 0;;',
       '  *"FOUND"*) echo "FOUND"; exit 0;;',
       '  *"LEAKED"*) echo "CLEAN"; exit 0;;',
@@ -663,7 +665,30 @@ function writeCooperatingVendor(dir, name) {
       '    return;',
       '  }',
       '',
-      "  if (prompt.includes('query tool')) {",
+      "  if (prompt.includes('graph_propose')) {",
+      "    const tag = firstQuotedAfter(prompt, 'original is ');",
+      "    const listed = textOf(await call('tools/call', { name: 'memory', arguments: { op: 'intake_list' } }));",
+      "    const idMatch = new RegExp('(intake:[0-9]+) original=' + tag + '(?:\\s|$)').exec(listed);",
+      "    const intake = idMatch ? idMatch[1] : 'intake:missing';",
+      "    const actor = firstQuotedAfter(prompt, 'actor=') || 'certification';",
+      '    const proposals = [',
+      "      { predicate: 'about', subject: intake, object: 'topic:' + tag + '-v1' },",
+      "      { predicate: 'about', subject: intake, object: 'topic:' + tag + '-v2' },",
+      "      { predicate: 'supersedes', subject: 'topic:' + tag + '-v2', object: 'topic:' + tag + '-v1' },",
+      '    ];',
+      '    let admitted = 0;',
+      '    for (const proposal of proposals) {',
+      "      const result = await call('tools/call', { name: 'memory', arguments: Object.assign({ op: 'graph_propose', supportedBy: [intake], actor }, proposal) });",
+      "      if (textOf(result).includes('admitted')) admitted += 1;",
+      '    }',
+      "    say(admitted === proposals.length ? 'CONNECTED' : 'REFUSED');",
+      "  } else if (prompt.includes('memory_graph')) {",
+      "    const ref = firstQuotedAfter(prompt, 'refs=[');",
+      "    const superseding = firstQuotedAfter(prompt, 'assertion from ');",
+      "    const result = await call('tools/call', { name: 'memory_graph', arguments: { op: 'history', refs: [ref] } });",
+      '    const text = textOf(result);',
+      "    say(superseding && text.includes(superseding) && text.includes('supersedes') ? 'SUPERSEDED' : 'MISSING');",
+      "  } else if (prompt.includes('query tool')) {",
       "    const q = firstQuotedAfter(prompt, 'q=') || 'certifiedSymbol';",
       "    const result = await call('tools/call', { name: 'query', arguments: { q } });",
       '    say(textOf(result));',
@@ -901,6 +926,13 @@ function servingCribSource() {
     `      textResult(message.id, 'first hit: ' + (params.q || '') + ' (certifiedSymbol verified)');`,
     '      continue;',
     '    }',
+    "    if (tool === 'memory_graph') {",
+    "      const edges = readStore()[principal + '#edges'] || [];",
+    '      const refs = params.refs || [];',
+    '      const touching = edges.filter((edge) => refs.includes(edge.subject) || refs.includes(edge.object));',
+    '      textResult(message.id, JSON.stringify({ op: params.op, timeline: touching }));',
+    '      continue;',
+    '    }',
     "    if (tool === 'status') {",
     '      textResult(message.id, JSON.stringify({ op: params.op, status: "ok" }));',
     '      continue;',
@@ -919,6 +951,27 @@ function servingCribSource() {
     '        fs.mkdirSync(path.dirname(storePath), { recursive: true });',
     "        fs.writeFileSync(storePath, JSON.stringify(store, null, 2) + '\\n');",
     `        textResult(message.id, 'created intake:' + mine.length + ' original=' + params.original + ' summary=' + params.summary);`,
+    '        continue;',
+    '      }',
+    "      if (params.op === 'intake_list') {",
+    '        const mine = readStore()[principal] || [];',
+    '        textResult(message.id,',
+    `          mine.map((record, index) => 'intake:' + (index + 1) + ' original=' + record.original).join('\\n'));`,
+    '        continue;',
+    '      }',
+    "      if (params.op === 'graph_propose') {",
+    '        const store = readStore();',
+    '        const mine = store[principal] || [];',
+    '        const owned = (params.supportedBy || []).every((ref) => /^intake:[0-9]+$/.test(ref) && Number(ref.slice(7)) <= mine.length);',
+    '        if (!owned) {',
+    `          textResult(message.id, JSON.stringify({ ok: false, error: { code: 'REJECTED' } }));`,
+    '          continue;',
+    '        }',
+    "        const edges = store[principal + '#edges'] || (store[principal + '#edges'] = []);",
+    '        edges.push({ predicate: params.predicate, subject: params.subject, object: params.object });',
+    '        fs.mkdirSync(path.dirname(storePath), { recursive: true });',
+    "        fs.writeFileSync(storePath, JSON.stringify(store, null, 2) + '\\n');",
+    `        textResult(message.id, JSON.stringify({ ok: true, admitted: true, id: 'grel:' + edges.length }));`,
     '        continue;',
     '      }',
     "      if (params.op === 'handoff') {",
@@ -1056,15 +1109,15 @@ if (e2e) {
     const file = join(out, `client-claude-${process.platform}-${process.arch}.json`);
     assert.ok(existsSync(file), `no receipt was written at ${file}`);
     const onDisk = JSON.parse(readFileSync(file, 'utf8'));
-    assert.equal(onDisk.formatVersion, 3, 'on-disk receipt must be version 3');
+    assert.equal(onDisk.formatVersion, 4, 'on-disk receipt must be version 4');
     assert.equal(onDisk.client.driverVersion, DRIVER_VERSION);
   });
 
-  check('the receipt VALIDATES against the version-3 contract', () => {
+  check('the receipt VALIDATES against the version-4 contract', () => {
     // It must validate even though it certifies nothing: a blocked receipt that cannot be loaded is
     // indistinguishable from a missing cell, and the decision needs to name it.
     const validated = validateClientCertificationReceipt(result.receipt, { evidenceRoot: out });
-    assert.equal(validated.formatVersion, 3);
+    assert.equal(validated.formatVersion, 4);
   });
 
   check('no leg claims a pass, because no vendor runtime was exercised', () => {
@@ -1283,9 +1336,9 @@ if (stubbed) {
     assert.ok(!text.includes('foreign-certify-'), 'the raw foreign marker leaked into the archive');
   });
 
-  check('the stub receipt still validates against the version-3 contract', () => {
+  check('the stub receipt still validates against the version-4 contract', () => {
     const validated = validateClientCertificationReceipt(result.receipt, { evidenceRoot: out });
-    assert.equal(validated.formatVersion, 3);
+    assert.equal(validated.formatVersion, 4);
     assert.equal(validated.legs.handshake.source, 'vendor-client');
   });
 
@@ -1333,6 +1386,7 @@ if (wordEchoRun) {
       restart: /a printed answer is not a restarted session/,
       authorizedResume: /a printed word is not a recovered session/,
       foreignPrincipalExclusion: /never exercised on the wire/,
+      connectedMemory: /a printed word is not a recorded connection/,
     };
     for (const [leg, pattern] of Object.entries(expected)) {
       assert.equal(result.legs[leg].status, 'fail', `${leg} did not fail`);
@@ -1373,9 +1427,9 @@ if (wordEchoRun) {
     );
   });
 
-  check('the word-echo receipt still validates against the version-3 contract', () => {
+  check('the word-echo receipt still validates against the version-4 contract', () => {
     const validated = validateClientCertificationReceipt(result.receipt, { evidenceRoot: out });
-    assert.equal(validated.formatVersion, 3);
+    assert.equal(validated.formatVersion, 4);
   });
 
   rmSync(scratch, { recursive: true, force: true });
@@ -1409,7 +1463,7 @@ try {
 if (cooperatingRun) {
   const { result, out, scratch } = cooperatingRun;
 
-  check('the six protocol-dependent legs PASS, each with protocol references', () => {
+  check('the seven protocol-dependent legs PASS, each with protocol references', () => {
     for (const leg of [
       'handshake',
       'toolUse',
@@ -1417,6 +1471,7 @@ if (cooperatingRun) {
       'restart',
       'authorizedResume',
       'foreignPrincipalExclusion',
+      'connectedMemory',
     ]) {
       assert.equal(
         result.legs[leg].status,
@@ -1440,7 +1495,7 @@ if (cooperatingRun) {
 
   check('the receipt names two distinct principals over one shared store and one candidate', () => {
     const receipt = result.receipt;
-    assert.equal(receipt.formatVersion, 3);
+    assert.equal(receipt.formatVersion, 4);
     const { owner, foreign } = receipt.configurations;
     assert.ok(owner && foreign, 'both configurations must be recorded');
     assert.notEqual(
@@ -1533,9 +1588,9 @@ if (cooperatingRun) {
     );
   });
 
-  check('the shared-journal receipt validates against the version-3 contract', () => {
+  check('the shared-journal receipt validates against the version-4 contract', () => {
     const validated = validateClientCertificationReceipt(result.receipt, { evidenceRoot: out });
-    assert.equal(validated.formatVersion, 3);
+    assert.equal(validated.formatVersion, 4);
   });
 
   check('no principal string or fixture marker survives into any archived artifact', () => {
@@ -1751,10 +1806,10 @@ if (masqueradingRun) {
     );
   });
 
-  check('the masquerading receipt still validates against the version-3 contract', () => {
+  check('the masquerading receipt still validates against the version-4 contract', () => {
     // A refused interruption is a finding, and a receipt that cannot be loaded is a missing cell.
     const validated = validateClientCertificationReceipt(result.receipt, { evidenceRoot: out });
-    assert.equal(validated.formatVersion, 3);
+    assert.equal(validated.formatVersion, 4);
   });
 
   rmSync(scratch, { recursive: true, force: true });
@@ -2112,9 +2167,9 @@ if (quotaRun) {
     assert.match(transcript, /exit 1/);
   });
 
-  check('the quota receipt still validates against the version-3 contract', () => {
+  check('the quota receipt still validates against the version-4 contract', () => {
     const validated = validateClientCertificationReceipt(result.receipt, { evidenceRoot: out });
-    assert.equal(validated.formatVersion, 3);
+    assert.equal(validated.formatVersion, 4);
   });
 
   rmSync(scratch, { recursive: true, force: true });
@@ -2195,9 +2250,9 @@ if (hungRun) {
     },
   );
 
-  check('the hung-session receipt still validates against the version-3 contract', () => {
+  check('the hung-session receipt still validates against the version-4 contract', () => {
     const validated = validateClientCertificationReceipt(result.receipt, { evidenceRoot: out });
-    assert.equal(validated.formatVersion, 3);
+    assert.equal(validated.formatVersion, 4);
   });
 
   rmSync(scratch, { recursive: true, force: true });

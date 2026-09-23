@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -69,6 +69,28 @@ describe('registry', () => {
     const path = registryPath(env);
     expect(existsSync(path)).toBe(true);
     expect(JSON.parse(readFileSync(path, 'utf8')).projects['/x'].repoId).toBe('9');
+  });
+
+  // The registry is GLOBAL (`~/.crib`), so unlike the per-project stores it has many writers: every
+  // `crib index` in every repo, plus the background freshness service (`freshness.ts` writes it too).
+  // `atomic-write.ts` documents the shared `${path}.tmp` name as safe only where a "single writer per
+  // path" is guaranteed — which does not hold here. Two writers collide: the first `rename` removes
+  // the temp, the second dies `ENOENT`. That was observed, not theorised — this suite's own rename
+  // fixture lost its index to exactly that. A real race cannot be reproduced on demand, so the shared
+  // path is occupied deterministically instead: a writer that depends on it MUST fail, and a writer
+  // with its own unique temp name MUST not. Under the shared name this threw `EISDIR`.
+  it('writeRegistry does not depend on the shared registry.json.tmp path being free', () => {
+    const occupied = `${registryPath(env)}.tmp`;
+    mkdirSync(occupied); // stands in for a concurrent writer holding the shared temp path
+    expect(() =>
+      writeRegistry(
+        { version: 1, projects: { '/y': { repoId: '7', cribDir: '/y/.crib', addedAt: 't' } } },
+        env,
+      ),
+    ).not.toThrow();
+    expect(readRegistry(env).projects['/y']?.repoId).toBe('7');
+    // Another writer's temp path is left untouched — nothing consumes what it cannot attribute.
+    expect(statSync(occupied).isDirectory()).toBe(true);
   });
 
   it('registers archive source identity (sourceRoot/archive/fingerprint) when provided', () => {

@@ -93,6 +93,7 @@ import {
   type MemoryCandidate,
   type MemoryCompositeOpts,
   type MemoryDecision,
+  type MemoryEvalContext,
   MemoryEvaluator,
   type MemoryEvidence,
   type MemoryFeedback,
@@ -104,6 +105,7 @@ import {
   type MemoryRecordVersioned,
   type MemorySource,
   MemoryStore,
+  NO_DEPENDENCY,
   ProjectionCheckpointStore,
   REMOTE_MANIFEST_KEY,
   type RecallProjection,
@@ -147,6 +149,7 @@ import {
   conservativeVerdicts,
   contradictedForReview,
   createMemoryBackup,
+  deadCaptures,
   decisionConflicts,
   decisionId,
   decryptEvent,
@@ -185,6 +188,7 @@ import {
   recallProjection,
   resolveProfile,
   resolveServerIdentity,
+  resolveStrictPrincipal,
   resolveSyncKey,
   restoreMemoryBackup,
   rotateSyncKey,
@@ -255,6 +259,7 @@ import {
   removeInstructions,
 } from './adapters.js';
 import { clientStateReport, unknownConnectedClients } from './client-states.js';
+import { durabilityCheck } from './durability-check.js';
 import {
   DEFAULT_EMBED_ALIAS,
   EMBED_MODELS,
@@ -347,6 +352,8 @@ import {
   parseMemoryLedgerQuery,
   parseMemoryPendingQuery,
   parseResumeBody,
+  parseRevalidateFlag,
+  readMemoryGraphDetail,
   readMemoryHome,
   readMemoryIntakeDetail,
   readMemoryLedger,
@@ -415,6 +422,14 @@ const VALUE_FLAGS = new Set([
   '--reason',
   '--tool',
   '--as-of',
+  // WP-G5 `crib memory graph <op> <refs…>`: every value-taking flag is stripped with its value so
+  // only refs remain positional.
+  '--q',
+  '--at',
+  '--known-by',
+  '--hops',
+  '--predicate',
+  '--cursor',
   // Gate 4 sync/purge subcommands (`crib memory init-sync|sync|purge`): their positionals are
   // mem: ids and their flag values are env names / urls — never paths, so every value-taking
   // flag they add must be stripped alongside its value (the fixed subcommand-token pattern).
@@ -425,6 +440,15 @@ const VALUE_FLAGS = new Set([
   '--secret-env',
   '--max-events',
   '--scope',
+  // `--out` has ALWAYS been value-taking (`support-bundle`, `memory bench`, `memory export`,
+  // `memory backup create`) but was never listed here, so its value leaked into `positionalsOf` and
+  // `resolveRoot` could read a bundle path AS the repo path (`crib support-bundle --out b.json`
+  // resolved `b.json` as the repo root; `crib memory export --out report.md` likewise). Listing it
+  // is the fix for the class, not for one caller.
+  '--out',
+  // WP1 item 12 (`crib memory migrate --principal <id>`): the principal stamped into every migrated
+  // record is a value, and it is never a path.
+  '--principal',
   '--backend',
   '--stores',
   '--outcome',
@@ -2234,6 +2258,12 @@ async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
             buildGraph: ({ generation, capture }) => {
               const graph = new MemoryGraphIndex(':memory:');
               try {
+                // The projection's own publication number, captured so the reader it returns reports
+                // the SAME identity that was stamped on the projection — one `++`, one value. This is
+                // the graph's own generation (D2-b), independent of the bundle's code-reader
+                // generation: it moves on every rebuild, including the memory-only rebuild D2-a
+                // stops from moving the code generation.
+                const publication = ++graphPublication;
                 graph.replace(
                   createMemoryApi(
                     rt.soul,
@@ -2244,12 +2274,13 @@ async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
                   {
                     sourcePosition: capture.graphSourcePosition ?? 'unavailable',
                     codeRevision: capture.head ?? 'unavailable',
-                    generation: ++graphPublication,
+                    generation: publication,
                   },
                 );
                 return {
                   generation,
                   sourcePosition: capture.graphSourcePosition,
+                  publication,
                   close: () => graph.close(),
                 };
               } catch (error) {
@@ -2293,6 +2324,25 @@ async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
       'freshness mode manual — serving the committed graph; saved-but-uncommitted edits are NOT ' +
         'visible to query. Enable with `crib freshness watch` (takes effect next server start).\n',
     );
+  }
+  // WP1 item 8 — WHAT A MEMORY VERDICT IS CURRENT AGAINST, for the life of this server. Both slots
+  // are resolved at BIND time, not captured here: the adopted reader moves on every refresh cycle,
+  // so a string frozen at startup would either never bust (§7.4's stale verdict) or bust on the wrong
+  // trigger. It rides on the eval context, which every projection surface already passes to
+  // `bindEvaluationPass` — `MemoryApi.search`, CLI recall and the MCP recall verbs alike — so no
+  // recall path can forget it and a new one cannot be written that does.
+  if (memory) {
+    memory.evalCtx.pin = {
+      // `NO_DEPENDENCY` until a bundle is adopted: a read before adoption resolves against the
+      // canonical soul, and a generation APPEARING later changes the slot and busts the cache, so
+      // there is no stale window in either direction. In manual freshness mode `coordinator` stays
+      // undefined for the life of the process — the honest "no reader to be pinned to", and exactly
+      // why this mode's reads are not claimed pinned.
+      reader: () => coordinator?.currentReaderGeneration ?? NO_DEPENDENCY,
+      // The ledger is a real dependency of every memory verdict (a decision, retraction or admission
+      // can flip one) and is cheap to read: three in-memory generation counters, no filesystem scan.
+      ledger: () => memoryGraphSourcePosition(memory),
+    };
   }
   // The embed tier is resolved ONCE here, before the server starts: every MCP recall below is
   // synchronous, and a server must not decide its ranker per request.
@@ -2467,7 +2517,14 @@ async function cmdUpdate(args: string[], ctx?: CmdCtx): Promise<number> {
     // which is why a failed upgrade warns instead of proceeding quietly.
     let vectorEmbedder: Embedder | undefined;
     try {
-      const probe = openIndexOnly(rt);
+      // `allowStale` — see {@link openIndexOnly}. `updateRepo` above has ALREADY advanced the
+      // manifest past this index, so without it this probe throws `derived index missing or stale`,
+      // lands in the `catch` below, and reads there as "there is no index yet": `vectorEmbedder`
+      // stays undefined, the open that follows throws identically, and the delta-apply is replaced
+      // by the full-rebuild fallback. Measured, not predicted — on a vector-bearing index that
+      // fallback rebuilt LEXICALLY and took the `vectors` table from N rows to 0 while printing
+      // `updated 1 file(s)`. The staleness is this caller's precondition, not its error.
+      const probe = openIndexOnly(rt, undefined, { allowStale: true });
       const caps = probe.capabilities();
       probe.close();
       if (caps.vector || caps.vectorNote !== undefined) {
@@ -2483,7 +2540,9 @@ async function cmdUpdate(args: string[], ctx?: CmdCtx): Promise<number> {
     }
     let index: IndexStore;
     try {
-      index = openIndexOnly(rt, vectorEmbedder);
+      // Same `allowStale` reason as the probe: applying the delta is what makes the index current
+      // again, so refusing to open a stale one here would make the incremental path unreachable.
+      index = openIndexOnly(rt, vectorEmbedder, { allowStale: true });
       index.applyDelta(result.delta, resolved.repoRoot);
     } catch {
       index = buildIndex(rt, vectorEmbedder); // full buildFromSoul from the just-updated soul
@@ -3293,6 +3352,29 @@ async function cmdDoctor(args: string[], ctx?: CmdCtx): Promise<number> {
     //     unknown". Measured before this check existed: a union gather handed principal A all 15 of
     //     principal B's memory-1 records. Surfaced rather than auto-migrated: rewriting a user's
     //     ledger is their call, not a health check's.
+    //
+    //     What `fix` may honestly promise (WP1 item 14). It once said "run `crib memory migrate` …
+    //     or pass strictPrincipal on any gather" — two halves, both wrong. `strictPrincipal` is an
+    //     internal option of `gatherRecall`, not something an operator passes; and the migrate half
+    //     promised a repair that only half exists, because the team ledger is append-only and
+    //     `migrateToV2` aliases a committed memory-1 line without stamping it (measured:
+    //     `retained: 1`, `schemaVersion: '1'`, no `provenance` left on disk). An operator with team
+    //     memory-1 records would run the named repair, see no change, and be told to run it again.
+    //
+    //     This comment then said "since WP1 item 13 every production gather already sets it", which
+    //     item 13's resolution made wrong. Every production gather now RESOLVES it — from
+    //     `KCRIB_STRICT_PRINCIPAL`, which is OFF (see `resolveStrictPrincipal`). It cannot be on by
+    //     default: local admission writes memory-1, which has no ownership column, so a strict
+    //     gather refuses every record this device writes and `crib memory migrate` can never catch
+    //     up. That makes the ORDER in `fix` load-bearing, not decorative: engaging the switch before
+    //     stamping hides the operator's OWN records.
+    //
+    //     The `detail`/`fix` text therefore name the switch, name the migration, and separate the
+    //     two remainders — the private one migrate can clear from the team one it cannot. NOT settled
+    //     here (spec §14 D-6): the verdict is still `ok: false` for a team-only remainder, which no
+    //     migrate can clear. Whether the check should instead pass on "private stores are stamped" —
+    //     the boundary item 13 actually enforces — is the principal's call, and it changes what a red
+    //     ✗ means.
     const unstamped = countUnstampedRecords(resolved.cribDir, repoRoot);
     checks.push({
       name: 'principal boundary enforceable',
@@ -3301,12 +3383,16 @@ async function cmdDoctor(args: string[], ctx?: CmdCtx): Promise<number> {
         unstamped.total === 0
           ? 'no records yet'
           : unstamped.unstamped === 0
-            ? `all ${unstamped.total} record(s) carry a principal stamp — the boundary is enforceable`
-            : `${unstamped.unstamped}/${unstamped.total} record(s) are memory-1 (no principal stamp): the boundary cannot exclude them if stores from another principal are ever gathered together`,
+            ? `all ${unstamped.total} record(s) carry a principal stamp — the boundary can attribute every one, so setting KCRIB_STRICT_PRINCIPAL=1 scopes recall without hiding your own records`
+            : unstamped.unstampedPrivate > 0
+              ? `${unstamped.unstamped}/${unstamped.total} record(s) are memory-1 (no principal stamp), ${unstamped.unstampedPrivate} of them in a PRIVATE store: the boundary refuses a record it cannot attribute, so those reach any principal whose stores are gathered together — and engaging it would ALSO hide them from you until they are stamped. Not currently engaged: KCRIB_STRICT_PRINCIPAL is unset`
+              : `${unstamped.unstamped}/${unstamped.total} record(s) are memory-1, all of them in the committed TEAM ledger (no private remainder). The boundary does not exclude team records — an unstamped committed line can never be stamped, and it is readable by anyone who can read the repository — so this remainder is neither a leak nor repairable`,
       fix:
-        unstamped.unstamped > 0
-          ? 'run `crib memory migrate` to stamp them (memory-1 → memory-2), or pass strictPrincipal on any gather that can see another principal'
-          : undefined,
+        unstamped.unstamped === 0
+          ? undefined
+          : unstamped.unstampedPrivate > 0
+            ? `run \`crib memory migrate\` to stamp your local/global records in place (memory-1 → memory-2), THEN set KCRIB_STRICT_PRINCIPAL=1 to engage the boundary at every production gather. Both steps, in that order: the boundary refuses a record it cannot attribute, so engaging it first would hide your own unstamped records until they are stamped.${unstamped.unstampedTeam > 0 ? ` ${unstamped.unstampedTeam} of the unstamped record(s) are in the committed TEAM ledger — append-only, so migrate only aliases those; re-writing one as a current-schema record is the only way to stamp it.` : ''}`
+            : `${unstamped.unstampedTeam} of ${unstamped.total} record(s) are memory-1 in the committed TEAM ledger — the whole remainder. \`crib memory migrate\` aliases those but cannot stamp them (append-only: it never rewrites a committed line), and the boundary would not exclude them anyway — a team record is readable by anyone who can read the repository. Re-writing each as a current-schema record is the only way to clear this; until then the check stays red because the ledger on disk still holds unattributable lines`,
     });
   }
 
@@ -3418,6 +3504,27 @@ async function cmdDoctor(args: string[], ctx?: CmdCtx): Promise<number> {
       detail: `status unavailable: ${(err as Error).message}`,
     });
   }
+
+  // 13. Durability model (WP1 obligation 2: "surface unsupported guarantees explicitly"). The store
+  //     now flushes the temp file, renames, then flushes the parent directory — but what that BUYS
+  //     depends on the platform, and until this check existed the limit lived only in
+  //     `docs/design/02-lld.md`'s failure table (docs-only is exactly the defect D1-f names).
+  //
+  //     Three-valued on purpose. `fsync` on darwin is a host-to-device flush, NOT a platter flush —
+  //     `man 2 fsync` verbatim: "the drive itself may not physically write the data to the platters…
+  //     if the drive loses power or the OS crashes, the application may find that only some or none
+  //     of their data was written". `F_FULLFSYNC` is the real barrier and is unreachable from Node
+  //     core without a native dependency, so `powerLossDurable` is probed and reported FALSE here
+  //     rather than asserted from the fact that a flush happened.
+  //
+  //     `ok` tracks the barriers this build can actually PERFORM, not power-loss durability: on
+  //     darwin the honest claim ("survives a process crash, device-ordered") is fully satisfied, so
+  //     ✗ would be a false alarm on the primary platform. When the probe finds no file flush at all,
+  //     the acknowledgement is back to being a page-cache claim and that IS a ✗.
+  //     The wording itself lives in `./durability-check.js` so that the sentence an operator reads is
+  //     asserted against a capability reading, and not only against the darwin host CI happens to run
+  //     on. `ok` and the ✗ wording are tested there; this call site only wires in the probed value.
+  checks.push(durabilityCheck());
 
   let failures = 0;
   for (const c of checks) {
@@ -3738,7 +3845,12 @@ export async function freshnessRevalidate(task: FreshnessTask): Promise<{
       local: MemoryStore.local(repoId, { repoRoot: resolved.repoRoot, env }),
       global: MemoryStore.global({ env }),
     };
-    const gathered = gatherRecall(stores);
+    // WP1 item 13 — resolved explicitly like every other production gather, even though this port
+    // reads only `decisions`/`localDecisions`/`feedback`. Those are id-keyed retire/adjust events,
+    // which the boundary deliberately does not scope (see `gatherRecall`), so the resolved value is
+    // immaterial here. It is passed so the audit rule stays mechanical: EVERY production merge point
+    // names its strictness, and a reviewer never has to re-derive whether one was forgotten.
+    const gathered = gatherRecall(stores, { strictPrincipal: resolveStrictPrincipal() });
     decisions = entrySetFingerprint([...gathered.decisions, ...gathered.localDecisions]);
     feedback = entrySetFingerprint(gathered.feedback);
   }
@@ -3751,6 +3863,14 @@ export async function freshnessRevalidate(task: FreshnessTask): Promise<{
       feedback,
       embedder: UNVERSIONED,
       index: UNVERSIONED,
+      // WP1 item 8 — both snapshot slots stay at the unpinned default, because this port runs in a
+      // FORKED CHILD with no reader at all, and the recall it must stay comparable to (a serve
+      // process in manual freshness mode, or any one-shot read) is unpinned for the same reason.
+      // Filling `ledger` here from the stores it already holds would look more precise and would be
+      // strictly worse: the published generation could then never equal the generation a later
+      // recall binds, which is the property this port exists to provide.
+      reader: NO_DEPENDENCY,
+      ledger: NO_DEPENDENCY,
     }),
     // The head the update ACTUALLY ran at — the repo may have moved since the task was enqueued.
     actualHead: currentHead(task.projectRoot) ?? task.head,
@@ -4286,6 +4406,18 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
                 },
             capture: {
               ...(latest('memory.observed') ? { lastSuccessfulAt: latest('memory.observed') } : {}),
+              // WP5 §7.3 — the two counts the recovery ladder needs, from the durable capture outbox
+              // itself rather than from the events journal above. They were DECLARED on
+              // `VizMemoryHomeOperations.capture` and never populated, so `health.capture.dead` was
+              // always absent and a ladder branch keyed on it could never fire: the signal existed in
+              // the type and not in the system. Absent local store ⇒ both absent, which the ladder
+              // reads as "nothing to act on" — a fresh repo genuinely has no outbox to drain.
+              ...(memoryDeps?.local
+                ? {
+                    pending: pendingCaptures(memoryDeps.local).length,
+                    dead: deadCaptures(memoryDeps.local).length,
+                  }
+                : {}),
             },
             codeIndex: {
               lastSuccessfulAt: rt.soul.getManifest().stats.lastUpdated,
@@ -4309,6 +4441,16 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
         res.end(JSON.stringify(home));
         return;
       }
+      if (requestUrl.pathname === '/memory/graph.json') {
+        const id = requestUrl.searchParams.get('id');
+        if (!id) throw new VizHttpError(400, 'missing id');
+        res.writeHead(200, {
+          'content-type': 'application/json; charset=utf-8',
+          'cache-control': 'no-store',
+        });
+        res.end(JSON.stringify(readMemoryGraphDetail(memoryApi, id)));
+        return;
+      }
       if (requestUrl.pathname === '/memory/record.json') {
         const id = requestUrl.searchParams.get('id');
         if (!id || !memoryApi) {
@@ -4317,7 +4459,11 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
             memoryApi ? 'missing id' : 'memory not configured',
           );
         }
-        const detail = readMemoryLedgerDetail(memoryApi, id);
+        // WP5 §7.4 — same `revalidate` rule as `/memory.json` (default on, `0` opts out), parsed by
+        // the same function so the two routes cannot drift on what the flag means.
+        const detail = readMemoryLedgerDetail(memoryApi, id, {
+          revalidate: parseRevalidateFlag(requestUrl.searchParams),
+        });
         res.writeHead(200, {
           'content-type': 'application/json; charset=utf-8',
           'cache-control': 'no-store',
@@ -5635,15 +5781,26 @@ async function ensureInstalledEmbedder(): Promise<Embedder | undefined> {
  * Count ledger records that carry no principal stamp (memory-1). Read-only and best-effort: a
  * health check must never fail because a store is mid-write or absent.
  */
+/**
+ * Count `mem:` records with no principal stamp, SPLIT by whether migrate can reach them (WP1 item 14).
+ *
+ * The split is the difference between an actionable finding and a residual the operator cannot
+ * clear. `migrateToV2` rewrites a LOCAL/GLOBAL record in place and stamps it; the team ledger is
+ * committed and append-only, so a memory-1 line there is only aliased, never stamped (measured:
+ * `retained: 1`, `schemaVersion: '1'`, no `provenance` on disk). Reporting one aggregate number
+ * let the doctor's remediation promise a repair that only half existed.
+ */
 function countUnstampedRecords(
   cribDir: string,
   repoRoot: string,
-): { total: number; unstamped: number } {
+): { total: number; unstamped: number; unstampedTeam: number; unstampedPrivate: number } {
   let total = 0;
   let unstamped = 0;
+  let unstampedTeam = 0;
   const count = (
     store: { readCollection: (c: never) => { entries: unknown[] } } | undefined,
     collection: string,
+    role: 'team' | 'private',
   ): void => {
     if (!store) return;
     try {
@@ -5651,7 +5808,10 @@ function countUnstampedRecords(
         const rec = entry as { id?: string; provenance?: { principalId?: string } };
         if (typeof rec.id !== 'string' || !rec.id.startsWith('mem:')) continue;
         total += 1;
-        if (!rec.provenance?.principalId) unstamped += 1;
+        if (!rec.provenance?.principalId) {
+          unstamped += 1;
+          if (role === 'team') unstampedTeam += 1;
+        }
       }
     } catch {
       /* best-effort */
@@ -5659,14 +5819,14 @@ function countUnstampedRecords(
   };
   try {
     const env = process.env;
-    count(MemoryStore.team(cribDir, { repoRoot, env }), 'records');
+    count(MemoryStore.team(cribDir, { repoRoot, env }), 'records', 'team');
     const repoId = readRepoId(cribDir);
-    if (repoId) count(MemoryStore.local(repoId, { repoRoot, env }), 'active');
-    count(MemoryStore.global({ env }), 'records');
+    if (repoId) count(MemoryStore.local(repoId, { repoRoot, env }), 'active', 'private');
+    count(MemoryStore.global({ env }), 'records', 'private');
   } catch {
     /* best-effort */
   }
-  return { total, unstamped };
+  return { total, unstamped, unstampedTeam, unstampedPrivate: unstamped - unstampedTeam };
 }
 
 function createMemoryDeps(soul: SoulStore, repoRoot: string, cribDir: string) {
@@ -5674,7 +5834,9 @@ function createMemoryDeps(soul: SoulStore, repoRoot: string, cribDir: string) {
   if (!repoId) return undefined;
   const env = process.env;
   const evaluator = new MemoryEvaluator();
-  const evalCtx = { soul: new SoulStoreSoulPort(soul, repoRoot) };
+  // Typed as the eval context (not an inferred literal) because a long-lived serving path attaches
+  // `pin` to it after construction — WP1 item 8 (see cmdServe).
+  const evalCtx: MemoryEvalContext = { soul: new SoulStoreSoulPort(soul, repoRoot) };
   return {
     team: MemoryStore.team(cribDir, { repoRoot, env }),
     local: MemoryStore.local(repoId, { repoRoot, env }),
@@ -5710,10 +5872,13 @@ function vizMemoryLayer(soul: SoulStore, deps: NonNullable<ReturnType<typeof cre
   const pending = deps.local.readCollection('candidates').entries as unknown as NonNullable<
     MemoryCompositeOpts['pending']
   >;
-  return memoryComposite(recallProjection(gatherRecall(stores)), {
-    pending,
-    resolveTarget: soulTargetResolver((id) => soul.getNode(id)),
-  });
+  return memoryComposite(
+    recallProjection(gatherRecall(stores, { strictPrincipal: resolveStrictPrincipal() })),
+    {
+      pending,
+      resolveTarget: soulTargetResolver((id) => soul.getNode(id)),
+    },
+  );
 }
 
 /**
@@ -6165,6 +6330,8 @@ function findReceipt(local: MemoryStore, id: string): GateReceipt | undefined {
  *   - supersede <id>       Gate 1.3 — retire a record in favour of a successor (append-only)
  *   - delete <id>          Gate 1.3 — a tombstone (retract decision), never a removal
  *   - history <key>        Gate 1.3 — the bi-temporal belief timeline (optionally `--as-of`)
+ *   - graph <op> [refs…]   WP-G5 — connected retrieval over the authorized temporal graph (the
+ *                          `memory_graph` MCP tool, same verb, same JSON)
  *   - evaluate <id> -p X   run the gate → evaluate → activate (the happy path); crash-safe
  *   - activate <id>        crash-recovery: re-evaluate + activate against an existing receipt
  *   - propose <mem-id>     write a team record + accept decision (idempotent; CI derives trust)
@@ -6538,6 +6705,8 @@ async function cmdMemory(args: string[], ctx?: CmdCtx): Promise<number> {
       return cmdMemoryBackup(rest, ctx);
     case 'search':
       return cmdMemorySearch(rest, ctx);
+    case 'graph':
+      return cmdMemoryGraph(rest, ctx);
     case 'get':
       return cmdMemoryGet(rest, ctx);
     case 'supersede':
@@ -6590,7 +6759,7 @@ async function cmdMemory(args: string[], ctx?: CmdCtx): Promise<number> {
     case '-h':
     case '--help':
       process.stderr.write(
-        'crib memory init | export [--format markdown] [--out MEMORY.md] [--include-pending] (a human-readable digest GENERATED from the ledger — one-way: editing it changes nothing, because every agent reads the ledger) | observe --kind <k> --subject <id> --claim "<text>" --evidence <file.json|-> (the AGENT write path: staged, re-grounded and gated exactly as the memory_observe MCP tool — works without MCP) | remember "<claim>" [--subject <id>] [--kind convention|decision] [--global] (record + admit a human-attested claim from a terminal — recallable immediately) | admit <candidate-id> (admit an agent-staged human-attested claim, from a terminal) | handoff [--limit N] [--json] (where was I? — in-flight work, undistilled captures, what went stale) | events [--include-expired] [--limit N] [--json] | profiles list [--json] | profiles register --key <profile-key> --alias <client-id>/<agent-id> [--alias ...] [--json] | recall "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--with-evidence] [--include-pending] [--max-tokens N] [--json] | search "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--max-tokens N] [--json] | get <id> [--with-evidence] [--json] | supersede <id> --actor <id> (--successor <id> | --claim <text>) [--reason <text>] [--json] | delete <id> --actor <id> [--reason <text>] [--json] | history <key> [--as-of <iso-ts>] [--with-evidence] [--json] | evaluate <candidate> --profile <name> | activate <candidate>|--all | propose <memory-id> | attest <candidate> | check | audit [--repair-local] | feedback <mem-id> --signal <useful|unhelpful|contradicted> [--actor <id>] [--context <text>] [--counter-evidence <json-file>] | gc [--max-age-days N] [--dry-run] | migrate | bench [--fast] [--json] [--out <path>] | distill --provider <name> [--providers-file F] [--max-batches N] [--concurrency N] [--timeout-ms N] | recheck [--limit N] [--json] (re-run the admission gate over pending captures) | dismiss <cap-id|cand-id> [--reason <text>] [--json] (retire one queued capture or staged candidate) | capture-hook --event <session-start|turn-end|tool-use> (hooks invoke this; always exits 0 — best-effort capture, never blocks a session) | init-sync --scope repo|global --backend file|http --url <target> [--key-env <NAME>|--keyfile <path>|--gen-key] [--secret-env <NAME>] [--sync-id <id>] [--backfill] [--json] | sync [push|pull|status] [--dry-run] [--backfill] [--max-events N] [--skip] [--json] | sync rotate-key (--gen-key | --key-env <NAME> | --keyfile <path>) [--dry-run] | sync purge-sync --stale-epoch [--dry-run] | purge <mem-id>... --confirm <mem-id>... [--stores local,global] [--history-scan] [--dry-run] [--actor <id>] [--json] | conflicts [--json] | resolve <record-id> (--successor <id> | --retract) --actor <id> [--reason <text>] [--json] (see docs/memory-sync.md)\n',
+        'crib memory init | export [--format markdown] [--out MEMORY.md] [--include-pending] (a human-readable digest GENERATED from the ledger — one-way: editing it changes nothing, because every agent reads the ledger) | observe --kind <k> --subject <id> --claim "<text>" --evidence <file.json|-> (the AGENT write path: staged, re-grounded and gated exactly as the memory_observe MCP tool — works without MCP) | remember "<claim>" [--subject <id>] [--kind convention|decision] [--global] (record + admit a human-attested claim from a terminal — recallable immediately) | admit <candidate-id> (admit an agent-staged human-attested claim, from a terminal) | handoff [--limit N] [--json] (where was I? — in-flight work, undistilled captures, what went stale) | events [--include-expired] [--limit N] [--json] | profiles list [--json] | profiles register --key <profile-key> --alias <client-id>/<agent-id> [--alias ...] [--json] | recall "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--with-evidence] [--include-pending] [--max-tokens N] [--json] | search "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--max-tokens N] [--json] | get <id> [--with-evidence] [--json] | supersede <id> --actor <id> (--successor <id> | --claim <text>) [--reason <text>] [--json] | delete <id> --actor <id> [--reason <text>] [--json] | history <key> [--as-of <iso-ts>] [--with-evidence] [--json] | evaluate <candidate> --profile <name> | activate <candidate>|--all | propose <memory-id> | attest <candidate> | check | audit [--repair-local] | feedback <mem-id> --signal <useful|unhelpful|contradicted> [--actor <id>] [--context <text>] [--counter-evidence <json-file>] | gc [--max-age-days N] [--dry-run] | migrate [--preview|--apply] [--principal <id>] [--out <bundle>] [--json] (stamp memory-1 records so the principal boundary can exclude them; PREVIEWS by default and touches nothing — --apply backs up local+global first, and cannot stamp team records because that ledger is append-only) | bench [--fast] [--json] [--out <path>] | distill --provider <name> [--providers-file F] [--max-batches N] [--concurrency N] [--timeout-ms N] | recheck [--limit N] [--json] (re-run the admission gate over pending captures) | dismiss <cap-id|cand-id> [--reason <text>] [--json] (retire one queued capture or staged candidate) | capture-hook --event <session-start|turn-end|tool-use> (hooks invoke this; always exits 0 — best-effort capture, never blocks a session) | init-sync --scope repo|global --backend file|http --url <target> [--key-env <NAME>|--keyfile <path>|--gen-key] [--secret-env <NAME>] [--sync-id <id>] [--backfill] [--json] | sync [push|pull|status] [--dry-run] [--backfill] [--max-events N] [--skip] [--json] | sync rotate-key (--gen-key | --key-env <NAME> | --keyfile <path>) [--dry-run] | sync purge-sync --stale-epoch [--dry-run] | purge <mem-id>... --confirm <mem-id>... [--stores local,global] [--history-scan] [--dry-run] [--actor <id>] [--json] | conflicts [--json] | resolve <record-id> (--successor <id> | --retract) --actor <id> [--reason <text>] [--json] (see docs/memory-sync.md)\n',
       );
       process.stderr.write(
         'additional operations: backup create|verify|restore; sync compact [--dry-run] [--json]\n',
@@ -8308,7 +8477,14 @@ function memoryRecallProjection(
   opts: { query: string; targetIds?: string[]; sources?: MemorySource[] },
 ): RecallProjection {
   const stores = { team: deps.team, local: deps.local, global: deps.global };
-  const gathered = gatherRecall(stores, opts.sources ? { sources: opts.sources } : {});
+  // WP1 item 13: the CLI's read surfaces resolve the same principal boundary as the MCP ones. The
+  // spec enumerated the MCP/API gathers only, but a boundary that holds on one path and not the
+  // other is not a boundary — `crib memory search` would still hand over a foreign unstamped record.
+  const strictPrincipal = resolveStrictPrincipal();
+  const gathered = gatherRecall(
+    stores,
+    opts.sources ? { sources: opts.sources, strictPrincipal } : { strictPrincipal },
+  );
   const fts = opts.sources ? new MemoryFtsIndex(':memory:') : openMemoryFts(stores);
   // Same persistent vector cache the MCP path opens — a CLI recall must not re-embed the ledger
   // either (4.9 s for 307 records with a real model). Content-addressed, so no invalidation.
@@ -8567,6 +8743,69 @@ function memorySearchHitView(h: SearchHit, withEvidence?: boolean): Record<strin
   };
 }
 
+const MEMORY_GRAPH_USAGE =
+  'usage: crib memory graph <search|neighbors|path|history|context> [refs…] [--q "<query>"] [--scope global|repo] [--at <iso>] [--known-by <iso>] [--hops 0-4] [--predicate <p>]… [--max-tokens N] [--cursor <c>]\n';
+
+/**
+ * `crib memory graph <op> [refs…]` — the CLI twin of the `memory_graph` MCP tool. It calls the SAME
+ * verb over the same memory deps, so a terminal and an agent cannot receive different connected
+ * answers; output is always the verb's JSON (errors included) and a refused request exits BAD_ARGS.
+ */
+function cmdMemoryGraph(args: string[], ctx?: CmdCtx): number {
+  if (args.includes('--help')) {
+    process.stdout.write(MEMORY_GRAPH_USAGE);
+    return EXIT.OK;
+  }
+  const [op, ...refs] = positionalsOf(args);
+  if (op === undefined) {
+    process.stderr.write(MEMORY_GRAPH_USAGE);
+    return EXIT.BAD_ARGS;
+  }
+  const scope = stringFlag(args, '--scope');
+  if (scope !== undefined && scope !== 'global' && scope !== 'repo') {
+    process.stderr.write(`error: --scope must be global or repo\n${MEMORY_GRAPH_USAGE}`);
+    return EXIT.BAD_ARGS;
+  }
+  const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
+  if (!isIndexedRoot(resolved)) {
+    process.stderr.write('not indexed — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const rt = openSoul(resolved);
+  const memory = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
+  if (!memory) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const index = openIndexForRead(rt);
+  if (!index) return EXIT.NOT_INDEXED;
+  try {
+    const verbs = new Verbs({ soul: rt.soul, index, repoRoot: resolved.repoRoot, memory });
+    const hops = intFlag(args, '--hops');
+    const maxTokens = intFlag(args, '--max-tokens');
+    const predicates = repeatedFlag(args, '--predicate');
+    const optional = {
+      q: stringFlag(args, '--q'),
+      at: stringFlag(args, '--at'),
+      knownBy: stringFlag(args, '--known-by'),
+      cursor: stringFlag(args, '--cursor'),
+    };
+    const result = verbs.memoryConnectedGraph({
+      op: op as Parameters<Verbs['memoryConnectedGraph']>[0]['op'],
+      ...(refs.length > 0 ? { refs } : {}),
+      ...(scope !== undefined ? { scope } : {}),
+      ...(hops !== undefined ? { hops } : {}),
+      ...(maxTokens !== undefined ? { maxTokens } : {}),
+      ...(predicates.length > 0 ? { predicates } : {}),
+      ...Object.fromEntries(Object.entries(optional).filter(([, v]) => v !== undefined)),
+    });
+    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+    return result.error !== undefined ? EXIT.BAD_ARGS : EXIT.OK;
+  } finally {
+    index.close();
+  }
+}
+
 /**
  * `crib memory search "<query>"` — the portable API's rich search. `--json` mirrors the MCP
  * `memory{op:'search'}` response byte-for-byte in shape (query + hits + conflicts + provenance +
@@ -8600,10 +8839,15 @@ function cmdMemorySearch(args: string[], ctx?: CmdCtx): number {
   // byte-comparability invariant). G3.2 — the versioned scorer names its configuration on the
   // provenance (red line #6). api.search gathers internally, so this double-gather is the accepted
   // cost of not widening the package's search signature for the adapter (same trade the MCP verb
-  // makes).
+  // makes). WP1 item 13 — BOTH gathers resolve the boundary, so the scorer's corpus and
+  // `api.search`'s own gather (which applies the boundary internally) agree: a foreign record can
+  // neither rank here nor be returned. A corpus wider than the pool it ranks would let an excluded
+  // record occupy a result slot and then vanish, which reads to the operator as a missing hit with
+  // no explanation.
+  const strictPrincipal = resolveStrictPrincipal();
   const gathered = gatherRecall(
     { team: deps.team, local: deps.local, global: deps.global },
-    sources ? { sources } : {},
+    sources ? { sources, strictPrincipal } : { strictPrincipal },
   );
   const fts = sources
     ? new MemoryFtsIndex(':memory:')
@@ -10064,6 +10308,15 @@ function cmdMemoryAudit(args: string[], ctx?: CmdCtx): number {
   // snapshot + decisions bridged from every bound legacy id, team/global decisions authoritative
   // per the no-poison rule), so the audit tally agrees with recall instead of demoting a
   // migrated record to trust 'candidate'. Memory-1 records keep their stamped verdicts.
+  // NOT a strict gather, deliberately (WP1 item 13). This gather feeds only `aliases` and
+  // `decisions` — the record pool it returns is never read here, because the audit's record view is
+  // the raw `teamRecords` read above and its per-store totals are `readCollection` counts. That is
+  // the point of a health report: it must count what is ON DISK, including a foreign record, or the
+  // doctor would go quiet about the very ledger the migration exists to stamp. Passing
+  // `strictPrincipal` here would filter a list nobody reads while implying the counts are scoped —
+  // a claim the output does not support. Residual, NOT closed: `feedback.contradictedForReview[]
+  // .context` renders LOCAL free-text feedback, and `MemoryFeedback` carries no principal stamp to
+  // filter on (schemaVersion '1', no provenance), so this surface is unchanged by item 13.
   const gathered = gatherRecall({ team: deps.team, local: deps.local, global: deps.global });
   const aliasIndex = buildAliasIndex(gathered.aliases ?? []);
   const trust: Record<string, number> = {};
@@ -10221,9 +10474,53 @@ function cmdMemoryGc(args: string[], ctx?: CmdCtx): number {
   return EXIT.OK;
 }
 
-/** `crib memory migrate` — re-validate every stored entry through the migration chain + recompute manifests. */
+/**
+ * `crib memory migrate` — stamp the ledger's memory-1 records with a principal (memory-1 → memory-2).
+ *
+ * **Why this verb exists.** The doctor's `principal boundary enforceable` check reports records that
+ * carry no principal stamp and tells the user to run this command. Until WP1 item 12 that text named
+ * a repair that did not exist: this handler only re-validated entries and recomputed manifests, and
+ * never called {@link MemoryStore.migrateToV2}. A product statement naming a non-existent repair is
+ * its own defect — this closes it, and item 14 corrects the wording to match.
+ *
+ * **What the stamp buys.** `gatherRecall` scopes the record pool by comparing each record's principal
+ * stamp against the caller's; a record with NO stamp cannot be compared, so it passes (recall.ts
+ * documents this as the honest v1 limitation). In the normal single-principal deployment that is
+ * harmless. It stops being harmless as soon as store sets from two principals reach one gather, where
+ * "unstamped" means "owner unknown" and an unknown owner is being treated as the caller. Stamping is
+ * what lets `strictPrincipal: true` (WP1 item 13) exclude them without emptying the ledger of every
+ * user who never set `KCRIB_PRINCIPAL_ID`.
+ *
+ * **Preview by default, and apply is explicit.** `--apply` is the only writing mode; a bare
+ * `crib memory migrate` reports what it WOULD stamp and touches nothing. Rewriting a user's ledger is
+ * their call, and a command whose name reads like a report must not silently migrate.
+ *
+ * **Resumable without a ledger file.** `migrateToV2` is deterministic and self-describing, so the
+ * store IS the ledger: `migrationProvenance` is pure over (authorship, overrides, env), and the
+ * rewrite is keyed on the record's content id — a re-run stamps the same ids. A completed store
+ * re-reports `migrated: 0` (no v1 lines remain); an interrupted run re-migrates only the collections
+ * it never reached, and any v1 line whose twin already exists reports as `skipped` (first writer
+ * wins, the twin is never overwritten). Inventing a separate progress file would add a second source
+ * of truth that can disagree with the stores it describes.
+ */
 function cmdMemoryMigrate(args: string[], ctx?: CmdCtx): number {
+  const json = args.includes('--json');
+  const apply = args.includes('--apply');
+  const preview = args.includes('--preview');
+  if (apply && preview) {
+    process.stderr.write('error: --preview and --apply are mutually exclusive\n');
+    return EXIT.BAD_ARGS;
+  }
+  // `--principal` / `--out` are stripped from the positional scan by VALUE_FLAGS, so resolveRoot
+  // cannot mistake an id or a bundle path for the repo path.
   const resolved = resolveRoot(args, ctx);
+  const principalFlag = stringFlag(args, '--principal')?.trim();
+  if (principalFlag !== undefined && principalFlag.length === 0) {
+    process.stderr.write('error: --principal requires a non-empty id\n');
+    return EXIT.BAD_ARGS;
+  }
+  const principalId =
+    principalFlag ?? process.env.KCRIB_PRINCIPAL_ID?.trim() ?? DEFAULT_MIGRATION_PRINCIPAL_ID;
   const deps = createMemoryDeps(openSoul(resolved).soul, resolved.repoRoot, resolved.cribDir);
   if (!deps) {
     process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
@@ -10234,13 +10531,52 @@ function cmdMemoryMigrate(args: string[], ctx?: CmdCtx): number {
     { name: 'local', store: deps.local },
     { name: 'global', store: deps.global },
   ];
+  const unstampedBefore = countUnstampedRecords(resolved.cribDir, resolved.repoRoot);
+
+  // The safety net runs BEFORE the first store is touched, and its failure aborts the whole apply:
+  // a backup that did not happen is not a backup. Team is excluded for the same reason `memory
+  // backup create` excludes it — it is the committed, Git-backed ledger, recoverable with `git`,
+  // and `migrateToV2` only ADDS aliases to it (never rewrites or removes a committed line).
+  let backup: { path: string; files: number } | undefined;
+  let backupError: string | undefined;
+  if (apply) {
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const destination =
+      stringFlag(args, '--out') ??
+      join(memoryHome(), 'backups', readRepoId(resolved.cribDir) ?? 'repo', `pre-migrate-${stamp}`);
+    try {
+      deps.local.ensureManifest();
+      deps.global.ensureManifest();
+      const manifest = createMemoryBackup(
+        [
+          { role: 'local', root: deps.local.rootDir },
+          { role: 'global', root: deps.global.rootDir },
+        ],
+        destination,
+      );
+      backup = { path: destination, files: manifest.files.length };
+    } catch (error) {
+      backupError = (error as Error).message;
+    }
+  }
+
   const perStore: Array<{
     store: string;
     entries: number;
     invalid: number;
     byVersion: Record<string, number>;
+    unstamped: number;
+    wouldStamp: number;
+    migrated: number;
+    aliases: number;
+    skipped: number;
+    retained: number;
+    error?: string;
   }> = [];
   let totalInvalid = 0;
+  let totalMigrated = 0;
+  let totalAliases = 0;
+  let applyFailed = false;
   // Observed schema versions, tallied from the entries themselves. This used to print a hardcoded
   // `schemaVersion: '1'`, which reported a store full of memory-2/3 records as if it were still v1 —
   // the one output an operator runs this command to trust. The report now states what IS on disk.
@@ -10248,7 +10584,10 @@ function cmdMemoryMigrate(args: string[], ctx?: CmdCtx): number {
   for (const { name, store } of stores) {
     let entries = 0;
     let invalid = 0;
+    let unstamped = 0;
+    let wouldStamp = 0;
     const byVersion: Record<string, number> = {};
+    const recordCollectionNames = new Set(store.recordCollections());
     for (const c of store.collections) {
       const res = store.readCollection(c);
       entries += res.entries.length;
@@ -10263,6 +10602,16 @@ function cmdMemoryMigrate(args: string[], ctx?: CmdCtx): number {
         } catch {
           invalid++;
         }
+        // What the stamp would change: a memory-1 RECORD (decisions/feedback/aliases carry no
+        // principal and are not what the boundary scopes — `gatherRecall` scopes the record pool).
+        if (recordCollectionNames.has(c)) {
+          const rec = e as { id?: string; provenance?: { principalId?: string } };
+          if (typeof rec.id === 'string' && rec.id.startsWith('mem:')) {
+            if (rec.provenance?.principalId) continue;
+            unstamped++;
+            wouldStamp++;
+          }
+        }
       }
     }
     // Recompute the manifest counts from the (migrated) shards — but ONLY where a manifest exists.
@@ -10272,20 +10621,112 @@ function cmdMemoryMigrate(args: string[], ctx?: CmdCtx): number {
     // version string below went unnoticed for so long: the report was never reached.
     if (store.hasManifest) store.persistManifest();
     totalInvalid += invalid;
-    perStore.push({ store: name, entries, invalid, byVersion });
+    const row = {
+      store: name,
+      entries,
+      invalid,
+      byVersion,
+      unstamped,
+      wouldStamp,
+      migrated: 0,
+      aliases: 0,
+      skipped: 0,
+      retained: 0,
+    };
+    // Apply BEFORE the push so the counters land on the same row the human reads. A store that
+    // throws does NOT abort the remaining stores: the pass is idempotent, so finishing what it can
+    // and reporting the failure leaves the run resumable by re-running it. Aborting mid-way would
+    // leave the same state with LESS information about it.
+    if (apply && backupError === undefined) {
+      try {
+        const result = store.migrateToV2({ provenance: { principalId } });
+        row.migrated = result.migrated.length;
+        row.aliases = result.aliases.length;
+        row.skipped = result.skipped;
+        row.retained = result.retained;
+        totalMigrated += result.migrated.length;
+        totalAliases += result.aliases.length;
+      } catch (error) {
+        applyFailed = true;
+        Object.assign(row, { error: (error as Error).message });
+      }
+    }
+    perStore.push(row);
   }
-  process.stdout.write(
-    `${JSON.stringify(
-      {
-        perStore,
-        totalInvalid,
-        byVersion: byVersionTotal,
-        supportedSchemaVersions: SUPPORTED_MEMORY_SCHEMA_VERSIONS,
-      },
-      null,
-      2,
-    )}\n`,
-  );
+  const unstampedAfter =
+    apply && !applyFailed && backupError === undefined
+      ? countUnstampedRecords(resolved.cribDir, resolved.repoRoot)
+      : undefined;
+
+  const payload = {
+    mode: apply ? 'applied' : 'preview',
+    principalId,
+    principalSource: principalFlag
+      ? 'flag'
+      : process.env.KCRIB_PRINCIPAL_ID?.trim()
+        ? 'KCRIB_PRINCIPAL_ID'
+        : 'default',
+    perStore,
+    totalInvalid,
+    totalMigrated,
+    totalAliases,
+    byVersion: byVersionTotal,
+    supportedSchemaVersions: SUPPORTED_MEMORY_SCHEMA_VERSIONS,
+    ...(backup ? { backup } : {}),
+    ...(backupError ? { backupError } : {}),
+    unstampedBefore,
+    ...(unstampedAfter ? { unstampedAfter } : {}),
+  };
+  if (json) {
+    process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
+  } else {
+    const lines: string[] = [];
+    if (!apply) {
+      lines.push('preview — nothing written (pass --apply to migrate)');
+    }
+    lines.push(`principal to stamp: ${principalId} (${payload.principalSource})`);
+    for (const row of perStore) {
+      const migrated = apply ? `, migrated ${row.migrated}` : '';
+      const suffix = row.error ? ` — FAILED: ${row.error}` : '';
+      lines.push(
+        [
+          `  ${row.store.padEnd(7)} ${row.entries} entr${row.entries === 1 ? 'y' : 'ies'}${migrated}, `,
+          `${row.wouldStamp} memory-1 record(s) ${apply ? 'were' : 'would be'} stamped`,
+          suffix,
+        ].join(''),
+      );
+    }
+    if (backup) lines.push(`backup before apply: ${backup.path} (${backup.files} file(s))`);
+    if (backupError) lines.push(`APPLY SKIPPED — backup failed: ${backupError}`);
+    // The team ledger is append-only: `migrateToV2` records the alias but never rewrites a committed
+    // line, so a team memory-1 record stays unstamped BY DESIGN. Measured, not assumed: after a
+    // successful apply the team store still holds `schemaVersion: '1'` with no `provenance`. Saying
+    // so is the difference between a report and a false claim — the boundary genuinely cannot
+    // exclude those records, and only a NEW write (a v2/3 record) can stamp them.
+    const teamRetained = perStore.find((r) => r.store === 'team')?.retained ?? 0;
+    if (apply && teamRetained > 0) {
+      lines.push(
+        [
+          `${teamRetained} team memory-1 record(s) were aliased but NOT stamped — the team ledger is `,
+          'append-only, so the boundary still cannot exclude them; re-write them as current-schema ',
+          'records to stamp them',
+        ].join(''),
+      );
+    }
+    // Held as the object (not a pre-destructured field) so the narrowing survives into the message.
+    const after = unstampedAfter;
+    lines.push(
+      after === undefined
+        ? `unstamped records: ${unstampedBefore.unstamped}/${unstampedBefore.total}`
+        : `unstamped records: ${unstampedBefore.unstamped}/${unstampedBefore.total} → ${after.unstamped}/${after.total}`,
+    );
+    if (after !== undefined && after.unstamped === 0 && unstampedBefore.unstamped > 0) {
+      lines.push('the principal boundary is now enforceable — the doctor check clears');
+    }
+    process.stdout.write(`${lines.join('\n')}\n`);
+  }
+  if (backupError !== undefined) return EXIT.ERROR;
+  if (applyFailed) return EXIT.ERROR;
   return totalInvalid === 0 ? EXIT.OK : EXIT.ERROR;
 }
 
@@ -10320,7 +10761,7 @@ function printHelp(): void {
       '  crib export [--format F] [--procedure P] [--extracted-only] [--redact|--no-redact] render graph: rules|mermaid|graph.json|report|llm',
       '  crib viz [path] [--port N]               serve the offline web UI (Claude Design DC graph) + open browser',
       '  crib enrich [path] [--budget-tokens N]    semantic work queue; --next (token-packed batch) | run --provider <name> [--max-tokens N --max-batches N --concurrency N] | --auto [--provider <name>] | --save <file> | --overview | --scopes | --prune-stale [--apply]',
-      '  crib memory <init|handoff|recall|backup|sync|evaluate|activate|propose|attest>   persistent memory, recovery, sync, and trusted promotion',
+      '  crib memory <init|handoff|recall|graph|backup|sync|evaluate|activate|propose|attest>   persistent memory, connected graph, recovery, sync, and trusted promotion',
       '  crib intake <create|checkpoint|list|show|complete|share>   durable intent and continuation checkpoints',
       '  crib session bootstrap [--json]       restore the deterministic resume brief for this project',
       '  crib audit-llm [path]                    re-verify every LLM artifact against the soul (grounding moat); exits non-zero on ungrounded/drift',

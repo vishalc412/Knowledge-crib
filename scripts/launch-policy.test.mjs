@@ -32,11 +32,23 @@ import {
   policyFuzzRequirements,
   policyGateIds,
   policyGlobalReceiptTypes,
+  policyGraphRequirements,
   policyOsNodeCells,
   validateLaunchPolicy,
 } from './launch-policy.mjs';
 
 const FROZEN_POLICY_SHA256 =
+  'sha256:4fd72a8ca07db4115f8a40f3589eee22e2994ebe720047932f44652fface2a00';
+
+/**
+ * The version-4 policy hash, kept here as a HEADSTONE rather than deleted.
+ *
+ * Version 4 froze the twenty-one-cell promise and its evidence contract but did not require the
+ * connected memory graph. Version 5 makes the graph a launch requirement with its own
+ * candidate-wide receipt, so a receipt set collected under v4 never proved the graph promise and
+ * the moved hash is the mechanical reason none of it may contribute to a version-5 decision.
+ */
+const VOID_POLICY_V4_SHA256 =
   'sha256:2761abf1a666ad4a1f0ccf16dfaa94272f65db0feabeed417aaaa634f26025b1';
 
 /**
@@ -71,6 +83,11 @@ assert.equal(
   FROZEN_POLICY_SHA256,
   'the launch policy changed: every receipt collected under the previous hash is now void. ' +
     'Update FROZEN_POLICY_SHA256 deliberately and recollect the affected evidence.',
+);
+assert.notEqual(
+  sha256,
+  VOID_POLICY_V4_SHA256,
+  'the policy must no longer carry the version-4 hash',
 );
 // The hash is over the FILE BYTES, so a reformat is a change.
 assert.equal(hashLaunchPolicyBytes(readFileSync(DEFAULT_POLICY_PATH)), FROZEN_POLICY_SHA256);
@@ -114,7 +131,7 @@ assert.equal(policy.semanticModel.requiredState, 'installed');
 
 // ─── version 4: the FULL promise plus the named evidence contract ───────────
 assert.equal(policy.policyVersion, EXPECTED_POLICY_VERSION);
-assert.equal(policy.policyVersion, 4);
+assert.equal(policy.policyVersion, 5);
 // Version 4 changes NOTHING about the promise itself: the same twenty-one cells, the same gates,
 // the same thresholds. What it adds is the receipt-schema contract, so the boundary a receipt may
 // certify is stated by the policy and not left to whatever the validators happen to accept.
@@ -129,7 +146,7 @@ assert.deepEqual(policy.receiptSchemas.clientCertification, {
   requiredFormatVersion: CERTIFICATION_EVIDENCE_FORMAT_VERSION,
   readableFormatVersions: SUPPORTED_CERTIFICATION_FORMAT_VERSIONS,
 });
-assert.equal(CERTIFICATION_EVIDENCE_FORMAT_VERSION, 3);
+assert.equal(CERTIFICATION_EVIDENCE_FORMAT_VERSION, 4);
 // The same boundary from the validators' side: the required version is the newest readable one and
 // every older schema stays readable, so a historical failure is never unreadable — but only the
 // required version can certify, and the policy says so in the same words the decision uses.
@@ -140,6 +157,9 @@ assert.equal(
 );
 assert.match(policy.scope.decision, /format version 2/i);
 assert.match(policy.scope.decision, /format version 3/i);
+// Version 5 moves client certification to format 4 (the connectedMemory leg).
+assert.match(policy.scope.graph, /format version 4/i);
+assert.match(policy.scope.graph, /connectedMemory/);
 assert.match(policy.scope.decision, /readable/i);
 // Exactly 21 cells: seven clients, three native platforms, and no waiver anywhere.
 assert.deepEqual(policy.clients, POLICY_CLIENTS);
@@ -207,8 +227,27 @@ assert.match(policy.scope.wsl, /not a native/i);
 assert.match(policy.scope.publication, /real runners and real vendor hosts/);
 assert.match(policy.scope.publication, /twenty-one client cells/);
 
-// The global receipt is the deep fuzz, which is collected once per candidate, not once per cell.
-assert.deepEqual(policyGlobalReceiptTypes(policy), ['fuzz-deep']);
+// The global receipts are the deep fuzz and (version 5) the connected memory graph — each collected
+// once per candidate, not once per cell.
+assert.deepEqual(policyGlobalReceiptTypes(policy), ['fuzz-deep', 'connected-memory-graph']);
+assert.match(policy.scope.graph, /held-out/i);
+assert.match(policy.scope.graph, /report artifact/);
+
+// The graph thresholds are the plan's frozen floors, stated in the policy and nowhere else.
+assert.deepEqual(policyGraphRequirements(policy), {
+  workload: 'connected-memory-graph-corpus-v1',
+  harnessVersion: 2,
+  minimumCorpusVersion: 1,
+  minimumMultiHopQuestions: 100,
+  evidencePathRecallMin: 0.9,
+  maxUnauthorizedPaths: 0,
+  maxForbiddenViolations: 0,
+  maxEmptinessViolations: 0,
+  maxUnavailableAnswers: 0,
+  requireHeldOut: true,
+  requireRetrievalEnabled: true,
+  requiredSuites: ['isolation', 'temporal', 'alias', 'contradiction', 'purge', 'replay', 'rebuild'],
+});
 assert.deepEqual(policy.receiptTypes, [
   'install',
   'native-service',
@@ -573,6 +612,48 @@ refuses(
     hashLaunchPolicyBytes(Buffer.from(`${twice}\n`)),
   );
 }
+refuses(
+  'a missing graph block',
+  (p) => {
+    p.graph = undefined;
+  },
+  /graph workload is required/,
+);
+refuses(
+  'a graph recall floor below the plan',
+  (p) => {
+    p.graph.evidencePathRecallMin = 0.8;
+  },
+  /evidencePathRecallMin must be in \[0\.9, 1\]/,
+);
+refuses(
+  'a graph suite fewer than 100 multi-hop questions',
+  (p) => {
+    p.graph.minimumMultiHopQuestions = 99;
+  },
+  /minimumMultiHopQuestions must be at least 100/,
+);
+refuses(
+  'a graph policy tolerating one foreign disclosure',
+  (p) => {
+    p.graph.maxUnauthorizedPaths = 1;
+  },
+  /graph\.maxUnauthorizedPaths must be exactly 0/,
+);
+refuses(
+  'a graph policy that does not require a held-out suite',
+  (p) => {
+    p.graph.requireHeldOut = false;
+  },
+  /graph\.requireHeldOut must be true/,
+);
+refuses(
+  'a graph policy that drops a deterministic suite',
+  (p) => {
+    p.graph.requiredSuites = p.graph.requiredSuites.filter((suite) => suite !== 'purge');
+  },
+  /missing required graph suite: purge/,
+);
 refuses(
   'a freshness platform set narrower than the advertised one',
   (p) => {

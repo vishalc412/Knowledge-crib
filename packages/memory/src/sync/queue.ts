@@ -19,9 +19,9 @@
  * (`<storeRoot>/.lock` — the SAME file `MemoryStore.withLock` holds, never a second lock; `CribLock`
  * is exclusive-create, so a nested acquire would fail loudly rather than nest).
  */
-import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { writeJsonAtomic } from '../atomic.js';
+import { appendLineDurable, writeJsonAtomic } from '../atomic.js';
 import { assertNoMemorySecrets } from '../secrets.js';
 import { assertValidMemoryEntry } from '../validate.js';
 import {
@@ -261,8 +261,7 @@ export function stageOutboundEvent(
   if (ids.includes(evt.id)) {
     return { id: evt.id, staged: false, idempotent: true };
   }
-  mkdirSync(storeRoot, { recursive: true });
-  appendFileSync(join(storeRoot, SYNC_OUTBOX_FILE), `${serializeSyncEvent(evt)}\n`, 'utf8');
+  appendLineDurable(join(storeRoot, SYNC_OUTBOX_FILE), `${serializeSyncEvent(evt)}\n`);
   return { id: evt.id, staged: true, idempotent: false };
 }
 

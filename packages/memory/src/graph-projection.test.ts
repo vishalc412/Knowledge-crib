@@ -510,6 +510,267 @@ describe('WP-G2 projection — unsupported exclusion', () => {
   });
 });
 
+// ─── WP2 S1 — evidence-placement containment ──────────────────────────────────
+
+describe('WP2 S1 — evidence must be placed at the scope it is cited from', () => {
+  it('(a) gd1: a global record whose only evidence anchor is repo-placed loses ALL its assertions', () => {
+    const cite = assertion({
+      predicate: 'supported-by',
+      subject: 'mem:gd',
+      object: 'sym:repo-anchor',
+      supportedBy: ['mem:gd'],
+    });
+    const about = assertion({
+      predicate: 'about',
+      subject: 'mem:gd',
+      object: 'topic:retry',
+      supportedBy: ['mem:gd'],
+    });
+    // The placement witness: a REPO_A non-citation assertion naming the anchor. It is invisible
+    // to a global viewer, but placement is a property of the gathered universe, not the view.
+    const placement = assertion({
+      predicate: 'applies-to',
+      subject: 'topic:retry',
+      object: 'sym:repo-anchor',
+      scope: REPO_A,
+    });
+    const control = assertion({
+      predicate: 'about',
+      subject: 'mem:control',
+      object: 'topic:ok',
+      supportedBy: ['mem:control'],
+    });
+    const p = projectGraph(
+      {
+        assertions: [cite, about, placement, control],
+        records: [{ id: 'mem:gd' }, { id: 'mem:control' }],
+      },
+      { principalId: P1, scope: GLOBAL },
+    );
+
+    // The anchor lives only at repo:repoa — inadmissible evidence for a global claim — so BOTH
+    // the citation and the about die as unsupported, off every trusted surface.
+    expect(p.current.map((a) => a.id)).toEqual([control.id]);
+    expect(p.timeline.map((a) => a.id)).toEqual([control.id]);
+    expect(p.historical).toEqual([]);
+    expect(p.counts.total).toBe(1);
+    expect(p.diagnostics.unsupported).toEqual([
+      { id: cite.id, missingSupporters: ['mem:gd'] },
+      { id: about.id, missingSupporters: ['mem:gd'] },
+    ]);
+    // (f) the diagnostics name the placement-invalid supporter and where the universe places
+    // the anchor, sorted by (assertionId, supporter).
+    const invalid = p.diagnostics.placementInvalidSupporters;
+    expect(invalid).toHaveLength(2);
+    expect(invalid.map((e) => e.assertionId)).toEqual(
+      [...invalid.map((e) => e.assertionId)].sort(),
+    );
+    for (const entry of invalid) {
+      expect(entry).toMatchObject({
+        supporter: 'mem:gd',
+        anchors: [{ ref: 'sym:repo-anchor', placements: ['repo:repoa'] }],
+      });
+    }
+  });
+
+  it('(b) g1: an anchor no non-citation assertion places is UNKNOWN, and unknown is admissible', () => {
+    const cite = assertion({
+      predicate: 'supported-by',
+      subject: 'mem:g1',
+      object: 'artifact:tooling',
+      supportedBy: ['mem:g1'],
+    });
+    const about = assertion({
+      predicate: 'about',
+      subject: 'mem:g1',
+      object: 'topic:tooling',
+      supportedBy: ['mem:g1'],
+    });
+    const p = projectGraph(
+      { assertions: [cite, about], records: [{ id: 'mem:g1' }] },
+      { principalId: P1, scope: GLOBAL },
+    );
+
+    expect(p.diagnostics.unsupported).toEqual([]);
+    expect(p.diagnostics.placementInvalidSupporters).toEqual([]);
+    expect(p.current.map((a) => a.id)).toEqual([cite.id, about.id].sort());
+  });
+
+  it('(c) a repo record citing a symbol placed in its OWN repo is unchanged', () => {
+    const cite = assertion({
+      predicate: 'supported-by',
+      subject: 'mem:rd',
+      object: 'sym:repoa#fn',
+      scope: REPO_A,
+      supportedBy: ['mem:rd'],
+    });
+    const about = assertion({
+      predicate: 'about',
+      subject: 'mem:rd',
+      object: 'topic:rd-topic',
+      scope: REPO_A,
+      supportedBy: ['mem:rd'],
+    });
+    const placement = assertion({
+      predicate: 'part-of',
+      subject: 'sym:repoa#fn',
+      object: 'entity:repoa/Svc',
+      scope: REPO_A,
+      supportedBy: ['mem:rd'],
+    });
+    const p = projectGraph(
+      { assertions: [cite, about, placement], records: [{ id: 'mem:rd' }] },
+      { principalId: P1, scope: REPO_A },
+    );
+
+    expect(p.diagnostics.unsupported).toEqual([]);
+    expect(p.diagnostics.placementInvalidSupporters).toEqual([]);
+    expect(p.current).toHaveLength(3);
+  });
+
+  it('(d) SHARED-ANCHOR: a global and a repo record citing the same unknown anchor both survive', () => {
+    const gcite = assertion({
+      predicate: 'supported-by',
+      subject: 'mem:sg',
+      object: 'artifact:shared',
+      supportedBy: ['mem:sg'],
+    });
+    const gabout = assertion({
+      predicate: 'about',
+      subject: 'mem:sg',
+      object: 'topic:sg',
+      supportedBy: ['mem:sg'],
+    });
+    const rcite = assertion({
+      predicate: 'supported-by',
+      subject: 'mem:sr',
+      object: 'artifact:shared',
+      scope: REPO_A,
+      supportedBy: ['mem:sr'],
+    });
+    const rabout = assertion({
+      predicate: 'about',
+      subject: 'mem:sr',
+      object: 'topic:sr',
+      scope: REPO_A,
+      supportedBy: ['mem:sr'],
+    });
+    const records = [{ id: 'mem:sg' }, { id: 'mem:sr' }];
+
+    const globalView = projectGraph(
+      { assertions: [gcite, gabout, rcite, rabout], records },
+      { principalId: P1, scope: GLOBAL },
+    );
+    const repoView = projectGraph(
+      { assertions: [gcite, gabout, rcite, rabout], records },
+      { principalId: P1, scope: REPO_A },
+    );
+
+    // Citation edges place nothing: the shared anchor stays unknown, and unknown is admissible
+    // at BOTH scopes — neither record's evidence is contaminated by the other's claim.
+    expect(globalView.current.map((a) => a.id)).toEqual([gcite.id, gabout.id].sort());
+    expect(repoView.diagnostics.unsupported).toEqual([]);
+    expect(repoView.current).toHaveLength(4);
+  });
+
+  it('(e) a repo record whose anchor is placed only in ANOTHER repo is unsupported there', () => {
+    const cite = assertion({
+      predicate: 'supported-by',
+      subject: 'mem:ra',
+      object: 'sym:rb-anchor',
+      scope: REPO_A,
+      supportedBy: ['mem:ra'],
+    });
+    const about = assertion({
+      predicate: 'about',
+      subject: 'mem:ra',
+      object: 'topic:ra',
+      scope: REPO_A,
+      supportedBy: ['mem:ra'],
+    });
+    // Invisible to the REPO_A viewer, but it still places the anchor — the classification is a
+    // property of the universe, not of the view.
+    const placement = assertion({
+      predicate: 'part-of',
+      subject: 'sym:rb-anchor',
+      object: 'entity:rb/X',
+      scope: REPO_B,
+    });
+    const p = projectGraph(
+      { assertions: [cite, about, placement], records: [{ id: 'mem:ra' }] },
+      { principalId: P1, scope: REPO_A },
+    );
+
+    expect(p.current).toEqual([]);
+    expect(p.timeline).toEqual([]);
+    expect(p.diagnostics.unsupported).toEqual([
+      { id: cite.id, missingSupporters: ['mem:ra'] },
+      { id: about.id, missingSupporters: ['mem:ra'] },
+    ]);
+    expect(p.diagnostics.placementInvalidSupporters.map((e) => e.supporter)).toEqual([
+      'mem:ra',
+      'mem:ra',
+    ]);
+  });
+
+  it('(f) strict ∀: ONE inadmissible anchor stops the supporter counting, and the diagnostics name every anchor’s placements', () => {
+    const citeGood = assertion({
+      predicate: 'supported-by',
+      subject: 'mem:multi',
+      object: 'artifact:good',
+      supportedBy: [SUPPORTER],
+    });
+    const citeBad = assertion({
+      predicate: 'supported-by',
+      subject: 'mem:multi',
+      object: 'artifact:bad',
+      supportedBy: [SUPPORTER],
+    });
+    const placeGood = assertion({
+      predicate: 'about',
+      subject: 'topic:gx',
+      object: 'artifact:good',
+    });
+    const placeBad = assertion({
+      predicate: 'about',
+      subject: 'topic:bx',
+      object: 'artifact:bad',
+      scope: REPO_B,
+    });
+    const mixed = assertion({
+      predicate: 'about',
+      subject: 'mem:multi',
+      object: 'topic:m',
+      scope: REPO_A,
+      supportedBy: ['mem:multi', SUPPORTER],
+    });
+    const p = projectGraph(
+      {
+        assertions: [citeGood, citeBad, placeGood, placeBad, mixed],
+        records: [{ id: 'mem:multi' }, ...RECORDS],
+      },
+      { principalId: P1, scope: REPO_A },
+    );
+
+    // mem:multi's evidence points at a global-placed anchor (fine) AND a foreign-repo-placed
+    // anchor (not fine at repo:repoa) — evidence that points partly outside the claimed scope is
+    // not evidence inside it, so mem:multi does not count. The assertion still survives on its
+    // OTHER supporter.
+    expect(p.diagnostics.unsupported).toEqual([]);
+    expect(p.current.map((a) => a.id)).toContain(mixed.id);
+    expect(p.diagnostics.placementInvalidSupporters).toEqual([
+      {
+        assertionId: mixed.id,
+        supporter: 'mem:multi',
+        anchors: [
+          { ref: 'artifact:good', placements: ['global'] },
+          { ref: 'artifact:bad', placements: ['repo:repob'] },
+        ],
+      },
+    ]);
+  });
+});
+
 // ─── exit surface: paths, counts, exports (exit criterion) ─────────────────────
 
 describe('WP-G2 projection — traversal, counts, and export', () => {
@@ -589,5 +850,88 @@ describe('WP-G2 projection — traversal, counts, and export', () => {
     const p2 = projectGraph(input, { principalId: P1, scope: GLOBAL });
     expect(p2).toEqual(p1);
     expect(JSON.parse(JSON.stringify(input))).toEqual(snapshot);
+  });
+});
+
+describe('WP-G5 projection — supersession is history, and conflicts are real disagreements', () => {
+  it('keeps an assertion supported only by a superseded record in history, never current', () => {
+    const edge = assertion({ predicate: 'about', subject: 'mem:old', object: 'topic:t' });
+    const p = projectGraph(
+      { assertions: [edge], records: [], historicalRecords: [{ id: SUPPORTER }] },
+      { principalId: P1, scope: GLOBAL },
+    );
+    expect(p.current).toEqual([]);
+    expect(p.timeline.map((a) => a.id)).toEqual([edge.id]);
+    expect(p.historical.map((a) => a.id)).toEqual([edge.id]);
+    expect(p.historicalRefs).toEqual([SUPPORTER]);
+    expect(p.diagnostics.unsupported).toEqual([]);
+  });
+
+  it('an active supporter keeps the assertion current even when another supporter is superseded', () => {
+    const edge = assertion({
+      predicate: 'about',
+      subject: 'mem:a',
+      object: 'topic:t',
+      supportedBy: [SUPPORTER, 'mem:retired'],
+    });
+    const p = projectGraph(
+      { assertions: [edge], records: RECORDS, historicalRecords: [{ id: 'mem:retired' }] },
+      { principalId: P1, scope: GLOBAL },
+    );
+    expect(p.current.map((a) => a.id)).toEqual([edge.id]);
+    expect(p.historical).toEqual([]);
+  });
+
+  it('never knows an edge before both of its record endpoints were recorded', () => {
+    const early = assertion({
+      predicate: 'contradicts',
+      subject: 'mem:a',
+      object: 'mem:b',
+      knownAt: T0,
+      validAt: T0,
+    });
+    const input = {
+      assertions: [early],
+      records: [{ id: SUPPORTER }, { id: 'mem:a', knownAt: T0 }, { id: 'mem:b', knownAt: T2 }],
+    };
+    const viewer = { principalId: P1, scope: GLOBAL };
+    expect(projectGraph(input, viewer, { knownBy: T1 }).current).toEqual([]);
+    expect(projectGraph(input, viewer, { knownBy: T1 }).historical).toEqual([]);
+    expect(projectGraph(input, viewer, { knownBy: T3 }).current.map((a) => a.id)).toEqual([
+      early.id,
+    ]);
+  });
+
+  it('does not call several objects of a multi-valued predicate a conflict', () => {
+    const p = projectGraph(
+      {
+        assertions: [
+          assertion({ predicate: 'supported-by', subject: 'mem:a', object: 'artifact:x' }),
+          assertion({ predicate: 'supported-by', subject: 'mem:a', object: 'artifact:y' }),
+          assertion({ predicate: 'affects', subject: 'topic:t', object: 'sym:f' }),
+          assertion({ predicate: 'affects', subject: 'topic:t', object: 'sym:g' }),
+        ],
+        records: RECORDS,
+      },
+      { principalId: P1, scope: GLOBAL },
+    );
+    expect(p.conflicts).toEqual([]);
+  });
+
+  it('groups an explicit contradiction in both directions as one disagreement', () => {
+    const ab = assertion({ predicate: 'contradicts', subject: 'mem:b', object: 'mem:a' });
+    const ba = assertion({ predicate: 'contradicts', subject: 'mem:a', object: 'mem:b' });
+    const p = projectGraph(
+      { assertions: [ab, ba], records: RECORDS },
+      { principalId: P1, scope: GLOBAL },
+    );
+    expect(p.conflicts).toEqual([
+      {
+        subject: 'mem:a',
+        predicate: 'contradicts',
+        objects: ['mem:a', 'mem:b'],
+        assertionIds: [ab.id, ba.id].sort(),
+      },
+    ]);
   });
 });

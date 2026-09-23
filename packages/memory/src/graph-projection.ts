@@ -76,12 +76,29 @@ export interface GraphProjectionInput {
   assertions: readonly GraphAssertion[];
   /** Alias resolution decisions, folded in (ts, id) order. */
   decisions?: readonly GraphResolutionDecision[];
-  /** Records the caller gathered — supporters naming a present record id resolve. */
-  records?: readonly { id: string }[];
+  /**
+   * Records the caller gathered — supporters naming a present record id resolve. `knownAt` is when
+   * the record itself was recorded: an assertion cannot be known before BOTH of its record
+   * endpoints are, so a `knownBy` read excludes an edge toward a record not yet recorded.
+   */
+  records?: readonly GraphRecordRef[];
+  /**
+   * Retained records that are no longer current (superseded as of the read point). An assertion
+   * supported ONLY by these stays in the supported `timeline` as history and never enters
+   * `current` — supersession changes what IS true, not what WAS. Retracted, quarantined, or
+   * purged records must never be passed here: they support nothing, not even history.
+   */
+  historicalRecords?: readonly GraphRecordRef[];
   /** Entities the caller gathered — supporters naming a present entity ref or id resolve. */
   entities?: readonly GraphEntity[];
   /** Refs the caller knows are addressable but which live outside the memory store (receipts). */
   knownRefs?: readonly string[];
+}
+
+/** A gathered record as the projection needs it: its id, and when it was recorded if known. */
+export interface GraphRecordRef {
+  id: string;
+  knownAt?: string;
 }
 
 /** The time window: `at` bounds valid time, `knownBy` bounds transaction time (and the alias fold). */
@@ -122,15 +139,44 @@ export interface GraphAliasView {
   canonical: Record<string, string>;
 }
 
+/** One evidence anchor of a supporter, with the scopes the universe places it in. */
+export interface GraphAnchorPlacement {
+  /** The anchor ref the supporter cites as evidence. */
+  ref: string;
+  /**
+   * Scope keys ('global' or `repo:<id>`) of the NON-citation assertions this anchor is an endpoint
+   * of, sorted. Empty means the anchor is placed nowhere the universe can name — unknown.
+   */
+  placements: string[];
+}
+
+/**
+ * A resolvable-or-historical supporter whose evidence anchors do not all live at the assertion's
+ * scope (S1 evidence-placement containment): the supporter still resolves, but its citations
+ * point outside the scope the relationship claims, so it does not count toward the assertion.
+ */
+export interface GraphPlacementInvalidSupporter {
+  assertionId: string;
+  supporter: string;
+  /** The supporter's evidence anchors and where the universe places each one. */
+  anchors: GraphAnchorPlacement[];
+}
+
 export interface GraphProjectionDiagnostics {
   /** Always zero to avoid disclosing the presence of foreign assertions through diagnostics. */
   excludedForeign: number;
-  /** Assertions no supporter of which resolves in the gathered universe. */
+  /** Assertions no supporter of which counts — none resolves, or none is placement-admissible. */
   unsupported: GraphUnsupportedAssertion[];
   /** Resolution decisions the fold refused (cycle / unmatched reverse). */
   rejectedDecisions: GraphRejectedDecision[];
   /** Decisions recorded after the `knownBy` bound — not applied to this (historical) view. */
   deferredDecisions: number;
+  /**
+   * Supporters that resolve (or survive as history) but whose evidence anchors are placed only
+   * outside the assertion's scope, sorted by (assertionId, supporter). Unresolvable supporters
+   * stay in `unsupported` only — this list is the placement lens, not a resolution repeat.
+   */
+  placementInvalidSupporters: GraphPlacementInvalidSupporter[];
 }
 
 export interface GraphProjectionCounts extends Record<MemoryGraphPredicate, number> {
@@ -145,6 +191,14 @@ export interface GraphProjection {
   current: GraphAssertion[];
   /** The full supported history of the visible slice, ordered by (validAt instant, id). */
   timeline: GraphAssertion[];
+  /** Record ids that are no longer current (superseded) but still support history, sorted. */
+  historicalRefs: string[];
+  /**
+   * Supported assertions KNOWN at the read point that are not current: supported only by
+   * historical records, or valid only after `at`. Ordered like `timeline`. Nothing recorded after
+   * `knownBy` (or pointing at a record recorded after it) is ever here — history is what was known.
+   */
+  historical: GraphAssertion[];
   aliases: GraphAliasView;
   conflicts: GraphConflictGroup[];
   counts: GraphProjectionCounts;
@@ -158,6 +212,11 @@ function visibleScope(scope: MemoryScope, viewer: GraphViewer): boolean {
   if (viewer.scope.boundary === 'global') return scope.boundary === 'global';
   if (scope.boundary === 'global') return true;
   return scope.repoId === viewer.scope.repoId;
+}
+
+/** The scope key a placement is recorded under: 'global' or `repo:<repoId>`. */
+function scopeKeyOf(scope: MemoryScope): string {
+  return scope.boundary === 'global' ? 'global' : `repo:${scope.repoId}`;
 }
 
 function visibleTo(assertion: GraphAssertion, viewer: GraphViewer): boolean {
@@ -328,20 +387,91 @@ export function projectGraph(
     resolvable.add(entity.id);
   }
 
+  const historicalSupport = new Set<string>();
+  for (const record of input.historicalRecords ?? []) {
+    if (!resolvable.has(record.id)) historicalSupport.add(record.id);
+  }
+
+  // S1 — evidence-placement containment, measured on the PRE-visibility input: placement is a
+  // property of the gathered universe, not of what this viewer happens to see. A supporter's
+  // evidence anchors are the objects of its derived `supported-by` citations; an anchor is
+  // PLACED at the scope of every non-citation assertion it is an endpoint of (citations never
+  // place content — they only carry it). A supporter counts toward an assertion only when every
+  // anchor is admissible at that assertion's scope: an anchor placed nowhere the universe can
+  // name is unknown and admissible; so are the assertion's own scope and the global scope.
+  // Strict ∀: ONE inadmissible anchor makes the whole supporter not count — evidence that points
+  // partly outside the claimed scope is not evidence inside it.
+  const anchorPlacements = new Map<string, Set<string>>();
+  const citeAnchors = new Map<string, string[]>();
+  for (const a of input.assertions) {
+    if (a.predicate === 'supported-by') {
+      const anchors = citeAnchors.get(a.subject);
+      if (anchors === undefined) citeAnchors.set(a.subject, [a.object]);
+      else anchors.push(a.object);
+      continue;
+    }
+    for (const endpoint of [a.subject, a.object]) {
+      let places = anchorPlacements.get(endpoint);
+      if (places === undefined) {
+        places = new Set<string>();
+        anchorPlacements.set(endpoint, places);
+      }
+      places.add(scopeKeyOf(a.scope));
+    }
+  }
+  const admissibleAt = (supporter: string, key: string): boolean => {
+    const anchors = citeAnchors.get(supporter);
+    if (anchors === undefined) return true; // no derived citations — nothing to contain
+    for (const anchor of anchors) {
+      const places = anchorPlacements.get(anchor);
+      if (places === undefined || places.size === 0) continue; // unknown placement is admissible
+      if (places.has(key) || places.has('global')) continue;
+      return false;
+    }
+    return true;
+  };
+
   const unsupported: GraphUnsupportedAssertion[] = [];
   const supported: GraphAssertion[] = [];
+  const historicalOnly = new Set<string>();
+  const placementInvalidSupporters: GraphPlacementInvalidSupporter[] = [];
 
   for (const assertion of input.assertions) {
     if (!visibleTo(assertion, viewer)) {
       continue;
     }
-    const missing = assertion.supportedBy.filter((ref) => !resolvable.has(ref));
+    const key = scopeKeyOf(assertion.scope);
+    // A supporter is missing when it does not resolve OR its evidence is not placement-admissible
+    // at this assertion's scope — the S1 extension of the WP-G2 missing-supporter predicate.
+    const missing = assertion.supportedBy.filter(
+      (ref) => (!resolvable.has(ref) && !historicalSupport.has(ref)) || !admissibleAt(ref, key),
+    );
+    // The owner sees WHY a placement-invalid supporter did not count — on assertions another
+    // supporter carried AND on assertions that went unsupported for exactly this reason.
+    for (const ref of assertion.supportedBy) {
+      if ((resolvable.has(ref) || historicalSupport.has(ref)) && !admissibleAt(ref, key)) {
+        placementInvalidSupporters.push({
+          assertionId: assertion.id,
+          supporter: ref,
+          anchors: (citeAnchors.get(ref) ?? []).map((anchor) => ({
+            ref: anchor,
+            placements: [...(anchorPlacements.get(anchor) ?? [])].sort(),
+          })),
+        });
+      }
+    }
     if (missing.length === assertion.supportedBy.length) {
       unsupported.push({ id: assertion.id, missingSupporters: missing });
       continue; // excluded from every trusted surface; the owner still sees it in diagnostics
     }
+    if (!assertion.supportedBy.some((ref) => resolvable.has(ref) && admissibleAt(ref, key))) {
+      historicalOnly.add(assertion.id);
+    }
     supported.push(assertion);
   }
+  placementInvalidSupporters.sort(
+    (x, y) => x.assertionId.localeCompare(y.assertionId) || x.supporter.localeCompare(y.supporter),
+  );
 
   const {
     view: aliases,
@@ -349,35 +479,74 @@ export function projectGraph(
     deferred: deferredDecisions,
   } = foldAliases(input.decisions, viewer, opts.knownBy);
 
-  const inWindow = (a: GraphAssertion): boolean =>
-    (opts.at === undefined || compareGraphInstants(a.validAt, opts.at) <= 0) &&
-    (opts.knownBy === undefined || compareGraphInstants(a.knownAt, opts.knownBy) <= 0);
+  const recordKnownAt = new Map<string, string>();
+  for (const record of [...(input.records ?? []), ...(input.historicalRecords ?? [])]) {
+    if (record.knownAt !== undefined) recordKnownAt.set(record.id, record.knownAt);
+  }
+  const endpointKnown = (ref: string, knownBy: string): boolean => {
+    const at = recordKnownAt.get(ref);
+    return at === undefined || compareGraphInstants(at, knownBy) <= 0;
+  };
+  const validOk = (a: GraphAssertion): boolean =>
+    opts.at === undefined || compareGraphInstants(a.validAt, opts.at) <= 0;
+  const knownOk = (a: GraphAssertion): boolean =>
+    opts.knownBy === undefined ||
+    (compareGraphInstants(a.knownAt, opts.knownBy) <= 0 &&
+      endpointKnown(a.subject, opts.knownBy) &&
+      endpointKnown(a.object, opts.knownBy));
+  const inWindow = (a: GraphAssertion): boolean => validOk(a) && knownOk(a);
 
   const timeline = [...supported].sort(byInstantThenId);
-  const current = supported.filter(inWindow).sort((a, b) => (a.id < b.id ? -1 : 1));
+  const historical = timeline.filter(
+    (a) => knownOk(a) && (historicalOnly.has(a.id) || !validOk(a)),
+  );
+  const current = supported
+    .filter((a) => inWindow(a) && !historicalOnly.has(a.id))
+    .sort((a, b) => (a.id < b.id ? -1 : 1));
 
-  // Conflicts: same canonical subject + predicate, distinct canonical objects — grouped, NEVER
-  // resolved. Every member of the group stays in `current` and stays traversable.
+  // Conflicts, grouped and NEVER resolved — every member stays in `current` and traversable:
+  //  - a FUNCTIONAL predicate (a record is about one subject; a symbol is part of one entity) with
+  //    distinct canonical objects for one canonical subject is a disagreement;
+  //  - an explicit `contradicts` assertion is a disagreement between its two endpoints, grouped
+  //    with every `contradicts` assertion between the same pair in either direction.
+  // Multi-valued predicates (supported-by, applies-to, affects, derived-from, supersedes) naming
+  // several objects are simply several facts, not a disagreement.
   const canonicalOf = (ref: string): string => aliases.canonical[ref] ?? ref;
-  const groups = new Map<string, { objects: Set<string>; ids: string[] }>();
-  for (const a of current) {
-    const key = `${canonicalOf(a.subject)} ${a.predicate}`;
+  const groups = new Map<
+    string,
+    { subject: string; predicate: string; objects: Set<string>; ids: string[] }
+  >();
+  const addToGroup = (
+    key: string,
+    subject: string,
+    predicate: string,
+    objects: string[],
+    id: string,
+  ) => {
     let group = groups.get(key);
     if (!group) {
-      group = { objects: new Set<string>(), ids: [] };
+      group = { subject, predicate, objects: new Set<string>(), ids: [] };
       groups.set(key, group);
     }
-    group.objects.add(canonicalOf(a.object));
-    group.ids.push(a.id);
+    for (const object of objects) group.objects.add(object);
+    group.ids.push(id);
+  };
+  for (const a of current) {
+    const subject = canonicalOf(a.subject);
+    const object = canonicalOf(a.object);
+    if (GRAPH_FUNCTIONAL_PREDICATES.has(a.predicate)) {
+      addToGroup(`${subject} ${a.predicate}`, subject, a.predicate, [object], a.id);
+    } else if (a.predicate === 'contradicts' && subject !== object) {
+      const [low, high] = subject < object ? [subject, object] : [object, subject];
+      addToGroup(`${low} ${high} contradicts`, low, 'contradicts', [low, high], a.id);
+    }
   }
   const conflicts: GraphConflictGroup[] = [];
-  for (const [key, group] of groups) {
+  for (const group of groups.values()) {
     if (group.objects.size < 2) continue; // one object is a fact, not a disagreement
-    const subject = key.slice(0, key.indexOf(' '));
-    const predicate = key.slice(key.indexOf(' ') + 1);
     conflicts.push({
-      subject,
-      predicate,
+      subject: group.subject,
+      predicate: group.predicate,
       objects: [...group.objects].sort(),
       assertionIds: group.ids.sort(),
     });
@@ -400,10 +569,18 @@ export function projectGraph(
     ...(opts.knownBy !== undefined ? { knownBy: opts.knownBy } : {}),
     current,
     timeline,
+    historicalRefs: [...historicalSupport].sort(),
+    historical,
     aliases,
     conflicts,
     counts,
-    diagnostics: { excludedForeign: 0, unsupported, rejectedDecisions, deferredDecisions },
+    diagnostics: {
+      excludedForeign: 0,
+      unsupported,
+      rejectedDecisions,
+      deferredDecisions,
+      placementInvalidSupporters,
+    },
   };
 }
 
@@ -431,6 +608,9 @@ export function graphNeighbors(
   );
   return edges.sort((a, b) => (a.id < b.id ? -1 : 1));
 }
+
+/** Predicates with at most one object per subject — distinct objects are a disagreement. */
+export const GRAPH_FUNCTIONAL_PREDICATES: ReadonlySet<string> = new Set(['about', 'part-of']);
 
 /** The default hop bound — the plan's traversal law (two-hop default, max 4). */
 export const GRAPH_PATH_MAX_HOPS = 4;

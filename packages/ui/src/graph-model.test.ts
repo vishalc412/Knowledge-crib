@@ -19,6 +19,19 @@ type Model = {
     byId: Record<string, NodeLike>,
     indexes: Indexes,
   ) => SearchProjection;
+  hex: (color: string, alpha: number) => string;
+  esc: (value: unknown) => string;
+  ellipsize: (ctx: MeasureCtx, text: unknown, maxWidth: number) => string;
+  rr: (ctx: PathCtx, x: number, y: number, w: number, h: number, r: number) => void;
+};
+/** The slice of a canvas 2D context `ellipsize` needs: text metrics and nothing else. */
+type MeasureCtx = { measureText: (text: string) => { width: number } };
+/** The slice `rr` needs: path commands and nothing else. */
+type PathCtx = {
+  beginPath: () => void;
+  moveTo: (x: number, y: number) => void;
+  arcTo: (x1: number, y1: number, x2: number, y2: number, r: number) => void;
+  closePath: () => void;
 };
 type NodeLike = {
   id: string;
@@ -174,5 +187,157 @@ describe('search projection', () => {
     expect(projection.totalMatches).toBe(0);
     expect(projection.matchIds).toEqual([]);
     expect(projection.contextIds).toEqual([]);
+  });
+});
+
+/**
+ * WP3-H4 — the pure rendering helpers used to live as methods on the x-dc component in
+ * `index.html`, where the only thing able to assert them was a string match. They read no
+ * component state, so they are tested here as ordinary functions of their arguments.
+ */
+
+/** A context whose text is a fixed width per character, making a width budget a character budget. */
+function measureCtx(charWidth = 10): MeasureCtx {
+  return { measureText: (text: string) => ({ width: text.length * charWidth }) };
+}
+
+describe('render helper: hex', () => {
+  it('expands a #rrggbb colour and an alpha into rgba()', () => {
+    const m = loadModel();
+    expect(m.hex('#5b8cff', 0.5)).toBe('rgba(91,140,255,0.5)');
+    expect(m.hex('#000000', 0.25)).toBe('rgba(0,0,0,0.25)');
+    expect(m.hex('#ffffff', 1)).toBe('rgba(255,255,255,1)');
+  });
+
+  it('passes a non-hex colour through untouched rather than guessing at it', () => {
+    const m = loadModel();
+    // Theme tokens and already-composed colours reach hex() too; mangling those would be worse
+    // than returning them unchanged, so the guard is part of the contract, not an accident.
+    expect(m.hex('rgba(1,2,3,0.4)', 0.5)).toBe('rgba(1,2,3,0.4)');
+    expect(m.hex('transparent', 0.5)).toBe('transparent');
+    expect(m.hex('', 0.5)).toBe('');
+  });
+
+  it('interpolates alpha verbatim, including zero', () => {
+    const m = loadModel();
+    // Alpha 0 is a real request (an invisible edge) and must not be read as "no alpha supplied" —
+    // there is deliberately no default-parameter fallback.
+    expect(m.hex('#7c8aa5', 0)).toBe('rgba(124,138,165,0)');
+    expect(m.hex('#7c8aa5', 0.08)).toBe('rgba(124,138,165,0.08)');
+  });
+});
+
+describe('render helper: esc', () => {
+  it('escapes the characters that would break an innerHTML tooltip', () => {
+    const m = loadModel();
+    expect(m.esc('<T>')).toBe('&lt;T&gt;');
+    expect(m.esc('a & b')).toBe('a &amp; b');
+    expect(m.esc('say "hi"')).toBe('say &quot;hi&quot;');
+  });
+
+  it('escapes the ampersand first, so an existing entity is not double-decoded', () => {
+    const m = loadModel();
+    // `&` must be replaced before `<` / `>`: otherwise `&lt;` becomes `&amp;lt;`, which renders as
+    // the literal text "&lt;" on screen.
+    expect(m.esc('&lt;')).toBe('&amp;lt;');
+  });
+
+  it('renders null and undefined as empty, and numbers as text', () => {
+    const m = loadModel();
+    // null must never reach the tooltip as the four-character text "null".
+    expect(m.esc(null)).toBe('');
+    expect(m.esc(undefined)).toBe('');
+    expect(m.esc(0)).toBe('0');
+  });
+});
+
+describe('render helper: ellipsize', () => {
+  it('returns the string unchanged when it already fits', () => {
+    const m = loadModel();
+    expect(m.ellipsize(measureCtx(), 'short', 100)).toBe('short');
+    expect(m.ellipsize(measureCtx(), 'exactly-ten', 110)).toBe('exactly-ten');
+  });
+
+  it('returns the longest fitting prefix and appends one ellipsis', () => {
+    const m = loadModel();
+    // 10px per character and the ellipsis is one character: a 50px budget buys 4 + the ellipsis.
+    expect(m.ellipsize(measureCtx(), 'abcdefghijklmno', 50)).toBe('abcd…');
+  });
+
+  it('never exceeds the budget, and is maximal for it', () => {
+    const m = loadModel();
+    const text = 'the quick brown fox jumps over the lazy dog';
+    const ctx = measureCtx(7);
+    // From one ellipsis-width upward: below that, even the bare ellipsis cannot fit and the
+    // contract explicitly allows the result to overshoot.
+    for (let budget = 7; budget <= 308; budget += 7) {
+      const out = m.ellipsize(ctx, text, budget);
+      expect(ctx.measureText(out).width).toBeLessThanOrEqual(budget);
+      if (out.endsWith('…')) {
+        const fitted = out.length - 1;
+        if (fitted + 1 < text.length) {
+          // One more character would NOT have fit — otherwise the search stopped early and the
+          // label is shorter than the room it was given.
+          expect(ctx.measureText(`${text.slice(0, fitted + 1)}…`).width).toBeGreaterThan(budget);
+        }
+      }
+    }
+  });
+
+  it('coerces missing or non-string text instead of throwing', () => {
+    const m = loadModel();
+    expect(m.ellipsize(measureCtx(), null, 100)).toBe('');
+    expect(m.ellipsize(measureCtx(), undefined, 100)).toBe('');
+    expect(m.ellipsize(measureCtx(), 12345, 100)).toBe('12345');
+  });
+});
+
+describe('render helper: rr', () => {
+  it('emits one beginPath, a moveTo, four corner arcTo calls and a closePath', () => {
+    const m = loadModel();
+    const calls: unknown[][] = [];
+    const ctx: PathCtx = {
+      beginPath: () => calls.push(['beginPath']),
+      moveTo: (x, y) => calls.push(['moveTo', x, y]),
+      arcTo: (x1, y1, x2, y2, r) => calls.push(['arcTo', x1, y1, x2, y2, r]),
+      closePath: () => calls.push(['closePath']),
+    };
+    m.rr(ctx, 10, 20, 100, 60, 5);
+    // A rectangle is w wide and h tall from (x,y); each corner arcs on a radius r.
+    expect(calls).toEqual([
+      ['beginPath'],
+      ['moveTo', 15, 20],
+      ['arcTo', 110, 20, 110, 80, 5],
+      ['arcTo', 110, 80, 10, 80, 5],
+      ['arcTo', 10, 80, 10, 20, 5],
+      ['arcTo', 10, 20, 110, 20, 5],
+      ['closePath'],
+    ]);
+  });
+
+  it('builds the subpath only — it never fills or strokes', () => {
+    const m = loadModel();
+    const seen: string[] = [];
+    const rec = (name: string) => () => {
+      seen.push(name);
+    };
+    m.rr(
+      {
+        beginPath: rec('beginPath'),
+        moveTo: rec('moveTo'),
+        arcTo: rec('arcTo'),
+        closePath: rec('closePath'),
+      },
+      0,
+      0,
+      10,
+      10,
+      2,
+    );
+    // The caller decides fill vs stroke — the same subpath is used both ways on the canvas — so a
+    // fill or stroke in here would change the rendering of every call site at once.
+    expect(seen).not.toContain('fill');
+    expect(seen).not.toContain('stroke');
+    expect(seen.filter((n) => n === 'arcTo')).toHaveLength(4);
   });
 });

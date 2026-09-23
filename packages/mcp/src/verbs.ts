@@ -40,6 +40,9 @@ import {
   EXACT_MATCH_BONUS,
   type EffectiveVerdicts,
   type FusionStrategy,
+  GRAPH_DEFAULT_SEED_LIMIT,
+  GRAPH_SEED_SCORER_VERSION,
+  type GraphProjection,
   type IntelligenceEventJournal,
   MemoryApi,
   type MemoryCandidate,
@@ -78,10 +81,13 @@ import {
   contradictedForReview,
   effectiveVerdicts,
   expandFromSeeds,
+  fuseGraphSeeds,
   gatherRecall,
+  graphRelationsAmong,
   isFeedbackSignal,
   isMemoryRecordVersioned,
   isRecallEligible,
+  itemEligibleNodes,
   memoryComposite,
   openMemoryFts,
   openMemoryVectors,
@@ -91,6 +97,10 @@ import {
   readSyncConfig,
   recallProjection,
   resolveServerIdentity,
+  resolveStrictPrincipal,
+  seedEligibleNodes,
+  selectGraphSeeds,
+  selectSemanticGraphSeeds,
   soulTargetResolver,
   stageSyncableWrite,
 } from '@knowledge-crib/memory';
@@ -110,6 +120,21 @@ import {
   llmPointer,
   llmProjection,
 } from './enrichment.js';
+import {
+  type MemoryGraphOp,
+  type MemoryGraphPage,
+  authorizeExplicitSeeds,
+  decodeGraphCursor,
+  encodeGraphCursor,
+  fitGraphContext,
+  graphQueryDigest,
+  graphViewGeneration,
+  memoryGraphHistoryResult,
+  memoryGraphPathResult,
+  memoryGraphRequestError,
+  recallSeeds,
+  timeBoundRecallSeeds,
+} from './memory-graph.js';
 import type { ReaderFreshness } from './reader-freshness.js';
 import {
   DEFAULT_BODY_MAX_CHARS,
@@ -503,6 +528,7 @@ const PUBLIC_VERBS = new Set<string>([
   'memoryFeedback',
   // Gate 1.3 — the portable MemoryApi op set wired through the memory dispatcher.
   'memorySearch',
+  'memoryGraphPropose',
   'memoryConnectedGraph',
   'memorySupersede',
   'memoryDelete',
@@ -525,6 +551,11 @@ export class Verbs {
   private readonly aliases: AliasMap;
   /** M3.3 — runtime observability counters (per-verb count/latency + ifHash cache hit rate). */
   private readonly stats = new Stats();
+  private _graphVectorCache: Map<string, Float32Array> | undefined;
+  private readonly _graphViewCache = new Map<
+    string,
+    { projection: GraphProjection; texts: () => Map<string, string> }
+  >();
   /** W3 — the optional trusted agent-memory ledger (absent ⇒ memory verbs report "not configured"). */
   private readonly memory?: MemoryDeps;
   /** Distinguishes this MCP process from the prior process a handoff should recover. */
@@ -2957,6 +2988,12 @@ export class Verbs {
     // scorer names its configuration on the response provenance (red line #6).
     const gathered = gatherRecall(stores, {
       ...(args.sources ? { sources: args.sources } : {}),
+      // WP1 item 13: this is the search surface a user actually reaches, and the store set it is
+      // given can hold another principal's pulled records. An unstamped PRIVATE record therefore has
+      // an unknown owner and must not be returned as this caller's own. Resolved from the operator's
+      // env rather than hardcoded — `resolveStrictPrincipal` records why strict-by-default would
+      // blackhole the live write path (admission writes memory-1, which has no ownership column).
+      strictPrincipal: resolveStrictPrincipal(),
     });
     const { fts, vectors, scorer } = lexicalChannel(
       stores,
@@ -2999,70 +3036,287 @@ export class Verbs {
     }
   }
 
-  /** Connected memory retrieval over the caller-authorized temporal graph. */
+  /**
+   * WP-G5 — connected retrieval over the caller-authorized temporal graph (`memory_graph`).
+   *
+   * The projection is gathered with the server-derived principal, so every op reads only that
+   * viewer's graph. Responses name the view `generation` they were computed from; paged ops return
+   * a `nextCursor` bound to that generation, the principal, and every query parameter (see
+   * memory-graph.ts). A projection failure is never dressed as a graph answer: `search`/`context`
+   * fall back to plain recall with `unavailable: true` and no generation.
+   */
   memoryConnectedGraph(args: {
-    op?: 'search' | 'neighbors' | 'path' | 'history' | 'context';
+    op?: MemoryGraphOp;
     q?: string;
     refs?: string[];
     scope?: 'global' | 'repo';
     at?: string;
     knownBy?: string;
     hops?: number;
+    predicates?: string[];
     maxTokens?: number;
+    cursor?: string;
     ifHash?: string;
   }): Record<string, unknown> {
     const api = this.memoryApi();
     if (!api) return this.applyIfHash(args, { memory: 'not configured' });
     const op = args.op ?? 'search';
-    const graph = api.graphProjection({
-      ...(args.scope !== undefined ? { scope: args.scope } : {}),
-      ...(args.at !== undefined ? { at: args.at } : {}),
-      ...(args.knownBy !== undefined ? { knownBy: args.knownBy } : {}),
-    });
-    const explicitSeeds = (args.refs ?? []).map((ref) => ({
-      ref,
-      score: 1,
-      channel: 'explicit' as const,
-    }));
-    const recalled =
-      (op === 'search' || op === 'context') && explicitSeeds.length === 0
-        ? this.memorySearch({
-            q: args.q ?? '',
-            limit: 20,
-            maxTokens: 2_000,
-          })
-        : undefined;
-    const recalledSeeds = Array.isArray(recalled?.hits)
-      ? recalled.hits.flatMap((hit) => {
-          const view = hit as { id?: unknown; score?: unknown };
-          return typeof view.id === 'string' && typeof view.score === 'number'
-            ? [{ ref: view.id, score: view.score, channel: 'semantic' as const }]
-            : [];
-        })
-      : [];
-    const seeds = explicitSeeds.length > 0 ? explicitSeeds : recalledSeeds;
+    const invalid = memoryGraphRequestError(op, args);
+    if (invalid !== undefined) return { error: { code: 'BAD_REQUEST', message: invalid } };
+    const maxTokens = args.maxTokens === undefined ? 2_000 : capMaxTokens(args.maxTokens);
+
+    let graph: GraphProjection;
+    try {
+      graph = this.cachedGraphView(api, args).projection;
+    } catch (err) {
+      return this.applyIfHash(args, this.memoryGraphUnavailable(op, args, maxTokens, err));
+    }
+
+    const generation = graphViewGeneration(graph);
+    const digest = graphQueryDigest({ principalId: graph.viewer.principalId, op, ...args });
+    const cursor = decodeGraphCursor(args.cursor, generation, digest);
+    if (!cursor.ok) {
+      return { error: { code: cursor.code, message: cursor.message }, generation };
+    }
+    const page = { generation, digest, offset: cursor.offset, maxTokens };
+    const base = {
+      op,
+      generation,
+      unavailable: false,
+      diagnostics: graph.diagnostics,
+      ...this.memoryGraphFreshness(),
+    };
+    switch (op) {
+      case 'path':
+        return this.applyIfHash(args, { ...base, ...memoryGraphPathResult(graph, args) });
+      case 'history':
+        return this.applyIfHash(args, { ...base, ...memoryGraphHistoryResult(graph, args, page) });
+      default:
+        return this.applyIfHash(args, {
+          ...base,
+          ...this.memoryGraphExpand(api, graph, op, args, page),
+        });
+    }
+  }
+
+  /** `search` / `neighbors` / `context`: authorized seeds, bounded expansion, budget-fitted output. */
+  private memoryGraphExpand(
+    api: MemoryApi,
+    graph: GraphProjection,
+    op: MemoryGraphOp,
+    args: {
+      q?: string;
+      refs?: string[];
+      hops?: number;
+      predicates?: string[];
+      scope?: 'global' | 'repo';
+      at?: string;
+      knownBy?: string;
+    },
+    page: MemoryGraphPage,
+  ): Record<string, unknown> {
+    const explicit = authorizeExplicitSeeds(graph, args.refs ?? []);
+    const useRecall = op !== 'neighbors' && (args.refs ?? []).length === 0;
+    const recalled = useRecall
+      ? this.memorySearch({ q: args.q ?? '', limit: 20, maxTokens: page.maxTokens })
+      : undefined;
+    const embedder = this.memory?.embedder;
+    // WP2 S2/S3 — the viewer's own placement drives both eligibility laws: seeds must be placed
+    // at this scope AND content-bearing; pack items must be carried into this scope by an
+    // authorized relationship. A repo view without a repo id never happens — the projection
+    // refuses repo scope before this point — so the narrowing is total.
+    const viewerScope =
+      graph.viewer.scope.boundary === 'repo'
+        ? { boundary: 'repo' as const, repoId: graph.viewer.scope.repoId ?? '' }
+        : { boundary: 'global' as const };
+    const itemEligible = itemEligibleNodes(graph, viewerScope);
+    let seeds = explicit.seeds;
+    if (useRecall) {
+      const query = args.q ?? '';
+      const texts = this.cachedGraphView(api, args).texts();
+      const eligible = seedEligibleNodes(graph, texts, viewerScope);
+      const channels = [
+        timeBoundRecallSeeds(graph, recallSeeds(recalled)),
+        selectGraphSeeds(graph, query, texts),
+        ...(embedder
+          ? [
+              selectSemanticGraphSeeds(graph, query, texts, (batch) =>
+                this.graphVectors(embedder, batch),
+              ),
+            ]
+          : []),
+      ];
+      // The fuse choke point: every search-derived channel drops out-of-scope and content-free
+      // refs HERE, so no channel can admit an ineligible seed into the expansion.
+      seeds = fuseGraphSeeds(channels, { eligible });
+      // Round-2 S2 proposal relief: when the funnel received nothing eligible, the miss is in
+      // the channels' PROPOSAL slice, not in the law — five ineligible refs can outrank every
+      // lawful one, the eligible content never reaches the funnel, and the view then expands
+      // from nothing: a whole-repo miss for records that rank just below the cut. Re-propose
+      // each channel's top ELIGIBLE candidates — same per-channel width, same fuse, same laws —
+      // so a lawful record competes against lawful records instead of against out-of-scope
+      // decoys it was never going to be admitted over.
+      if (useRecall && seeds.length === 0 && eligible.size > 0 && query.trim() !== '') {
+        const reliefLimit = 50;
+        const relief = [
+          selectGraphSeeds(graph, query, texts, { limit: reliefLimit })
+            .filter((seed) => eligible.has(seed.ref))
+            .slice(0, GRAPH_DEFAULT_SEED_LIMIT),
+          ...(embedder
+            ? [
+                selectSemanticGraphSeeds(
+                  graph,
+                  query,
+                  texts,
+                  (batch) => this.graphVectors(embedder, batch),
+                  { limit: reliefLimit },
+                )
+                  .filter((seed) => eligible.has(seed.ref))
+                  .slice(0, GRAPH_DEFAULT_SEED_LIMIT),
+              ]
+            : []),
+        ];
+        seeds = fuseGraphSeeds(relief, { eligible });
+      }
+    }
     const expanded = expandFromSeeds(graph, seeds, {
       ...(args.hops !== undefined ? { hops: args.hops } : {}),
+      ...(args.predicates !== undefined ? { predicates: args.predicates } : {}),
+      itemEligible,
     });
-    const maxTokens = args.maxTokens === undefined ? 2_000 : capMaxTokens(args.maxTokens);
-    const fitted = fitTokenBudget(expanded.expansions, maxTokens, (prefix) =>
+    const shared = {
+      seeds,
+      ...(useRecall ? { seedScorer: GRAPH_SEED_SCORER_VERSION } : {}),
+      ...(explicit.unresolvedRefs.length > 0 ? { unresolvedRefs: explicit.unresolvedRefs } : {}),
+      degraded: [
+        ...(recalled !== undefined && recalled.memory === 'not configured'
+          ? ['recall-unavailable']
+          : []),
+        ...(useRecall && !embedder ? ['semantic-seed-channel-unavailable'] : []),
+      ],
+    };
+    if (op === 'context') {
+      // The pack's own item filter is the S3 defense-in-depth layer over the expansion filter.
+      return {
+        ...shared,
+        ...fitGraphContext(graph, expanded, page.maxTokens, { itemEligible }),
+      };
+    }
+    const remaining = expanded.expansions.slice(page.offset);
+    const fitted = fitTokenBudget(remaining, page.maxTokens, (prefix) =>
       JSON.stringify({ expansions: prefix, truncated: true, budgetExhausted: true }),
     );
-    const payload = {
-      op,
-      seeds,
+    // An item that alone overflows the budget is stepped over, so a continuation always advances.
+    const next = page.offset + Math.max(fitted.items.length, remaining.length > 0 ? 1 : 0);
+    return {
+      ...shared,
       expansions: fitted.items,
+      relations: graphRelationsAmong(graph, new Set(fitted.items.map((e) => e.ref))),
       report: {
         ...expanded.report,
         truncated: expanded.report.truncated || fitted.budgetExhausted,
       },
-      ...(op === 'history' ? { timeline: graph.timeline } : {}),
-      diagnostics: graph.diagnostics,
-      ...(recalled !== undefined ? { recall: recalled } : {}),
+      ...(next < expanded.expansions.length
+        ? { nextCursor: encodeGraphCursor(page.generation, page.digest, next) }
+        : {}),
       ...(fitted.budgetExhausted ? { budgetExhausted: true } : {}),
-      unavailable: false,
     };
-    return this.applyIfHash(args, payload);
+  }
+
+  /** The explicit unavailable shape: never a generation, never expansions, recall only as fallback. */
+  private memoryGraphUnavailable(
+    op: MemoryGraphOp,
+    args: { q?: string },
+    maxTokens: number,
+    err: unknown,
+  ): Record<string, unknown> {
+    const reason = err instanceof Error ? err.message : String(err);
+    const fallback =
+      op === 'search' || op === 'context'
+        ? { recall: this.memorySearch({ q: args.q ?? '', limit: 20, maxTokens }) }
+        : {};
+    return { op, unavailable: true, graph: { state: 'unavailable', reason }, ...fallback };
+  }
+
+  /**
+   * The authorized projection (and its node texts, built lazily) for one read, cached per
+   * server. The key is everything the view depends on: the caller principal, the placement, the
+   * read point, and EVERY store's write generation (gen + nonce). Any record, decision, intake,
+   * alias, graph, retraction or purge write advances a generation, so the next read misses and
+   * recomputes — a retracted or purged supporter can never be served from the cache, which is the
+   * plan's "immediate tombstone check" held by construction rather than by a second check. A torn
+   * generation sidecar (gen < 0) is never cached.
+   */
+  private cachedGraphView(
+    api: MemoryApi,
+    args: { scope?: 'global' | 'repo'; at?: string; knownBy?: string },
+  ): { projection: GraphProjection; texts: () => Map<string, string> } {
+    const stores = this.recallStores() ?? {};
+    const generations = (['team', 'local', 'global'] as const).map((role) => {
+      const store = stores[role];
+      return store ? store.readStoreGeneration() : { gen: 0, nonce: 'absent' };
+    });
+    const read = () =>
+      api.graphProjection({
+        ...(args.scope !== undefined ? { scope: args.scope } : {}),
+        ...(args.at !== undefined ? { at: args.at } : {}),
+        ...(args.knownBy !== undefined ? { knownBy: args.knownBy } : {}),
+      });
+    if (generations.some((g) => g.gen < 0)) {
+      const projection = read();
+      return { projection, texts: () => api.graphNodeTexts() };
+    }
+    const key = JSON.stringify([
+      process.env.KCRIB_PRINCIPAL_ID ?? DEFAULT_MIGRATION_PRINCIPAL_ID,
+      args.scope ?? null,
+      args.at ?? null,
+      args.knownBy ?? null,
+      generations,
+    ]);
+    const hit = this._graphViewCache.get(key);
+    if (hit) return hit;
+    const projection = read();
+    let texts: Map<string, string> | undefined;
+    const entry = {
+      projection,
+      texts: () => {
+        if (texts === undefined) texts = api.graphNodeTexts();
+        return texts;
+      },
+    };
+    if (this._graphViewCache.size >= 32) this._graphViewCache.clear();
+    this._graphViewCache.set(key, entry);
+    return entry;
+  }
+
+  /**
+   * Embed graph node texts through a bounded per-server cache. Node texts repeat across requests
+   * (claims and refs change rarely), so re-embedding every node on every query is the cost this
+   * avoids; the cache is keyed by embedder id + text, so a model change can never serve stale
+   * vectors, and it is cleared wholesale when it grows past its bound.
+   */
+  private graphVectors(embedder: Embedder, texts: string[]): Float32Array[] {
+    if (this._graphVectorCache === undefined) this._graphVectorCache = new Map();
+    const cache = this._graphVectorCache;
+    const key = (text: string) => `${embedder.id}\u0000${text}`;
+    const missing = [...new Set(texts.filter((t) => !cache.has(key(t))))];
+    if (missing.length > 0) {
+      if (cache.size + missing.length > 50_000) cache.clear();
+      embedder.embedBatch(missing).forEach((vector, i) => {
+        cache.set(key(missing[i] as string), vector);
+      });
+    }
+    return texts.map((t) => cache.get(key(t)) as Float32Array);
+  }
+
+  /** Reader freshness, best-effort: a failing probe is reported, never allowed to fail the read. */
+  private memoryGraphFreshness(): Record<string, unknown> {
+    if (!this.deps.readerFreshness) return {};
+    try {
+      return { freshness: this.deps.readerFreshness() };
+    } catch (err) {
+      return { freshness: { error: err instanceof Error ? err.message : String(err) } };
+    }
   }
 
   /**
@@ -3219,6 +3473,52 @@ export class Verbs {
       now: new Date().toISOString(),
     });
     return this.applyIfHash(args, { ...handoff });
+  }
+
+  /**
+   * WP-G4 — `memory{op:'graph_propose'}`: an explicit agent graph proposal. The admission law lives
+   * in {@link MemoryApi.proposeGraphAssertion}; this verb only relays the caller's relationship
+   * and its own session provenance, and reports a refusal with the checks that failed.
+   */
+  memoryGraphPropose(args: {
+    predicate: string;
+    subject: string;
+    object: string;
+    supportedBy: string[];
+    actor: string;
+    validAt?: string;
+    scopeBoundary?: 'repo' | 'global';
+    tool?: string;
+    ifHash?: string;
+  }): Record<string, unknown> {
+    const api = this.memoryApi();
+    if (!api) return this.applyIfHash(args, { memory: 'not configured' });
+    const result = api.proposeGraphAssertion({
+      predicate: args.predicate,
+      subject: args.subject,
+      object: args.object,
+      supportedBy: args.supportedBy,
+      ...(args.validAt !== undefined ? { validAt: args.validAt } : {}),
+      ...(args.scopeBoundary !== undefined ? { scope: args.scopeBoundary } : {}),
+      provenance: {
+        deviceId: process.env.KCRIB_DEVICE_ID ?? 'mcp-host',
+        actorId: args.actor,
+        clientId: 'mcp',
+        ...(args.tool ? { agentId: args.actor, tool: args.tool } : {}),
+      },
+    });
+    if (!result.ok) {
+      return this.applyIfHash(args, {
+        ok: false,
+        error: { code: 'REJECTED', message: 'graph proposal refused', problems: result.problems },
+      });
+    }
+    return this.applyIfHash(args, {
+      ok: true,
+      admitted: true,
+      id: result.id,
+      idempotent: result.idempotent,
+    });
   }
 
   memoryIntakeCreate(args: {
@@ -4106,7 +4406,12 @@ export class Verbs {
   private memoryGraph(): MemoryComposite | undefined {
     const stores = this.recallStores();
     if (!stores) return undefined;
-    const projection = recallProjection(gatherRecall(stores));
+    // WP1 item 13: the graph's memory layer is a production read of the same pool, so it resolves
+    // the same boundary — the spec's five-site list named the search/recall gathers and missed this
+    // one, which feeds `supported-by`/`applies-to` links off the identical store set.
+    const projection = recallProjection(
+      gatherRecall(stores, { strictPrincipal: resolveStrictPrincipal() }),
+    );
     const pending = (this.memory?.local?.readCollection('candidates').entries ??
       []) as unknown as MemoryCandidate[];
     const soul = this.deps.soul;
@@ -4239,7 +4544,10 @@ export class Verbs {
     const mem = this.memory;
     const stores = this.recallStores();
     if (!mem || !stores) return undefined;
-    const gathered = gatherRecall(stores, { sources: opts.sources });
+    const gathered = gatherRecall(stores, {
+      sources: opts.sources,
+      strictPrincipal: resolveStrictPrincipal(),
+    });
     // G3.1 — persistent snapshot on the all-sources path, ephemeral rebuild under a sources filter
     // (subset corpora rank differently — see {@link lexicalChannel}). G3.2 — the versioned scorer
     // carries its configuration id on the projection provenance (red line #6).
@@ -4315,7 +4623,7 @@ export class Verbs {
       stamped?: Verdicts;
     }> = [];
     if (!mem || !stores) return { entries, errors: [], fresh: false };
-    const gathered = gatherRecall(stores);
+    const gathered = gatherRecall(stores, { strictPrincipal: resolveStrictPrincipal() });
     const aliasIndex = buildAliasIndex(gathered.aliases ?? []);
     const evalFn =
       fresh && mem.evaluator && mem.evalCtx

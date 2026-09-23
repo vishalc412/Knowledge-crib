@@ -1,4 +1,8 @@
 (function installKnowledgeCribGraphModel(root) {
+  // A browser CLASSIC script (`<script src="./graph-model.js">`, no type="module"), so the file is
+  // NOT a module and the whole-file strictness the linter assumes does not apply to it: this
+  // directive is what makes the IIFE body strict in the page. Keep it.
+  // biome-ignore lint/suspicious/noRedundantUseStrict: browser classic script, not a module — see above
   'use strict';
 
   const ARCHITECTURAL_RELS = new Set([
@@ -13,7 +17,11 @@
   ]);
 
   function uniquePush(map, key, value) {
-    const list = map[key] || (map[key] = []);
+    let list = map[key];
+    if (!list) {
+      list = [];
+      map[key] = list;
+    }
     if (!list.includes(value)) list.push(value);
   }
 
@@ -43,7 +51,9 @@
       const bn = byId[b] || {};
       return (
         (bn.importance || 0) - (an.importance || 0) ||
-        String(an.qualified || an.label || a).localeCompare(String(bn.qualified || bn.label || b)) ||
+        String(an.qualified || an.label || a).localeCompare(
+          String(bn.qualified || bn.label || b),
+        ) ||
         a.localeCompare(b)
       );
     });
@@ -91,7 +101,9 @@
    * gets masked by a previously selected cluster.
    */
   function searchProjection(options, nodes, edges, byId, indexes) {
-    const query = String(options.query || '').trim().toLowerCase();
+    const query = String(options.query || '')
+      .trim()
+      .toLowerCase();
     if (!query) {
       return {
         query,
@@ -174,11 +186,78 @@
     };
   }
 
+  // --- Pure rendering helpers, extracted from the x-dc component (WP3-H4) ---------------------
+  // These four were methods on the component class inside `index.html` even though not one of them
+  // reads component state or the DOM: each is a function of its arguments alone. Sitting in the
+  // asset made them unreachable by any test — the served asset is asserted by string match, so a
+  // change to the ellipsize search or the channel extraction below could only be caught by eye.
+  // Moved here they are ordinary behaviour, covered by graph-model.test.ts.
+
+  /** `#rrggbb` plus an alpha -> `rgba(...)`. Anything that is not a `#` colour passes through. */
+  function hex(c, a) {
+    if (c[0] !== '#') return c;
+    const n = Number.parseInt(c.slice(1), 16);
+    const r = (n >> 16) & 255;
+    const g = (n >> 8) & 255;
+    const b = n & 255;
+    return `rgba(${r},${g},${b},${a})`;
+  }
+
+  /**
+   * Escape dynamic node text before splicing it into the tooltip's innerHTML. `qualified` / `label` /
+   * `summary` flow from extracted source text — signatures carry `<T>` generics and docstrings carry
+   * HTML characters, so unescaped they corrupt the tooltip DOM or inject markup. `null` renders as
+   * the empty string rather than the text "null".
+   */
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  /**
+   * Truncate `text` to `maxWidth` as measured by `ctx`, appending an ellipsis. Binary search over
+   * the prefix length rather than a linear scan: this runs once per drawn label per frame and labels
+   * can be hundreds of characters. `ctx` is any object exposing `measureText` — the canvas 2D
+   * context in the browser, a stub in the tests. The result may still exceed `maxWidth` when one
+   * character plus the ellipsis already does; callers assume labels are not narrower than that.
+   */
+  function ellipsize(ctx, text, maxWidth) {
+    const s = String(text || '');
+    if (ctx.measureText(s).width <= maxWidth) return s;
+    const ell = '…';
+    let lo = 0;
+    let hi = s.length;
+    while (lo < hi) {
+      const mid = Math.ceil((lo + hi) / 2);
+      if (ctx.measureText(s.slice(0, mid) + ell).width <= maxWidth) lo = mid;
+      else hi = mid - 1;
+    }
+    return s.slice(0, Math.max(0, lo)) + ell;
+  }
+
+  /** Rounded-rect subpath on `ctx`. Emits path commands only; the caller chooses fill or stroke. */
+  function rr(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
   root.KCGraphModel = {
     ARCHITECTURAL_RELS,
     buildIndexes,
     clusterProjection,
     edgeIndexesForNodeIds,
+    ellipsize,
+    esc,
+    hex,
+    rr,
     searchProjection,
   };
 })(typeof globalThis !== 'undefined' ? globalThis : window);

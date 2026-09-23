@@ -1,0 +1,4 @@
+{
+  "_comment": "Exceptions for scripts/license-check.mjs. Each entry needs a `name` (the package name as pnpm reports it) and a `reason` saying why the license terms were accepted despite not being on the permissive list — naming the person or review that accepted them. An entry that matches no installed package FAILS the check, so this file cannot rot into a blanket exemption. It is intentionally EMPTY: every installed dependency's expression is permissive, so nothing needs excepting, and an empty list is the only honest state for that. Add an entry only when a real dependency requires it.",
+  "entries": []
+}

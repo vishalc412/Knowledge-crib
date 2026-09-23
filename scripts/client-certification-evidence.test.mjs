@@ -85,6 +85,8 @@ const allPassLegs = (overrides = {}) => ({
     status: 'pass',
     protocol: [protocolRef('foreign', 1), protocolRef('owner', 9)],
   },
+  // Format 4: the connection recorded and superseded, then retrieved after the restart.
+  connectedMemory: { status: 'pass', protocol: [protocolRef('owner', 5), protocolRef('owner', 8)] },
   ...overrides,
 });
 
@@ -132,12 +134,12 @@ function fixtureRecordingBytes(name, side, principalSha256) {
 }
 
 /**
- * A complete version-3 receipt whose log AND archived recordings actually exist under `dir`, so
+ * A complete version-4 receipt whose log AND archived recordings actually exist under `dir`, so
  * every fixture is backed by real artifacts — two principals over one store and one candidate,
  * every passing protocol leg referencing its completed operation. A certifying receipt the loader
  * must accept, which a test can then break one fact at a time.
  */
-function v3Receipt(dir, name, overrides = {}) {
+function v4Receipt(dir, name, overrides = {}) {
   const bytes = runtimeBytes(name);
   mkdirSync(join(dir, 'logs'), { recursive: true });
   writeFileSync(join(dir, 'logs', `${name}.log`), bytes);
@@ -148,7 +150,7 @@ function v3Receipt(dir, name, overrides = {}) {
   writeFileSync(join(dir, 'recordings', `${name}-foreign-recording.json`), foreignBytes);
   return {
     format: 'knowledge-crib-client-certification',
-    formatVersion: 3,
+    formatVersion: 4,
     generatedAt: CAPTURED_AT,
     policySha256: SHA_A,
     product: { commit: COMMIT, packageSha256: SHA_A },
@@ -221,8 +223,8 @@ function v2Receipt(dir, name, overrides = {}) {
   };
 }
 
-assert.equal(CERTIFICATION_EVIDENCE_FORMAT_VERSION, 3);
-assert.deepEqual(SUPPORTED_CERTIFICATION_FORMAT_VERSIONS, [1, 2, 3]);
+assert.equal(CERTIFICATION_EVIDENCE_FORMAT_VERSION, 4);
+assert.deepEqual(SUPPORTED_CERTIFICATION_FORMAT_VERSIONS, [1, 2, 3, 4]);
 assert.deepEqual(CERTIFICATION_LEGS, [
   'configuration',
   'handshake',
@@ -232,6 +234,7 @@ assert.deepEqual(CERTIFICATION_LEGS, [
   'restart',
   'authorizedResume',
   'foreignPrincipalExclusion',
+  'connectedMemory',
 ]);
 assert.deepEqual(CERTIFIED_CLIENTS, [
   'claude',
@@ -262,7 +265,7 @@ assert.throws(
   CertificationEvidenceError,
 );
 assert.throws(
-  () => validateClientCertificationReceipt(receipt({ formatVersion: 4 })),
+  () => validateClientCertificationReceipt(receipt({ formatVersion: 5 })),
   /unsupported certification receipt version/,
 );
 assert.throws(
@@ -555,7 +558,7 @@ try {
   // ─── version 3: a complete certifying receipt ───────────────────────────────────────────────
   const v3Dir = join(root, 'v3');
   mkdirSync(v3Dir);
-  const certifying = v3Receipt(v3Dir, 'codex-darwin');
+  const certifying = v4Receipt(v3Dir, 'codex-darwin');
   assert.deepEqual(
     validateClientCertificationReceipt(certifying, { evidenceRoot: v3Dir }),
     certifying,
@@ -565,6 +568,36 @@ try {
   assert.equal(certificationStatus(certifying), 'runtime-verified');
   assert.equal(certificationSummary([certifying]).codex, 'runtime-verified');
   assert.ok(!missingRuntimeCertificationCells([certifying]).includes('codex/darwin'));
+
+  // ─── version 3: readable history against its eight legs, never certifying ──────────────────
+  const legacyV3Dir = join(root, 'legacy-v3');
+  mkdirSync(legacyV3Dir);
+  const legacyV3 = v4Receipt(legacyV3Dir, 'codex-v3', {
+    formatVersion: 3,
+    legs: without(allPassLegs(), 'connectedMemory'),
+  });
+  assert.deepEqual(
+    validateClientCertificationReceipt(legacyV3, { evidenceRoot: legacyV3Dir }),
+    legacyV3,
+    'a version-3 receipt without the connectedMemory leg stays loadable as history',
+  );
+  assert.deepEqual(certifyClientCell(legacyV3), {
+    ok: false,
+    problem: 'client-cell-uncertified',
+    cell: 'codex/darwin',
+    detail: 'receipt schema v3 is not certifying',
+  });
+  // A version-4 receipt missing the ninth leg is refused outright.
+  assert.throws(
+    () =>
+      validateClientCertificationReceipt(
+        v4Receipt(legacyV3Dir, 'codex-v4-no-graph', {
+          legs: without(allPassLegs(), 'connectedMemory'),
+        }),
+        { evidenceRoot: legacyV3Dir },
+      ),
+    /legs\.connectedMemory is required/,
+  );
 
   // Candidate, package and policy binding.
   assert.equal(
@@ -592,7 +625,7 @@ try {
   // is refused by name; one above it passes — so the floor is a floor, not a ban.
   const floor = policy.clientVersionRequirements['codex/darwin'];
   assert.ok(floor, 'the policy must state a codex/darwin floor for this test to mean anything');
-  const belowFloor = v3Receipt(v3Dir, 'codex-old', {
+  const belowFloor = v4Receipt(v3Dir, 'codex-old', {
     client: { id: 'codex', version: '0.0.1', driverVersion: '1.0.0', certificationMode: 'codex' },
   });
   assert.deepEqual(certifyClientCell(belowFloor, { policy }), {
@@ -607,7 +640,7 @@ try {
   const broken =
     (overrides, name = 'codex-broken') =>
     () =>
-      validateClientCertificationReceipt(v3Receipt(v3Dir, name, overrides), {
+      validateClientCertificationReceipt(v4Receipt(v3Dir, name, overrides), {
         evidenceRoot: v3Dir,
       });
 
@@ -618,7 +651,7 @@ try {
   for (const field of ['driverVersion', 'certificationMode']) {
     assert.throws(
       () => {
-        const fixture = v3Receipt(v3Dir, `codex-no-${field}`);
+        const fixture = v4Receipt(v3Dir, `codex-no-${field}`);
         fixture.client = without(fixture.client, field);
         return validateClientCertificationReceipt(fixture, { evidenceRoot: v3Dir });
       },
@@ -632,19 +665,19 @@ try {
     /unknown certification mode: slack/,
   );
   assert.throws(() => {
-    const fixture = without(v3Receipt(v3Dir, 'codex-no-runid'), 'runId');
+    const fixture = without(v4Receipt(v3Dir, 'codex-no-runid'), 'runId');
     return validateClientCertificationReceipt(fixture, { evidenceRoot: v3Dir });
   }, /runId is required/);
 
   // Who ran it, where and when — the same attribution a v1 runtime pass must carry.
   assert.throws(() => {
-    const fixture = without(v3Receipt(v3Dir, 'codex-no-capture'), 'capture');
+    const fixture = without(v4Receipt(v3Dir, 'codex-no-capture'), 'capture');
     return validateClientCertificationReceipt(fixture, { evidenceRoot: v3Dir });
   }, /capture is required/);
   for (const field of ['hostname', 'operator', 'capturedAt']) {
     assert.throws(
       () => {
-        const fixture = v3Receipt(v3Dir, `codex-capture-${field}`);
+        const fixture = v4Receipt(v3Dir, `codex-capture-${field}`);
         fixture.capture = without(fixture.capture, field);
         return validateClientCertificationReceipt(fixture, { evidenceRoot: v3Dir });
       },
@@ -659,7 +692,7 @@ try {
   // Sanitized principal markers: the receipt names both principals by digest, and they must differ —
   // an "exclusion" leg whose two markers are the same proves nothing was excluded.
   assert.throws(() => {
-    const fixture = without(v3Receipt(v3Dir, 'codex-no-markers'), 'principalMarkers');
+    const fixture = without(v4Receipt(v3Dir, 'codex-no-markers'), 'principalMarkers');
     return validateClientCertificationReceipt(fixture, { evidenceRoot: v3Dir });
   }, /principalMarkers is required/);
   assert.throws(
@@ -673,7 +706,7 @@ try {
 
   // Legs: all eight present, each with a valid status.
   assert.throws(() => {
-    const fixture = v3Receipt(v3Dir, 'codex-no-leg');
+    const fixture = v4Receipt(v3Dir, 'codex-no-leg');
     fixture.legs = without(fixture.legs, 'toolUse');
     return validateClientCertificationReceipt(fixture, { evidenceRoot: v3Dir });
   }, /legs\.toolUse is required/);
@@ -700,7 +733,7 @@ try {
   for (const leg of ['handshake', 'toolUse']) {
     assert.deepEqual(
       certifyClientCell(
-        v3Receipt(v3Dir, `codex-sourceless-${leg}`, {
+        v4Receipt(v3Dir, `codex-sourceless-${leg}`, {
           legs: allPassLegs({ [leg]: { status: 'pass', source: 'test-client' } }),
         }),
       ),
@@ -714,7 +747,7 @@ try {
   }
   // A receipt carrying no legs at all is refused rather than read as "nothing failed".
   assert.equal(
-    certifyClientCell(v3Receipt(v3Dir, 'codex-no-legs', { legs: {} })).detail,
+    certifyClientCell(v4Receipt(v3Dir, 'codex-no-legs', { legs: {} })).detail,
     'legs.handshake was not produced by a vendor-client',
   );
 
@@ -728,7 +761,7 @@ try {
   // needs neither artifacts nor an evidence root to load. Under v3 that means a run that never
   // exercised the wire: passing protocol legs would demand verifiable recordings, so the blocked
   // fixture is the vendor that refused to start at all — nothing passed, nothing to verify.
-  const blockedFixture = v3Receipt(v3Dir, 'codex-blocked', {
+  const blockedFixture = v4Receipt(v3Dir, 'codex-blocked', {
     legs: {
       configuration: { status: 'pass' },
       handshake: { status: 'blocked', source: 'vendor-client' },
@@ -738,6 +771,7 @@ try {
       restart: { status: 'not-run' },
       authorizedResume: { status: 'blocked' },
       foreignPrincipalExclusion: { status: 'blocked' },
+      connectedMemory: { status: 'blocked' },
     },
     configurations: undefined,
     protocol: undefined,
@@ -754,18 +788,18 @@ try {
     problem: 'client-cell-uncertified',
     cell: 'codex/darwin',
     detail:
-      'legs not passed: handshake, toolUse, record, interruption, restart, authorizedResume, foreignPrincipalExclusion',
+      'legs not passed: handshake, toolUse, record, interruption, restart, authorizedResume, foreignPrincipalExclusion, connectedMemory',
   });
 
   // A certifying receipt is a claim that a real vendor process ran. Legs alone are assertion; the
   // transcript is what makes them evidence, and the vendor process identity is what says WHICH
   // binary produced it — a harness that merely speaks the protocol has a transcript too.
   assert.throws(() => {
-    const fixture = without(v3Receipt(v3Dir, 'codex-unbacked'), 'vendor');
+    const fixture = without(v4Receipt(v3Dir, 'codex-unbacked'), 'vendor');
     return validateClientCertificationReceipt(fixture, { evidenceRoot: v3Dir });
   }, /a certifying receipt must reference a vendor transcript or log/);
   assert.throws(() => {
-    const fixture = v3Receipt(v3Dir, 'codex-nameless');
+    const fixture = v4Receipt(v3Dir, 'codex-nameless');
     fixture.vendor = without(fixture.vendor, 'processIdentity');
     return validateClientCertificationReceipt(fixture, { evidenceRoot: v3Dir });
   }, /vendor\.processIdentity is required/);
@@ -810,7 +844,7 @@ try {
   );
   assert.deepEqual(
     certifyClientCell(
-      v3Receipt(v3Dir, 'codex-unreferenced', { legs: allPassLegs({ record: { status: 'pass' } }) }),
+      v4Receipt(v3Dir, 'codex-unreferenced', { legs: allPassLegs({ record: { status: 'pass' } }) }),
     ),
     {
       ok: false,
@@ -872,7 +906,7 @@ try {
   {
     const tamperedDir = join(root, 'tampered');
     mkdirSync(tamperedDir);
-    const tampered = v3Receipt(tamperedDir, 'codex-tampered');
+    const tampered = v4Receipt(tamperedDir, 'codex-tampered');
     writeFileSync(join(tamperedDir, 'recordings', 'codex-tampered-owner-recording.json'), '{}\n');
     assert.throws(
       () => validateClientCertificationReceipt(tampered, { evidenceRoot: tamperedDir }),
@@ -882,7 +916,7 @@ try {
   assert.throws(
     () =>
       validateClientCertificationReceipt(
-        v3Receipt(v3Dir, 'codex-misattributed', {
+        v4Receipt(v3Dir, 'codex-misattributed', {
           configurations: {
             owner: {
               sha256: SHA_A,
@@ -907,7 +941,7 @@ try {
   {
     const alteredDir = join(root, 'altered');
     mkdirSync(alteredDir);
-    const fresh = v3Receipt(alteredDir, 'codex-altered');
+    const fresh = v4Receipt(alteredDir, 'codex-altered');
     writeFileSync(join(alteredDir, `${fresh.runId}.json`), `${JSON.stringify(fresh)}\n`);
     assert.equal(loadClientCertificationReceipts(alteredDir).length, 1);
     // The digest is the whole point: the receipt is unchanged, the artifact is not, and the cell
@@ -930,7 +964,7 @@ try {
     driverVersion: '1.0.0',
     certificationMode: 'cursor',
   };
-  const wslReceipt = v3Receipt(v3Dir, 'cursor-wsl', {
+  const wslReceipt = v4Receipt(v3Dir, 'cursor-wsl', {
     client: cursorClient,
     platform: { os: 'linux', arch: 'x64', node: 'v22.23.1', wsl: true },
   });
@@ -948,7 +982,7 @@ try {
   assert.ok(missingRuntimeCertificationCells([wslReceipt]).includes('cursor/linux'));
 
   // Contrast: a native linux runtime pass does satisfy the native-linux cell.
-  const nativeLinuxReceipt = v3Receipt(v3Dir, 'cursor-native', {
+  const nativeLinuxReceipt = v4Receipt(v3Dir, 'cursor-native', {
     client: cursorClient,
     platform: { os: 'linux', arch: 'x64', node: 'v22.23.1' },
   });
@@ -961,12 +995,12 @@ try {
   // Three cells, each built against THIS directory — the factory writes each receipt's log and
   // archived recordings under it, so the loader can verify every digest and every recording.
   const loadedFixtures = [
-    v3Receipt(loadedDir, 'codex-darwin'),
-    v3Receipt(loadedDir, 'cursor-loaded', {
+    v4Receipt(loadedDir, 'codex-darwin'),
+    v4Receipt(loadedDir, 'cursor-loaded', {
       client: cursorClient,
       platform: { os: 'linux', arch: 'x64', node: 'v22.23.1' },
     }),
-    v3Receipt(loadedDir, 'claude-win32', {
+    v4Receipt(loadedDir, 'claude-win32', {
       client: {
         id: 'claude',
         version: '2.1.0',
@@ -1008,8 +1042,8 @@ try {
   // The same client on the same platform, twice: one cell, counted once.
   const duplicateCellDir = join(root, 'duplicate-cell');
   mkdirSync(duplicateCellDir);
-  const first = v3Receipt(duplicateCellDir, 'codex-one');
-  const second = v3Receipt(duplicateCellDir, 'codex-two');
+  const first = v4Receipt(duplicateCellDir, 'codex-one');
+  const second = v4Receipt(duplicateCellDir, 'codex-two');
   writeFileSync(join(duplicateCellDir, 'a.json'), `${JSON.stringify(first)}\n`);
   writeFileSync(join(duplicateCellDir, 'b.json'), `${JSON.stringify(second)}\n`);
   assert.throws(
@@ -1022,8 +1056,8 @@ try {
   const duplicateRunDir = join(root, 'duplicate-run');
   mkdirSync(duplicateRunDir);
   const sharedRun = 'run-shared-0001';
-  const runA = v3Receipt(duplicateRunDir, 'codex-shared', { runId: sharedRun });
-  const runB = v3Receipt(duplicateRunDir, 'vscode-shared', {
+  const runA = v4Receipt(duplicateRunDir, 'codex-shared', { runId: sharedRun });
+  const runB = v4Receipt(duplicateRunDir, 'vscode-shared', {
     runId: sharedRun,
     client: {
       id: 'vscode',
@@ -1043,7 +1077,7 @@ try {
   // silently becoming a missing cell is the failure this module exists to prevent.
   const invalidDir = join(root, 'invalid');
   mkdirSync(invalidDir);
-  const invalid = v3Receipt(invalidDir, 'codex-invalid');
+  const invalid = v4Receipt(invalidDir, 'codex-invalid');
   invalid.vendor.logPath = 'logs/absent.log';
   writeFileSync(join(invalidDir, 'codex-darwin.json'), `${JSON.stringify(invalid)}\n`);
   assert.throws(() => loadClientCertificationReceipts(invalidDir), CertificationEvidenceError);

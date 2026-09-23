@@ -1,8 +1,8 @@
 # Knowledge Crib — capability matrix
 
-**Dated 15 September 2026.** Branch `debug/auditMaster`. The launch promise is policy version 4 —
-seven clients on three native platforms, twenty-one cells, no waivers — and **no cell is certified
-yet, so the release is NO-GO**; [Clients](#clients) below says what that does and does not mean. This
+**Dated 16 September 2026.** Branch `debug/auditMaster`. The launch promise is policy version 5 —
+seven clients on three native platforms, twenty-one cells, no waivers, plus the connected memory
+graph — and **no cell is certified yet and the graph gate fails, so the release is NO-GO**; [Clients](#clients) below says what that does and does not mean. This
 page states what has been MEASURED, on what, and what has not. It is the support boundary: if a
 capability is not listed as verified here, treat it as unverified regardless of what any other
 document claims.
@@ -85,6 +85,16 @@ the contribution of having vectors at all (that would need a second embedding re
 production for the harness's benefit), and 20 questions on one repository authored by someone who
 knows it is a regression gate, not an external benchmark.
 
+**Its exit code is a three-outcome gate, and it names the arm it graded** (H-6, 2026-09-23). Before
+this the harness could report a lexical number under a hybrid framing: with the vector channel
+refused, `--min-mrr` silently graded the LEXICAL MRR and printed nothing about which arm it used.
+Now: `PASS (0)` when the run measured what it claims and any `--min-mrr` floor was met; `FAIL (1)`
+when the graded arm fell below it; **`UNAVAILABLE (2)`** when the channel could not be measured at
+all — the case where an embedder is installed but the index withheld the vectors, which is
+actionable and so is never a silent pass. With no embedder installed the run states it is
+lexical-only and prints no hybrid column. A CI gate that means "the hybrid arm must have run" passes
+`--require-hybrid` and gets UNAVAILABLE rather than a green light from the wrong arm.
+
 ### The measured code-retrieval numbers
 
 `node scripts/eval/code-vector-eval.mjs` on this repository, 2026-09-21, same 20-question labelled
@@ -158,17 +168,18 @@ and not the ranking.
 
 ## Clients
 
-**Launch scope (policy version 4, `scripts/launch-policy.json`, frozen 2026-09-15).** The promised
+**Launch scope (policy version 5, `scripts/launch-policy.json`, frozen 2026-09-16).** The promised
 boundary is **seven clients on three native platforms — twenty-one cells, no waivers**. A cell is
 Claude Code, GitHub Copilot, Cursor, VS Code, Codex, Windsurf or Gemini on macOS, native Linux or
 native Windows, and it is met only by a vendor-client runtime receipt for the exact candidate
-package: record → interruption/restart → authorized resume, driven through the real client binary.
-Version 4 keeps that boundary unchanged and names the evidence contract it is certified under —
-client certification receipts at format version 3 (acceptance receipts at format version 2), with
-the correlated protocol and process evidence those schemas require. Receipts from older format
-versions stay readable as history but cannot certify a cell.
+package: record → connect and supersede in the memory graph → interruption/restart → authorized
+resume and connected-history retrieval, driven through the real client binary. Version 5 keeps that
+boundary and certifies it under client certification receipts at format version 4 — nine legs, the
+ninth (`connectedMemory`) proving `graph_propose` and `memory_graph` on the wire — with acceptance
+receipts at format version 2 and the correlated protocol and process evidence those schemas
+require. Receipts from older format versions stay readable as history but cannot certify a cell.
 
-There is **no preview tier** under version 4. Version 2 had narrowed the promise to Claude Code on
+There is **no preview tier** under version 5. Version 2 had narrowed the promise to Claude Code on
 macOS and named the other twenty cells preview; that narrowing and its `uncertified` escape hatch
 are gone, and version 3's removal of them stands. A cell that cannot be executed leaves the release
 **NO-GO** rather than becoming preview.
@@ -213,9 +224,9 @@ committed grid below stays the promise, not the record.
 <!-- client-certification:generated:start -->
 ## Client certification evidence
 
-Generated under launch policy version 4 (`sha256:2761abf1a666ad4a1f0ccf16dfaa94272f65db0feabeed417aaaa634f26025b1`). Every state below is judged against that exact frozen contract; a receipt naming any other hash is evidence about the run and never a certified cell.
+Generated under launch policy version 5 (`sha256:4fd72a8ca07db4115f8a40f3589eee22e2994ebe720047932f44652fface2a00`). Every state below is judged against that exact frozen contract; a receipt naming any other hash is evidence about the run and never a certified cell.
 
-Generated from validated receipts. A client is runtime verified only when a vendor-client receipt proves record → interruption/restart → authorized resume on the listed platform. Four labels say a row is evidence and not a runtime pass: "protocol evidence only (test client)" when the handshake came from a test client rather than the client under test, "runtime evidence only (not a native runtime)" when the run happened somewhere other than the native platform — a WSL run satisfies every leg and still cannot certify native Linux or Windows — "runtime evidence only (legacy receipt schema)" when the receipt predates the certifying schema and is kept as readable history, and "runtime evidence only (collected under a different policy)" when the receipt was collected under a policy hash other than the one named above. No label can promote a row.
+Generated from validated receipts. A client is runtime verified only when a vendor-client receipt proves record → connected memory → interruption/restart → authorized resume on the listed platform. Four labels say a row is evidence and not a runtime pass: "protocol evidence only (test client)" when the handshake came from a test client rather than the client under test, "runtime evidence only (not a native runtime)" when the run happened somewhere other than the native platform — a WSL run satisfies every leg and still cannot certify native Linux or Windows — "runtime evidence only (legacy receipt schema)" when the receipt predates the certifying schema and is kept as readable history, and "runtime evidence only (collected under a different policy)" when the receipt was collected under a policy hash other than the one named above. No label can promote a row.
 
 | Client | Highest verified evidence | Strongest certified cell |
 |---|---|---|
@@ -256,6 +267,12 @@ One row per advertised cell. A cell is certified only by a vendor-client receipt
 | VS Code | Windows | not certified | — | — | — | — | — | — |
 
 <!-- client-certification:generated:end -->
+
+<!-- connected-memory-graph:generated:start -->
+## Connected memory graph
+
+**Not certified.** No validated `connected-memory-graph` receipt was supplied. Judged under launch policy version 5 (`sha256:4fd72a8ca07db4115f8a40f3589eee22e2994ebe720047932f44652fface2a00`).
+<!-- connected-memory-graph:generated:end -->
 
 Each cell's receipt is produced by **one harness**, `scripts/client-certify.mjs`:
 

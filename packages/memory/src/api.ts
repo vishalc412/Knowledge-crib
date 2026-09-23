@@ -69,10 +69,11 @@ import {
   type EffectiveVerdicts,
   type MemoryEvalContext,
   type MemoryEvaluator,
+  type RecordEvaluation,
   admissibilityProblems,
   conflictGroups,
   effectiveVerdicts,
-  isRecallEligible,
+  recallExclusionClause,
   recordSortTime,
   supersedeDecision,
 } from './evaluator.js';
@@ -84,7 +85,13 @@ import {
   entrySetFingerprint,
   evaluationCacheFor,
 } from './generation-cache.js';
-import { type GraphProjection, projectGraph } from './graph-projection.js';
+import { type GraphProjection, type GraphRecordRef, projectGraph } from './graph-projection.js';
+import {
+  compareGraphInstants,
+  createGraphAssertion,
+  isGraphRef,
+  isMemoryGraphPredicate,
+} from './graph.js';
 import { verifyQuote } from './grounding.js';
 import {
   type HandoffAttemptEvent,
@@ -112,6 +119,7 @@ import type { ProjectionCheckpointStore } from './intelligence-projections.js';
 import {
   DEFAULT_LEDGER_PAGE,
   LEDGER_GROUPS,
+  type LedgerExclusion,
   type LedgerGroup,
   type LedgerOpts,
   type LedgerResult,
@@ -119,6 +127,7 @@ import {
   MAX_LEDGER_PAGE,
   capClaim,
   correlateAnchors,
+  ledgerExclusionOf,
   ledgerGroupOf,
   standingOf,
 } from './ledger.js';
@@ -150,6 +159,7 @@ import {
   type RecallStores,
   gatherRecall,
   recallProjection,
+  resolveStrictPrincipal,
 } from './recall.js';
 import { assertNoMemorySecrets } from './secrets.js';
 import type { MemoryCollection, MemoryStore } from './store.js';
@@ -186,6 +196,7 @@ import type {
   MemoryEntry,
   MemoryEvidence,
   MemoryFeedback,
+  MemoryProvenance,
   MemoryRecord,
   MemoryRecordV2,
   MemoryRecordV3,
@@ -198,6 +209,11 @@ import { isMemoryRecordV2, isMemoryRecordVersioned } from './types.js';
 type ReadableMemoryRecord = MemoryRecord | MemoryRecordV2 | MemoryRecordV3;
 
 /** The only graph placement choices exposed to callers; repository identity is resolved server-side. */
+/** When a record was recorded: memory-2/3 transaction time, memory-1 creation time. */
+function recordKnownAt(record: ReadableMemoryRecord): string {
+  return isMemoryRecordVersioned(record) ? record.transactionTime.recordedAt : record.createdAt;
+}
+
 export interface GraphProjectionReadOpts {
   scope?: 'global' | 'repo';
   at?: string;
@@ -991,6 +1007,31 @@ export interface GetResult {
   validity?: ValidityInterval;
   /** the effective verdicts (alias snapshot + every store's decision overlay, no-poison honoured). */
   verdicts?: EffectiveVerdicts;
+  /**
+   * WP5 §7.2/§7.4 — the recall gate's own decision for THIS record, read off the same
+   * {@link recallExclusionClause} walk the ledger row and `recall` use. Absent only on
+   * `found: false`, where there is no record and therefore no decision to report.
+   *
+   * `get()` computed the verdicts already and then discarded the gate, so a record's own detail view
+   * could contradict the row that opened it: the row said "not recalled, the anchored code changed
+   * under the quote" while the detail — reading the STAMP — said the evidence was `valid`. A surface
+   * whose job is to answer "why is this missing" cannot be the one surface that reports a claim as
+   * healthy after the ledger has excluded it. Same walk, same display vocabulary, no second rule.
+   */
+  eligible?: boolean;
+  /** the FIRST failing clause, in the display vocabulary — absent when the record IS eligible. */
+  excludedBy?: LedgerExclusion;
+  /**
+   * Whether THIS read re-checked the record's evidence against the code, from the same
+   * {@link canRevalidate} predicate the ledger's own flag is read off — so the two surfaces cannot
+   * disagree about what "the read re-checked" means.
+   *
+   * The detail view needs its own answer rather than borrowing the ledger page's: the ledger's flag
+   * describes the LEDGER's read, and a detail reached from a stamped page while itself re-checking
+   * would otherwise caption its verdicts with the wrong provenance. Absent on `found: false`, where
+   * nothing was re-checked because nothing was found.
+   */
+  revalidated?: boolean;
   evidence?: readonly EvidenceSummary[];
   lineage?: { derivedFrom?: string[]; supersedes?: string[]; contradicts?: string[] };
   /** v1 only — the SEMANTIC scope. */
@@ -1340,11 +1381,27 @@ function observationEvidenceRefs(evidence: readonly MemoryEvidence[]): string[] 
 
 /**
  * G3.3 — bind a generation-keyed evaluation pass over one read: the WeakMap-backed cache hangs off
- * the LONG-LIVED eval context (not the throwaway call), the seven dependency slots are fingerprinted
- * from the context ports + the gathered decision/feedback sets, and the returned eval context carries
- * the pass scratch memos + cache port. A dependency that cannot be versioned (unit-fake soul port,
- * receipts without a generation, an undefined policy hash) refuses the bind and the caller evaluates
- * fresh — the pre-G3.3 behaviour, exactly.
+ * the LONG-LIVED eval context (not the throwaway call), the dependency slots are fingerprinted from
+ * the context ports + the gathered decision/feedback sets + the caller's PIN, and the returned eval
+ * context carries the pass scratch memos + cache port. A dependency that cannot be versioned (unit-
+ * fake soul port, receipts without a generation, an undefined policy hash) refuses the bind and the
+ * caller evaluates fresh — the pre-G3.3 behaviour, exactly.
+ *
+ * THE PIN COMES FROM THE SERVING LAYER, THROUGH THE CONTEXT (WP1 item 8). `reader` and `ledger`
+ * describe the SNAPSHOT a request was adopted against, which this function cannot derive — but the
+ * long-lived eval context already IS that serving identity, so the pin rides on it as
+ * {@link MemoryEvalContext.pin} and is resolved HERE, at bind time (the adopted reader moves on
+ * every refresh cycle, so a value captured once would be wrong either way). `opts.reader`/
+ * `opts.ledger` override the pin for one pass. The three readings are not interchangeable:
+ *   - `NO_DEPENDENCY` (the default, i.e. unpinned): this pass has NO such dependency. Correct for a
+ *     read that resolves against the canonical store alone — a one-shot CLI command, or a server
+ *     before its first bundle is adopted.
+ *   - a generation string: the pass reads through that snapshot, so its verdicts move with it.
+ *   - `UNVERSIONED`: the pass HAS the dependency and cannot name it (an overlay exists but adoption
+ *     is still pending, so its generation is not yet authoritative). Caching is refused outright,
+ *     which is the only safe reading — a reader that exists but cannot be named cannot be proven
+ *     current, and serving a memoized `valid` verdict against an unnameable reader is precisely the
+ *     §7.4 stale read this item exists to close.
  *
  * Extracted so EVERY projection surface shares one binding (red line #1: never revalidate every
  * record to answer one query): `MemoryApi.search` and the CLI/MCP `recallProjection` adapters both
@@ -1353,7 +1410,14 @@ function observationEvidenceRefs(evidence: readonly MemoryEvidence[]): string[] 
 export function bindEvaluationPass(
   baseCtx: MemoryEvalContext | undefined,
   gathered: Pick<GatheredRecall, 'decisions' | 'localDecisions' | 'feedback'>,
-  opts: { nowMs?: () => number; cache?: GenerationCache } = {},
+  opts: {
+    nowMs?: () => number;
+    cache?: GenerationCache;
+    /** the pinned code-reader generation of the snapshot this request was adopted against. */
+    reader?: string;
+    /** the pinned memory-ledger position this request reads. */
+    ledger?: string;
+  } = {},
 ): { evalCtx?: MemoryEvalContext; generation: string | null; cache?: GenerationCache } {
   if (!baseCtx) return { generation: null };
   const cache =
@@ -1365,6 +1429,17 @@ export function bindEvaluationPass(
   };
   if (baseCtx.policy) generations.policy = baseCtx.policy.policyHash() ?? UNVERSIONED;
   if (baseCtx.receipts) generations.receipts = baseCtx.receipts.generation?.() ?? UNVERSIONED;
+  // Omitted ⇒ the slot keeps its `none` default (no such dependency on this pass), NOT UNVERSIONED:
+  // refusing every cache for every reader-less caller would be over-invalidation, and the two cases
+  // are genuinely different (see the doc above).
+  //
+  // The serving layer's pin is the fallback (WP1 item 8), read from the CONTEXT both recall adapters
+  // already pass — which is why `verbs.ts` and the CLI recall path need no edit of their own. An
+  // explicit argument still wins, so a caller may pin one pass without disturbing the session.
+  const reader = opts.reader ?? baseCtx.pin?.reader?.();
+  const ledger = opts.ledger ?? baseCtx.pin?.ledger?.();
+  if (reader !== undefined) generations.reader = reader;
+  if (ledger !== undefined) generations.ledger = ledger;
   const cachePort = cache.bind(generations);
   if (!cachePort) return { generation: null };
   return {
@@ -1434,14 +1509,42 @@ export class MemoryApi {
     // the same lifecycle projection as recall. The graph journal itself stays append-only for
     // replay/audit, but retracted, superseded, or quarantined records must not keep an assertion
     // traversable merely because their old shard line still exists.
+    //
+    // Supersession is the one lifecycle change that is time-relative: a record superseded AFTER the
+    // read point's `knownBy` was still current then, and a superseded record still supports its
+    // assertions as HISTORY. Retraction and quarantine are not time-relative — a historical read
+    // never bypasses them, so those decisions apply at every read point.
     const recordAliases = this.buildAliasIndex();
-    const recordDecisions = this.allDecisions();
-    const activeRecordIds = this.gatherAllRecords()
-      .filter(({ record, source }) => {
-        const { verdicts } = this.foldedVerdicts(record, source, recordAliases, recordDecisions);
-        return verdicts.lifecycle === 'active' && !verdicts.quarantined;
-      })
-      .map(({ record }) => ({ id: record.id }));
+    const recordDecisions = this.allDecisions().filter(
+      ({ decision }) =>
+        decision.kind !== 'supersede' ||
+        opts.knownBy === undefined ||
+        compareGraphInstants(decision.ts, opts.knownBy) <= 0,
+    );
+    const activeRecordIds: GraphRecordRef[] = [];
+    const historicalRecordIds: GraphRecordRef[] = [];
+    for (const { record, source } of this.gatherAllRecords()) {
+      const { verdicts } = this.foldedVerdicts(record, source, recordAliases, recordDecisions);
+      if (verdicts.quarantined) continue;
+      const ref = { id: record.id, knownAt: recordKnownAt(record) };
+      if (verdicts.lifecycle === 'active') activeRecordIds.push(ref);
+      else if (verdicts.lifecycle === 'superseded') historicalRecordIds.push(ref);
+    }
+    // Work references: an intake the caller is authorized to see supports graph edges the same way
+    // a record does. Finished work (completed or cancelled as of the read point) is history — it
+    // still explains what was done, but it never counts as current, resumable work.
+    const { requirements, checkpoints } = this.intakeEntries();
+    for (const requirement of requirements) {
+      const finished = checkpoints.some(
+        (c) =>
+          c.intakeId === requirement.id &&
+          (c.kind === 'completed' || c.kind === 'cancelled') &&
+          (opts.knownBy === undefined || compareGraphInstants(c.recordedAt, opts.knownBy) <= 0),
+      );
+      const ref = { id: requirement.id, knownAt: requirement.createdAt };
+      if (finished) historicalRecordIds.push(ref);
+      else activeRecordIds.push(ref);
+    }
 
     return projectGraph(
       {
@@ -1449,6 +1552,7 @@ export class MemoryApi {
         entities,
         decisions,
         records: activeRecordIds,
+        historicalRecords: historicalRecordIds,
       },
       {
         principalId: this.callerPrincipal(),
@@ -1459,6 +1563,131 @@ export class MemoryApi {
         ...(opts.knownBy !== undefined ? { knownBy: opts.knownBy } : {}),
       },
     );
+  }
+
+  /**
+   * WP-G4 — an explicit agent graph proposal (`memory{op:'graph_propose'}`).
+   *
+   * The caller states ONLY the relationship and what supports it. Everything that decides trust is
+   * the server's: the principal is the authenticated caller, the placement is the server's own
+   * repository (or global), `knownAt` is now, and admission is checked HERE before anything is
+   * written — the predicate must be in the vocabulary, both endpoints must be graph refs, and every
+   * supporter must be a record, intake, or entity THIS caller is authorized to see and that is
+   * still active. A proposal failing any check writes nothing and says which check failed, so there
+   * is no path by which a producer marks its own edge trusted.
+   */
+  proposeGraphAssertion(input: {
+    predicate: string;
+    subject: string;
+    object: string;
+    supportedBy: readonly string[];
+    validAt?: string;
+    scope?: 'repo' | 'global';
+    provenance: Omit<MemoryProvenance, 'principalId'>;
+  }): { ok: true; id: string; idempotent: boolean } | { ok: false; problems: string[] } {
+    const problems: string[] = [];
+    if (!isMemoryGraphPredicate(input.predicate))
+      problems.push(`unknown-predicate:${input.predicate}`);
+    for (const [field, ref] of [
+      ['subject', input.subject],
+      ['object', input.object],
+    ] as const) {
+      if (typeof ref !== 'string' || !isGraphRef(ref)) problems.push(`not-a-graph-ref:${field}`);
+    }
+    if (input.subject === input.object) problems.push('self-edge');
+    const supporters = Array.isArray(input.supportedBy) ? [...new Set(input.supportedBy)] : [];
+    if (supporters.length === 0) problems.push('no-supporting-evidence');
+    if (input.validAt !== undefined && Number.isNaN(Date.parse(input.validAt))) {
+      problems.push('valid-at-not-an-instant');
+    }
+
+    const boundary = input.scope ?? (this.resolveRepoId() !== undefined ? 'repo' : 'global');
+    const repoId = boundary === 'repo' ? this.resolveRepoId() : undefined;
+    if (boundary === 'repo' && repoId === undefined) problems.push('repository-scope-unavailable');
+    const store = boundary === 'repo' ? this.deps.stores.local : this.deps.stores.global;
+    if (store === undefined || !store.collections.includes('graph')) {
+      problems.push(`graph-store-unavailable:${boundary}`);
+    }
+
+    // ref → when that supporter was recorded; used to default valid time without inventing it.
+    const authorized = new Map<string, string | undefined>();
+    if (supporters.length > 0) {
+      const aliases = this.buildAliasIndex();
+      const decisions = this.allDecisions();
+      for (const { record, source } of this.gatherAllRecords()) {
+        const { verdicts } = this.foldedVerdicts(record, source, aliases, decisions);
+        if (verdicts.lifecycle === 'active' && !verdicts.quarantined) {
+          authorized.set(record.id, recordKnownAt(record));
+        }
+      }
+      for (const requirement of this.intakeEntries().requirements) {
+        authorized.set(requirement.id, requirement.createdAt);
+      }
+      const principal = this.callerPrincipal();
+      for (const { store: s } of this.orderedStores()) {
+        if (!s.collections.includes('graph')) continue;
+        for (const entry of s.readCollection('graph').entries) {
+          if (isGraphEntityEntry(entry) && entry.namespace.principalId === principal) {
+            authorized.set(entry.ref, undefined);
+          }
+        }
+      }
+      for (const ref of supporters) {
+        if (!authorized.has(ref)) problems.push(`supporter-not-authorized:${ref}`);
+      }
+    }
+    // Valid time is never invented from ingestion: an explicit validAt, else the moment the most
+    // recent supporter was recorded (the proposal cannot have held before its evidence existed).
+    const supporterTimes = supporters
+      .map((ref) => authorized.get(ref))
+      .filter((t): t is string => typeof t === 'string')
+      .sort(compareGraphInstants);
+    const validAt = input.validAt ?? supporterTimes.at(-1);
+    if (validAt === undefined && problems.length === 0) problems.push('valid-at-required');
+    if (problems.length > 0 || store === undefined || validAt === undefined) {
+      return { ok: false, problems };
+    }
+
+    const principalId = this.callerPrincipal();
+    const assertion = createGraphAssertion({
+      predicate: input.predicate as Parameters<typeof createGraphAssertion>[0]['predicate'],
+      subject: input.subject,
+      object: input.object,
+      namespace: { principalId, ...(repoId !== undefined ? { projectId: repoId } : {}) },
+      scope: repoId !== undefined ? { boundary: 'repo', repoId } : { boundary: 'global' },
+      validAt,
+      knownAt: this.now(),
+      supportedBy: supporters,
+      provenance: { ...input.provenance, principalId },
+      meta: { origin: 'agent-proposal' },
+    });
+    const result = store.submitGraphEntries([assertion]);
+    return { ok: true, id: assertion.id, idempotent: !result.written.includes(assertion.id) };
+  }
+
+  /**
+   * Searchable text for the caller's graph nodes: each principal-visible record's claim and
+   * subject, and each of the caller's own entities' names. Seed selection runs over the
+   * authorized projection's nodes; this only says what those nodes are called.
+   */
+  graphNodeTexts(): Map<string, string> {
+    const texts = new Map<string, string>();
+    for (const { record } of this.gatherAllRecords()) {
+      texts.set(record.id, `${record.claim} ${record.subject}`);
+    }
+    for (const requirement of this.intakeEntries().requirements) {
+      texts.set(requirement.id, `${requirement.original} ${requirement.interpretation.outcome}`);
+    }
+    const principal = this.callerPrincipal();
+    for (const { store } of this.orderedStores()) {
+      if (!store.collections.includes('graph')) continue;
+      for (const entry of store.readCollection('graph').entries) {
+        if (isGraphEntityEntry(entry) && entry.namespace.principalId === principal) {
+          texts.set(entry.ref, entry.name);
+        }
+      }
+    }
+    return texts;
   }
 
   // ── capture ────────────────────────────────────────────────────────────────
@@ -2330,6 +2559,13 @@ export class MemoryApi {
       currentSessionId?: string;
       /** pass the current time to mark idle unfinished work stale (surfaces shown to a person). */
       now?: string;
+      /**
+       * WP5 §7.1 — re-validate every gathered record's evidence so the primary intake's rows carry
+       * real `ItemReason`s (default **false**; see {@link freshEvaluation} for why this is opt-in).
+       * This is the one place the change touches a RECORD SET rather than a single row, so it is
+       * the one place the opt-in has a real cost — the Home view's price is a deliberate choice.
+       */
+      revalidate?: boolean;
     } = {},
   ): HandoffResponse {
     const pinned = [this.deps.stores.team, this.deps.stores.local, this.deps.stores.global].filter(
@@ -2339,6 +2575,12 @@ export class MemoryApi {
     try {
       const gathered = gatherRecall(this.deps.stores, {
         principal: this.env.KCRIB_PRINCIPAL_ID ?? DEFAULT_MIGRATION_PRINCIPAL_ID,
+        // WP1 item 13: a handoff crosses a repo/device boundary by definition — the receiving
+        // principal is not necessarily the writing one — so an unstamped private record is an
+        // unknown owner, not this caller's. Resolved from THIS api's env, not hardcoded: see
+        // `resolveStrictPrincipal` for why strict-by-default blackholes the live write path, and
+        // `KCRIB_STRICT_PRINCIPAL` for how an operator engages it.
+        strictPrincipal: resolveStrictPrincipal(this.env),
       });
       const aliasIndex = buildAliasIndex(gathered.aliases ?? []);
       const allDecisions = [...gathered.decisions, ...gathered.localDecisions];
@@ -2350,7 +2592,12 @@ export class MemoryApi {
         const bridged = bridgedDecisions(legacy, record.id, pool);
         return {
           record,
-          verdicts: effectiveVerdicts(record, bridged, undefined, conservativeVerdicts(legacy)),
+          verdicts: effectiveVerdicts(
+            record,
+            bridged,
+            this.freshEvaluation(record, opts.revalidate === true),
+            conservativeVerdicts(legacy),
+          ),
         };
       });
       const local = this.deps.stores.local;
@@ -2494,6 +2741,13 @@ export class MemoryApi {
       // same value from process.env; passing it explicitly keeps the boundary on the API's OWN
       // env (tests inject one) rather than the process's.
       principal: this.env.KCRIB_PRINCIPAL_ID ?? DEFAULT_MIGRATION_PRINCIPAL_ID,
+      // …and the boundary is resolved from this api's OWN env (WP1 item 13). It is OFF unless
+      // `KCRIB_STRICT_PRINCIPAL` is set: the local admission path writes memory-1 records, which
+      // carry no ownership column, so a strict gather refuses every record this device writes and
+      // `crib memory migrate` can never catch up — `resolveStrictPrincipal` carries the measurement.
+      // With the switch on, run `crib memory migrate` to stamp what exists; the doctor reports the
+      // unstamped count until you do.
+      strictPrincipal: resolveStrictPrincipal(this.env),
     });
     const baseCtx = opts.evalCtx ?? this.deps.evalCtx;
     // G3.3 — bind the generation-keyed evaluation cache for THIS pass via the SHARED helper (the
@@ -2607,7 +2861,7 @@ export class MemoryApi {
    * v1 lines), reports which binding was followed, and carries the effective verdicts with the
    * no-poison rule honoured (local decisions fold into local-sourced records only).
    */
-  get(idOrAlias: string): GetResult {
+  get(idOrAlias: string, opts: { revalidate?: boolean } = {}): GetResult {
     const notFound = (requestedId: string): GetResult => ({
       found: false,
       requestedId,
@@ -2630,7 +2884,16 @@ export class MemoryApi {
       record.id,
       pool.map((d) => d.decision),
     );
-    const verdicts = effectiveVerdicts(record, bridged, undefined, conservativeVerdicts(legacy));
+    const verdicts = effectiveVerdicts(
+      record,
+      bridged,
+      this.freshEvaluation(record, opts.revalidate === true),
+      conservativeVerdicts(legacy),
+    );
+    // The same one-walk rule the ledger row applies (api.ts `ledgerRow`): `eligible` and the clause
+    // that produced it come from ONE call, so the label a surface renders cannot disagree with the
+    // gate's own decision — and the clause crosses to the display vocabulary at the same boundary.
+    const excludedBy = recallExclusionClause(verdicts);
     return {
       found: true,
       requestedId: idOrAlias,
@@ -2644,6 +2907,9 @@ export class MemoryApi {
       visibility: visibilityOf(record),
       validity: validityOf(record),
       verdicts,
+      eligible: excludedBy === undefined,
+      ...(excludedBy !== undefined ? { excludedBy: ledgerExclusionOf(excludedBy) } : {}),
+      revalidated: this.canRevalidate(opts.revalidate === true),
       evidence: evidenceSummaries(record),
       lineage: lineageOf(record),
       ...(isMemoryRecordVersioned(record) ? { propositionKey: record.propositionKey } : {}),
@@ -3516,7 +3782,7 @@ export class MemoryApi {
    * The COMPUTED `verdicts` honour the same no-poison rule as get()/search(): local decisions fold
    * into local-SOURCED records only, so a local quarantine never retracts the same-id team record.
    */
-  audit(idOrSubject: string): AuditResult {
+  audit(idOrSubject: string, opts: { revalidate?: boolean } = {}): AuditResult {
     const records = this.gatherAllRecords();
     const aliasIndex = this.buildAliasIndex();
     const matched = matchKey(records, aliasIndex, idOrSubject);
@@ -3540,7 +3806,12 @@ export class MemoryApi {
       const stamped: Verdicts | undefined = isMemoryRecordVersioned(record)
         ? conservativeVerdicts(legacy)
         : record.verdicts;
-      const verdicts = effectiveVerdicts(record, bridged, undefined, stamped);
+      const verdicts = effectiveVerdicts(
+        record,
+        bridged,
+        this.freshEvaluation(record, opts.revalidate === true),
+        stamped,
+      );
       views.push(this.auditView(record, legacy, stamped, verdicts, mine, feedback, legacyIds));
     }
     return { requested: idOrSubject, found: true, records: views };
@@ -3575,7 +3846,7 @@ export class MemoryApi {
     const folded = sourced.map(({ record, source }) => ({
       record,
       source,
-      ...this.foldedVerdicts(record, source, aliasIndex, decisions),
+      ...this.foldedVerdicts(record, source, aliasIndex, decisions, opts.revalidate === true),
     }));
     const conflicts = conflictGroups(folded).map((c) => conflictSummaryOf(c));
     // Sort-time per id, built once — a comparator calling back into the records would be O(n²).
@@ -3608,6 +3879,10 @@ export class MemoryApi {
     const capturePolicy = this.capturePolicyView();
     return {
       configured: true,
+      // Reported, never inferred by the caller: `reasons` is empty on a revalidated row that
+      // reported no failure AND on a row that was never re-checked, so this flag is the only
+      // thing that tells the two apart (§7.1/§7.4, WP5 §10 dated note).
+      revalidated: this.canRevalidate(opts.revalidate === true),
       total: filtered.length,
       offset,
       limit,
@@ -3637,15 +3912,62 @@ export class MemoryApi {
   }
 
   /**
+   * WP5 §7.1 — the optional fresh-evaluation port for a read that wants `ItemReason`s.
+   *
+   * WHY THIS IS OPT-IN AND NOT A DEFAULT. Supplying an evaluation to `effectiveVerdicts` does **not**
+   * merely add `reasons`: the evaluation is consulted FIRST for `evidence`/`applicability`
+   * (`evaluator.ts`, both branches of `effectiveVerdicts`), so a fresh evaluation **replaces** the
+   * stamped verdict rather than decorating it. A record whose quote no longer grounds moves
+   * `evidenceVerdict` `valid` → `invalid` and, by `isRecallEligible`, `eligible` `true` → `false` —
+   * it silently leaves RECALL. That is the correct direction (evidence validity is a property of the
+   * world now), and it is exactly why `search` already supplies one — but it is a behaviour change,
+   * so a caller must ASK for it.
+   *
+   * Note the blast radius is NOT the ledger group, though an earlier draft of this docstring said it
+   * was. `ledgerGroupOf` (`ledger.ts`) derives the group from the ANCHOR correlation and consults
+   * verdicts only for lifecycle and quarantine, so an evidence-only re-decision leaves a row sitting
+   * in `current` while it is excluded from recall. That gap is real and is why the re-decision is
+   * carried on `reasons` — the one field where it can be seen.
+   *
+   * BOTH PORTS OR NEITHER. A lone evaluator with no context cannot revalidate anything, so the pair
+   * is required together — the same rule {@link SearchOpts} documents for `search`.
+   */
+  private freshEvaluation(
+    record: ReadableMemoryRecord,
+    want: boolean,
+  ): RecordEvaluation | undefined {
+    if (!this.canRevalidate(want)) return undefined;
+    // Memoized per record content at one dependency generation (`evaluator.ts` `evaluate`), so a
+    // ledger page folding its rows does not re-read the same evidence items twice.
+    return this.deps.evaluator!.evaluate(record, this.deps.evalCtx!);
+  }
+
+  /**
+   * Whether a `revalidate` request can actually take effect: the caller asked AND both ports are
+   * wired. ONE predicate, so {@link freshEvaluation} and the `revalidated` flag it is reported
+   * through can never disagree about whether a re-check happened — a surface that is told `false`
+   * must be looking at rows that were not re-checked, which is only guaranteed if both read the
+   * same answer from the same place.
+   */
+  private canRevalidate(want: boolean): boolean {
+    if (!want) return false;
+    const { evaluator, evalCtx } = this.deps;
+    return evaluator !== undefined && evalCtx !== undefined;
+  }
+
+  /**
    * The effective-verdict fold `get()`/`audit()` apply, extracted so the ledger REUSES the same
    * decision truth instead of re-implementing it. Returns the folded verdicts plus the no-poison
    * decision pool the row's supersession projection reuses.
+   *
+   * `revalidate` (WP5 §7.1, default OFF) is the opt-in described on {@link freshEvaluation}.
    */
   private foldedVerdicts(
     record: ReadableMemoryRecord,
     source: MemorySource,
     aliasIndex: AliasIndex,
     decisions: readonly SourcedDecision[],
+    revalidate = false,
   ): { verdicts: EffectiveVerdicts; pool: readonly MemoryDecision[] } {
     const legacy = aliasIndex.aliasesFor(record.id);
     const legacyIds = new Set(legacy.map((a) => a.legacyId));
@@ -3658,7 +3980,12 @@ export class MemoryApi {
       (d) => d.decision,
     );
     const bridged = bridgedDecisions(legacy, record.id, pool);
-    const verdicts = effectiveVerdicts(record, bridged, undefined, conservativeVerdicts(legacy));
+    const verdicts = effectiveVerdicts(
+      record,
+      bridged,
+      this.freshEvaluation(record, revalidate),
+      conservativeVerdicts(legacy),
+    );
     return { verdicts, pool };
   }
 
@@ -3680,6 +4007,9 @@ export class MemoryApi {
       nodes,
     );
     const isV1 = !isMemoryRecordVersioned(record);
+    // WP5 §7.2 — ONE walk decides both: `eligible` and the clause that produced it are read off the
+    // same call, so the label a surface renders cannot disagree with the gate's own decision.
+    const excludedBy = recallExclusionClause(verdicts);
     return {
       id: record.id,
       schemaVersion: record.schemaVersion,
@@ -3694,7 +4024,13 @@ export class MemoryApi {
       applicability: verdicts.applicability,
       lifecycle: verdicts.lifecycle,
       quarantined: verdicts.quarantined,
-      eligible: isRecallEligible(verdicts),
+      reasons: verdicts.reasons,
+      eligible: excludedBy === undefined,
+      // Mapped to the DISPLAY vocabulary here, at the one boundary where the clause becomes part of a
+      // serialized row: the evaluator's clause name for the admission axis is a word Gate-0 forbids on
+      // any surface a person reads, and `ledgerExclusionOf` is exhaustive, so a new clause breaks the
+      // build rather than leaking. The gate decided on the raw clause; only the label is translated.
+      ...(excludedBy !== undefined ? { excludedBy: ledgerExclusionOf(excludedBy) } : {}),
       evidence: evidenceSummaries(record),
       validity: validityOf(record).validTime,
       ...(isV1
@@ -3763,13 +4099,13 @@ export class MemoryApi {
     for (const { source, store } of this.orderedStores()) {
       const collection = recordCollectionOf(store);
       const direct = this.directEntry(store, collection, id);
-      if (direct && isRecordEntry(direct) && this.acceptsRecord(direct)) {
+      if (direct && isRecordEntry(direct) && this.acceptsRecord(direct, source)) {
         return { record: direct, source, store };
       }
       const alias = this.readAliasSafe(store, id);
       if (alias && alias.resolvedId !== id) {
         const twin = this.directEntry(store, collection, alias.resolvedId);
-        if (twin && isRecordEntry(twin) && this.acceptsRecord(twin)) {
+        if (twin && isRecordEntry(twin) && this.acceptsRecord(twin, source)) {
           return { record: twin, source, store, viaAlias: alias };
         }
       }
@@ -3786,10 +4122,19 @@ export class MemoryApi {
     return store.readShard(collection, memoryShard(id)).entries.find((e) => e.id === id);
   }
 
-  /** Whether the store physically holds this exact id in `collection` (no alias chase). */
+  /**
+   * Whether the store physically holds this exact id in `collection` (no alias chase).
+   *
+   * The source is DERIVED from the store rather than passed in: the store is what the source
+   * describes, so a second, hand-threaded copy could only ever be a way for the two to disagree.
+   * An unwired store resolves to `undefined`, which `acceptsRecord` treats as non-team — the
+   * conservative reading of a store the api cannot place.
+   */
   private holdsDirect(store: MemoryStore, id: string, collection: MemoryCollection): boolean {
     const entry = this.directEntry(store, collection, id);
-    return entry !== undefined && (!isRecordEntry(entry) || this.acceptsRecord(entry));
+    if (entry === undefined) return false;
+    if (!isRecordEntry(entry)) return true;
+    return this.acceptsRecord(entry, this.sourceOf(store));
   }
 
   private readAliasSafe(store: MemoryStore, legacyId: string): MemoryAlias | undefined {
@@ -3833,7 +4178,7 @@ export class MemoryApi {
       if (!store) continue;
       const read = store.readCollection(recordCollectionOf(store));
       for (const entry of read.entries) {
-        if (!isRecordEntry(entry) || !this.acceptsRecord(entry)) continue;
+        if (!isRecordEntry(entry) || !this.acceptsRecord(entry, source)) continue;
         if (!byId.has(entry.id)) byId.set(entry.id, { record: entry, source, store });
       }
     }
@@ -3858,15 +4203,51 @@ export class MemoryApi {
   }
 
   /**
-   * The direct-read counterpart to `gatherRecall`'s G7 boundary. Versioned records are private to
-   * their stamped principal; v1 has no principal column and remains readable for migration
-   * compatibility. Keep this guard at locate/gather rather than individual public verbs so a new
-   * record-returning API cannot accidentally bypass principal isolation.
+   * The direct-read counterpart to `gatherRecall`'s G7 boundary. Keep this guard at locate/gather
+   * rather than individual public verbs so a new record-returning API cannot accidentally bypass
+   * principal isolation.
+   *
+   * The two implementations must AGREE, and they did not (WP1 item 15). `gatherRecall` refuses an
+   * unstamped record when the boundary is engaged; this predicate admitted it unconditionally, so
+   * `get`/`history`/`ledger`/`audit` disclosed another principal's unmigrated record in full while
+   * `search` refused it — measured with two principals in one store: engaged, `search` returned only
+   * the caller's record and `ledger().total` counted all 5 records, `history(foreignSubject)`
+   * returned a record, `audit(foreignSubject).found` was true. The audit that first found the split
+   * (F03, `docs/audits/2026-09-05/launch-audit.md`) closed the STAMPED case — the ownership
+   * comparison below is that repair — and its action named the remainder: "require migration or
+   * quarantine for unstamped legacy records in shared deployments". This is that requirement, keyed
+   * off the same switch rather than a second policy.
+   *
+   * The three branches, and why each is what it is:
+   *  - versioned: private to its stamped principal, always (the F03 repair);
+   *  - memory-1 in the TEAM ledger: admitted. `acceptRecord` makes the same carve-out for the same
+   *    reason — a committed, append-only line can never be stamped, so refusing it removes readable
+   *    repo-public history for no gain, and anyone who can read the repository can read it;
+   *  - memory-1 anywhere else (a PRIVATE store): admitted unless the boundary is engaged. Unlike the
+   *    team case, `crib memory migrate` CAN stamp these in place — which is why the strict reading is
+   *    the correct one to offer here, and why it stays opt-in: the default admits them, because
+   *    admission itself writes memory-1 (`resolveStrictPrincipal` carries that measurement).
    */
-  private acceptsRecord(record: ReadableMemoryRecord): boolean {
-    return (
-      !isMemoryRecordVersioned(record) || record.provenance.principalId === this.callerPrincipal()
-    );
+  private acceptsRecord(record: ReadableMemoryRecord, source: MemorySource | undefined): boolean {
+    if (isMemoryRecordVersioned(record)) {
+      return record.provenance.principalId === this.callerPrincipal();
+    }
+    if (source === 'team') return true;
+    return !this.strictPrincipal();
+  }
+
+  /**
+   * Whether the caller engaged the strict principal boundary (`KCRIB_STRICT_PRINCIPAL`, off by
+   * default). Resolved from THIS api's env, never `process.env`, so a serving layer that holds its
+   * own env is scoped independently — the same reason the recall gathers resolve it this way.
+   */
+  private strictPrincipal(): boolean {
+    return resolveStrictPrincipal(this.env);
+  }
+
+  /** The source of a store the api was wired with (undefined for a store it does not hold). */
+  private sourceOf(store: MemoryStore): MemorySource | undefined {
+    return this.orderedStores().find((s) => s.store === store)?.source;
   }
 
   private callerPrincipal(): string {

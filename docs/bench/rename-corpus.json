@@ -1,0 +1,50 @@
+{
+  "generatedAt": "2026-09-23T02:45:22.213Z",
+  "repo": "/Users/vishalchawla/Documents/personal/Knowledge-crib",
+  "window": {
+    "base": "a8a5c121a11390131c804427840255bc59ca9635",
+    "head": "b4615721e6a352aa9f89edc0f9f4094d28e113a6",
+    "depth": 400,
+    "commitsInWindow": 353
+  },
+  "indexRev": "b4615721e6a352aa9f89edc0f9f4094d28e113a6",
+  "renameLimit": 20000,
+  "renameDetection": "complete — `-l` was raised above the tree width; a skipped detection would have returned 0 entries",
+  "counts": {
+    "renameEntries": 1192,
+    "commitsWithRenames": 5,
+    "byPathClass": {
+      "derived": 1188,
+      "docs": 3,
+      "other": 1,
+      "source": 0
+    },
+    "tasks": 0,
+    "dropped": {
+      "commitHasOtherChanges": 5,
+      "noSourceRename": 0,
+      "oldPathStillInIndexRev": 0,
+      "newPathNotInIndexRev": 0,
+      "messageTooThin": 0
+    }
+  },
+  "power": {
+    "powered": false,
+    "minTasks": 8,
+    "tasks": 0
+  },
+  "metric2": {
+    "name": "old-site-at-top",
+    "kind": "tripwire",
+    "guaranteedZeroBy": [
+      "applyDelta deletes nodes_fts + nodes rows",
+      "vectorQuery joins nodes for metadata"
+    ]
+  },
+  "limits": [
+    "One repository, and this one has no source-file renames in its history — see counts.byPathClass.",
+    "A file-level rename is a proxy for the declaration-level rename §8.4 describes; a declaration that moves between files without the file itself moving is invisible to `--diff-filter=R`.",
+    "The commit subject is a post-hoc description written after the move, so it is a better proxy for \"an agent is told what moved\" than for \"an agent asks where something went\"."
+  ],
+  "tasks": []
+}

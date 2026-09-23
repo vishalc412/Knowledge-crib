@@ -2,6 +2,7 @@
  * @knowledge-crib/core — SoulStore (source of truth) + conflict rule + manifest + validation.
  * IndexStore lands at M1.
  */
+export * from './atomic-write.js';
 export * from './soul-store.js';
 export * from './graph-layout.js';
 export * from './graph-store.js';

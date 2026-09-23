@@ -1,0 +1,57 @@
+{
+  "_note": "Frozen WP3 maintenance-risk baseline. Every number was MEASURED by node scripts/boundaries-check.mjs --json on the tree named in _measuredOn, then written back verbatim. Raising any of these is a deliberate, reviewable commit: the gate fails on growth so a reviewer sees the change. Never edit this file by hand to make a run go green.",
+  "_measuredOn": "branch program/developer-trust, working tree at HEAD b4615721 plus the WP3 browser-linting change",
+  "_measuredAt": "2026-09-23",
+  "_invariant": "boundaries-check.mjs exits 1 when any of: an undeclared package edge (R1/R2), production code escaping its package by relative path (R3), a package cycle (R4), a change to the frozen file-cycle set (R5), a suppression count that grows (R6), or coverage debt that grows (R7). Counts may always go DOWN; shrinking this file is part of the commit that earns it.",
+  "_whyTheThreeCyclesAreFrozenNotFixed": "Each is a real value-import cycle between two or three files inside one package. Breaking one is a refactor with its own blast radius: cli/freshness.ts<->freshness-child.ts is a parent/child process pair, memory/sync/policy.ts<->engine.ts<->api.ts runs through the public api surface, and pipeline/parse-pool.ts<->parse-concurrent.ts<->parse.ts is a shared worker-pool. WP3 asks for DETECTION and a ratchet, not a risky refactor under a maintenance-hygiene bullet; freezing them makes a NEW cycle fail while leaving the existing three to a separately-scoped change.",
+  "fileCycles": [
+    ["packages/cli/src/freshness-child.ts", "packages/cli/src/freshness.ts"],
+    [
+      "packages/memory/src/api.ts",
+      "packages/memory/src/sync/engine.ts",
+      "packages/memory/src/sync/policy.ts"
+    ],
+    [
+      "packages/pipeline/src/parse-concurrent.ts",
+      "packages/pipeline/src/parse-pool.ts",
+      "packages/pipeline/src/parse.ts"
+    ]
+  ],
+  "suppressions": {
+    "cli": {
+      "biome-ignore": 1,
+      "eslint-disable": 1
+    },
+    "core": {
+      "biome-ignore": 9,
+      "as any": 6
+    },
+    "mcp": {
+      "biome-ignore": 2,
+      "as any": 1
+    },
+    "memory": {
+      "as any": 1
+    },
+    "parsers": {
+      "eslint-disable": 1,
+      "biome-ignore": 2,
+      "as any": 8
+    }
+  },
+  "unresolvedRelativeSpecifiers": 3,
+  "skippedSourceFilesInFixtures": 15,
+  "_measuredTotals": {
+    "sourceFilesWalked": 535,
+    "packages": 8,
+    "declaredPackageEdges": 20,
+    "packageCycles": 0,
+    "typeOnlyEdgesExcludedFromCycles": 652,
+    "jsonDataImports": 22,
+    "buildConfigFilesOutsideWalk": 9
+  },
+  "_whatThisWalkCovers": "packages/<pkg>/src/** and packages/<pkg>/test/** for every workspace package — the shipped modules plus the first-party executable tests (packages/cli/test/browser/*.ts drives the shipped UI in a real browser). Walked file count is under _measuredTotals.sourceFilesWalked.",
+  "_whatThisWalkDoesNotCover": "packages/<pkg>/fixtures/** (15 .ts files: parser and pipeline test DATA, not shipped code — biome ignores them too), and the 9 *.config.ts build/tooling files at package roots (vitest/playwright config; linted by biome but not part of the source module graph this gate describes). Neither is executable product code, and both are counted rather than silently skipped.",
+  "_knownParserLimits": "Textual parsing, not type-aware: re-exports THROUGH a barrel are followed as edges, but tsconfig paths aliases and conditional requires are not resolved. Type-only edges are excluded from cycle detection (a type cycle has no runtime effect) and counted instead (652 at freeze). JSON imports are data, not edges (22 at freeze). The 3 unresolved specifiers are all test files deliberately reaching scripts/fixtures/*.mjs; they are permitted by R3 and declared here as R7 debt.",
+  "_unusedExportsNotImplemented": "The plan names unused exports in the same bullet as casts and suppressions. It is deliberately NOT implemented: proving an export unused needs project-wide symbol analysis (tsc reports unused locals, not exports), and a grep-shaped approximation would fail on prose and be turned off within a week. Recorded as an omission so a green run is not read as covering it."
+}

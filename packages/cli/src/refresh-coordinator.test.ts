@@ -91,14 +91,25 @@ function poisonableExtractors(): ReturnType<typeof defaultExtractors> {
 interface TestGraphReader {
   readonly generation: string;
   readonly sourcePosition: string | null;
+  /** The projection's own identity, mirroring cli.ts's `++graphPublication` counter (D2-b). */
+  readonly publication: number;
   closed: boolean;
   close(): void;
 }
+
+/**
+ * Mirrors the CLI wiring (`generation: ++graphPublication`): every built reader is a NEW projection
+ * with its OWN identity, higher than the last. A test can therefore tell "a different graph is
+ * serving" from "the same graph, restamped" — which is the whole point of the field, since the
+ * reader generation no longer moves for a memory-only rebuild (D2-a).
+ */
+let graphPublications = 0;
 
 function graphReader(generation: string, sourcePosition: string | null): TestGraphReader {
   return {
     generation,
     sourcePosition,
+    publication: ++graphPublications,
     closed: false,
     close() {
       this.closed = true;
@@ -297,7 +308,9 @@ describe('WP-G3 — graph, FTS, and source graph publish as one recoverable gene
       expect(second?.sourcePosition).toBe('memory:2');
       expect(first?.closed).toBe(true);
       expect(coordinator.freshness().graphSourcePosition).toBe('memory:2');
-      expect(coordinator.freshness().graphGeneration).toBe(second?.generation);
+      // The report reads the SERVING graph's own publication (D2-b), not the bundle generation: a
+      // field that merely restated `readerGeneration` could never fail an agreement check.
+      expect(coordinator.freshness().graphGeneration).toBe(String(second?.publication));
       expect(coordinator.freshness()).toHaveProperty(
         'searchGeneration',
         coordinator.freshness().readerGeneration,
@@ -350,7 +363,12 @@ describe('WP-G3 — graph, FTS, and source graph publish as one recoverable gene
     try {
       const fresh = coordinator.freshness();
       expect(fresh.readerGeneration).not.toBeNull();
-      expect(fresh.graphGeneration).toBe(fresh.readerGeneration);
+      // The graph half carries its OWN identity and the FTS half IS the bundle generation — the two
+      // are different KINDS of id, which is why the graph field can no longer be asserted equal to
+      // the reader generation (D2-b). What must hold is that each field names something real: the
+      // graph field names the serving projection, the search field names the serving bundle.
+      expect(fresh.graphGeneration).toBe(String(coordinator.currentGraph?.publication));
+      expect(fresh.graphGeneration).not.toBeNull();
       expect(fresh.searchGeneration).toBe(fresh.readerGeneration);
       expect(fresh.lastRefreshError).toBeNull();
     } finally {
@@ -444,7 +462,13 @@ describe('WP-G3 — graph, FTS, and source graph publish as one recoverable gene
     try {
       await restarted.initialize();
       expect(restarted.freshness().readerGeneration).toBe(firstGeneration);
-      expect(restarted.freshness().graphGeneration).toBe(firstGeneration);
+      // Same CODE generation — that is what "restart rebuilt the same reader" means, and it is the
+      // whole assertion. The graph publication is deliberately NOT compared across the restart: it
+      // counts projections within ONE serving process, so a restarted process legitimately starts a
+      // new count (D2-b). What must hold is that the restarted report names THAT process's graph.
+      expect(restarted.freshness().graphGeneration).toBe(
+        String(restarted.currentGraph?.publication),
+      );
       expect(restarted.freshness().graphSourcePosition).toBe(graphSource);
     } finally {
       restarted.close();
@@ -485,6 +509,81 @@ describe('WP-G3 — graph, FTS, and source graph publish as one recoverable gene
       expect(readers.every((reader) => reader.closed)).toBe(true);
     }
   });
+
+  // ─── D2-a / D2-b: the two generation fields are separate facts ───────────────
+
+  it('D2-a — a memory-only mutation does not bump the code-reader generation, and a code change still does', async () => {
+    const soul = await indexedSoul();
+    let graphSource = 'memory:1';
+    const coordinator = new RefreshCoordinator(soul, repo, {
+      graphSourcePosition: () => graphSource,
+      buildGraph: ({ generation, capture }) => graphReader(generation, capture.graphSourcePosition),
+    });
+    await coordinator.initialize();
+    try {
+      const before = coordinator.freshness();
+      const graphBefore = coordinator.currentGraph;
+      expect(before.readerGeneration).not.toBeNull();
+
+      // A memory-only mutation. Not one byte of code changes.
+      graphSource = 'memory:2';
+      coordinator.requestRefresh('memory');
+      await coordinator.whenIdle();
+
+      const afterMemory = coordinator.freshness();
+      // THE ROW: the code-reader generation is unmoved. It used to move, because the memory-ledger
+      // position was hashed into it — so one appended memory line re-priced the whole code reader
+      // (a new reader generation, a full overlay/FTS/graph rebuild) and, worse, made a code-reader
+      // generation that did not describe code.
+      expect(afterMemory.readerGeneration).toBe(before.readerGeneration);
+      // Non-vacuous: the mutation must still have been PUBLISHED. A coordinator that simply ignored
+      // memory changes would satisfy the assertion above while serving a stale graph forever.
+      expect(coordinator.currentGraph).not.toBe(graphBefore);
+      expect(afterMemory.graphSourcePosition).toBe('memory:2');
+      expect(afterMemory.staleReasons).not.toContain(STALE_REASONS.ADOPTION_PENDING);
+
+      // …and the field is not simply frozen: a real CODE change still moves it. Without this the
+      // test would pass against a generation that never changes again.
+      writeFileSync(join(repo, 'src', 'd2a.ts'), 'export function d2a(): void {}\n');
+      coordinator.requestRefresh('watcher');
+      await coordinator.whenIdle();
+      expect(coordinator.freshness().readerGeneration).not.toBe(before.readerGeneration);
+    } finally {
+      coordinator.close();
+    }
+  });
+
+  it('D2-b — the graph and reader generation fields diverge when only the graph reader is replaced', async () => {
+    const soul = await indexedSoul();
+    let graphSource = 'memory:1';
+    const coordinator = new RefreshCoordinator(soul, repo, {
+      graphSourcePosition: () => graphSource,
+      buildGraph: ({ generation, capture }) => graphReader(generation, capture.graphSourcePosition),
+    });
+    await coordinator.initialize();
+    try {
+      const before = coordinator.freshness();
+      expect(before.graphGeneration).not.toBeNull();
+      expect(before.readerGeneration).not.toBeNull();
+
+      graphSource = 'memory:2';
+      coordinator.requestRefresh('memory');
+      await coordinator.whenIdle();
+
+      const after = coordinator.freshness();
+      // THE ROW: the two fields disagree. `graphGeneration` used to BE `readerGeneration` (the graph
+      // reader was stamped with the bundle's id and the report read it straight back), so an
+      // agreement check across these fields was a tautology that could not fail on any input —
+      // including a graph projection that had been left behind.
+      expect(after.graphGeneration).not.toBe(after.readerGeneration);
+      // …and it names the thing that actually moved: the serving projection's own publication.
+      expect(after.graphGeneration).toBe(String(coordinator.currentGraph?.publication));
+      // The graph that moved is the one being SERVED, not a discarded candidate.
+      expect(after.graphSourcePosition).toBe('memory:2');
+    } finally {
+      coordinator.close();
+    }
+  });
 });
 
 // ─── WP4.7: staleReasons accuracy + anchor fallback ────────────────────────────
@@ -500,7 +599,10 @@ describe('WP4.7 — readerFreshness verdicts', () => {
       expect(f.stale).toBe(false);
       expect(f.staleReasons).toEqual([]);
       expect(f.readerGeneration).toBe(f.publishedGeneration);
-      expect(f.graphGeneration).toBe(f.readerGeneration);
+      // No memory graph is configured for this coordinator, so the bundle HAS no graph and the field
+      // is honestly null. It used to fall back to `served.generation` — a fabricated agreement: with
+      // no graph at all the report claimed one whose generation was the reader's (D2-b).
+      expect(f.graphGeneration).toBeNull();
       expect(f.graphSourcePosition).toBeTruthy();
       expect(f.codeRevision).toBe(f.currentHead);
       expect(f.lastRefreshError).toBeNull();

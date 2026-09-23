@@ -29,15 +29,18 @@ import {
   MemoryApi,
   MemoryEvaluator,
   MemoryStore,
+  NO_DEPENDENCY,
   SoulStoreSoulPort,
   UNVERSIONED,
   __resetMemoryLockGuardForTest,
   attachVolatileFreshness,
+  bindEvaluationPass,
   entrySetFingerprint,
   fingerprintGenerations,
   freshnessAgeMs,
 } from './index.js';
 import type {
+  DependencyGenerations,
   EvaluationCachePort,
   MemoryEvalContext,
   MemoryEvidence,
@@ -55,17 +58,13 @@ const SUBJECT = 'sym:src/a.ts#A.b';
 
 describe('generation fingerprints', () => {
   it('fingerprintGenerations joins every slot (any slot change re-fingerprints)', () => {
-    const base = fingerprintGenerations({
-      code: 'c1',
-      policy: 'p1',
-      receipts: 'r1',
-      decisions: 'd1',
-      feedback: 'f1',
-      embedder: 'e1',
-      index: 'i1',
-    });
-    expect(base).toBe('c1|p1|r1|d1|f1|e1|i1');
+    const base = fingerprintGenerations(base0());
+    expect(base).toBe('c1|g1|l1|p1|r1|d1|f1|e1|i1');
     expect(fingerprintGenerations({ ...base0(), code: 'c2' })).not.toBe(base);
+    // The two WP1 slots are members of the fingerprint, not decoration — a `reader` or `ledger` move
+    // alone must re-fingerprint, or §7.4's stale read stays reachable (D2-c).
+    expect(fingerprintGenerations({ ...base0(), reader: 'g2' })).not.toBe(base);
+    expect(fingerprintGenerations({ ...base0(), ledger: 'l2' })).not.toBe(base);
   });
 
   it('entrySetFingerprint is count + max id (append-only sets)', () => {
@@ -82,9 +81,11 @@ describe('generation fingerprints', () => {
   });
 });
 
-function base0() {
+function base0(): DependencyGenerations {
   return {
     code: 'c1',
+    reader: 'g1',
+    ledger: 'l1',
     policy: 'p1',
     receipts: 'r1',
     decisions: 'd1',
@@ -93,6 +94,9 @@ function base0() {
     index: 'i1',
   };
 }
+
+/** The fingerprint a `bind` reaches from a bare `{ code }` — every other slot is at its default. */
+const RAW_BIND = 'c1|none|none|none|none|none|none|none|none';
 
 // ─── unit: GenerationCache ───────────────────────────────────────────────────
 
@@ -111,7 +115,7 @@ describe('GenerationCache', () => {
     const port = cache.bind({ code: 'c1' });
     expect(port).toBeDefined();
     const p = port!;
-    expect(p.generation()).toBe('c1|none|none|none|none|none|none');
+    expect(p.generation()).toBe(RAW_BIND);
     p.set('k1', EVAL);
     expect(p.get('k1')).toBe(EVAL);
     expect(cache.size).toBe(1);
@@ -124,7 +128,7 @@ describe('GenerationCache', () => {
     expect(cache.bind({ code: 'c1', receipts: UNVERSIONED })).toBeUndefined();
     // the refusal left the previously-bound entries intact at their generation
     expect(cache.size).toBe(1);
-    expect(cache.currentGeneration).toBe('c1|none|none|none|none|none|none');
+    expect(cache.currentGeneration).toBe(RAW_BIND);
   });
 
   it('ANY slot change invalidates wholesale (a stale verdict is never served)', () => {
@@ -193,8 +197,150 @@ describe('attachVolatileFreshness (the wall-clock law, enforced by shape)', () =
   });
 });
 
-// ─── evaluator wiring ────────────────────────────────────────────────────────
+// ─── the caller's pin: the reader + ledger slots (WP1 items 7/8, D2-c) ───────
 
+describe('bindEvaluationPass pins the reader + ledger slots (D2-c)', () => {
+  const soul = (): MemorySoulPort => fakeSoulWithGeneration({ generation: 'gen-1' });
+  const none = { decisions: [], localDecisions: [], feedback: [] };
+  /** Opaque memoized verdict — identity is all these assertions need. */
+  const EVAL_FOR_PIN: RecordEvaluation = {
+    evidence: 'valid',
+    applicability: 'current',
+    items: [],
+    reattached: false,
+    reasons: [],
+  };
+
+  it('reports the pin on the pass generation, so the verdict names what it is current against', () => {
+    const bound = bindEvaluationPass({ soul: soul() }, none, {
+      reader: 'reader:A',
+      ledger: 'ledger:9',
+    });
+
+    // `code` is still the soul port's own generation — the pin ADDS a dependency, never replaces one.
+    expect(bound.generation).toBe('gen-1|reader:A|ledger:9|none|none|0:|0:|none|none');
+  });
+
+  it('a reader bump misses even though the soul generation is untouched — D2-c', () => {
+    const cache = new GenerationCache({ nowMs: () => 1000 });
+    const gathered = { decisions: [], localDecisions: [], feedback: [] };
+    const first = bindEvaluationPass({ soul: soul() }, gathered, {
+      cache,
+      reader: 'reader:A',
+      ledger: 'ledger:9',
+    });
+    first.evalCtx!.cache!.set('k', EVAL_FOR_PIN);
+
+    // The §7.4 sequence, reduced to the slot that makes it reachable: a working-tree edit republishes
+    // the code reader while the canonical soul has not moved. Before this item no slot could move, so
+    // the memoized verdict was served for evidence whose anchored span had changed.
+    const second = bindEvaluationPass({ soul: soul() }, gathered, {
+      cache,
+      reader: 'reader:B',
+      ledger: 'ledger:9',
+    });
+
+    expect(second.evalCtx).toBeDefined();
+    expect(second.evalCtx!.cache!.get('k')).toBeUndefined();
+    expect(second.generation).not.toBe(first.generation);
+    expect(cache.size).toBe(0);
+  });
+
+  it('a ledger-only change misses even though the soul generation is untouched — D2-c', () => {
+    const cache = new GenerationCache({ nowMs: () => 1000 });
+    const gathered = { decisions: [], localDecisions: [], feedback: [] };
+    const first = bindEvaluationPass({ soul: soul() }, gathered, {
+      cache,
+      reader: 'reader:A',
+      ledger: 'ledger:9',
+    });
+    first.evalCtx!.cache!.set('k', EVAL_FOR_PIN);
+
+    // The other half of the collapse: the ledger moves (a durable graph entry lands) without the soul
+    // moving and without touching the decision/feedback entry sets — invisible to every pre-WP1 slot.
+    const second = bindEvaluationPass({ soul: soul() }, gathered, {
+      cache,
+      reader: 'reader:A',
+      ledger: 'ledger:10',
+    });
+
+    expect(second.evalCtx!.cache!.get('k')).toBeUndefined();
+    expect(cache.size).toBe(0);
+  });
+
+  it('an omitted pin binds `none`, not UNVERSIONED — a reader-less caller still caches', () => {
+    const bound = bindEvaluationPass({ soul: soul() }, none);
+
+    // The distinction the slots turn on: "no such dependency" is cacheable, "cannot name it" is not.
+    // Refusing here would have made every existing CLI/MCP read evaluate fresh, which is why the
+    // default is `none` and item 8's call sites opt IN to the pin.
+    expect(bound.evalCtx).toBeDefined();
+    expect(bound.generation).toBe('gen-1|none|none|none|none|0:|0:|none|none');
+  });
+
+  it('UNVERSIONED refuses the cache: a reader that exists but cannot be named is never trusted', () => {
+    const bound = bindEvaluationPass({ soul: soul() }, none, {
+      reader: UNVERSIONED,
+      ledger: 'ledger:9',
+    });
+
+    // Adoption pending: an overlay is serving reads but its generation is not yet authoritative, so
+    // there is nothing to prove a memoized verdict current against. Fresh evaluation is the only
+    // honest answer — and it must not be silently reported as a cacheable generation.
+    expect(bound.evalCtx).toBeUndefined();
+    expect(bound.generation).toBeNull();
+  });
+
+  // ── the pin as the serve process carries it: on the long-lived eval context ──
+
+  it('resolves the CONTEXT pin at bind time, so a reader that moves between reads busts — D2-c', () => {
+    // The serve process's shape: one long-lived context, one pin whose accessor answers "what is this
+    // process serving RIGHT NOW". A value captured once at construction would answer yesterday's
+    // question — either never busting (§7.4) or busting on the wrong trigger.
+    let served = 'reader:A';
+    const ctx: MemoryEvalContext = {
+      soul: soul(),
+      pin: { reader: () => served, ledger: () => 'ledger:9' },
+    };
+    const cache = new GenerationCache({ nowMs: () => 1000 });
+
+    const first = bindEvaluationPass(ctx, none, { cache });
+    expect(first.generation).toBe('gen-1|reader:A|ledger:9|none|none|0:|0:|none|none');
+    first.evalCtx!.cache!.set('k', EVAL_FOR_PIN);
+
+    // One refresh cycle later: the bundle the process serves has moved. The memoized verdict was
+    // evaluated against the OLD snapshot's spans, so serving it now is the stale read.
+    served = 'reader:B';
+    const second = bindEvaluationPass(ctx, none, { cache });
+
+    expect(second.evalCtx!.cache!.get('k')).toBeUndefined();
+    expect(cache.size).toBe(0);
+    expect(second.generation).toContain('reader:B');
+  });
+
+  it('a context with no reader pins `none` and still caches (manual freshness mode)', () => {
+    // The manual-mode server and every one-shot command resolve against the canonical soul: there is
+    // no snapshot to be stale against, so the slot is `NO_DEPENDENCY` — not a refusal, and not a
+    // claim of a dependency the process does not have.
+    const bound = bindEvaluationPass({ soul: soul(), pin: { reader: () => NO_DEPENDENCY } }, none);
+
+    expect(bound.evalCtx).toBeDefined();
+    expect(bound.generation).toBe('gen-1|none|none|none|none|0:|0:|none|none');
+  });
+
+  it('an explicit per-pass pin overrides the context pin', () => {
+    const ctx: MemoryEvalContext = { soul: soul(), pin: { reader: () => 'reader:A' } };
+
+    // The context says what the process serves; an argument says what THIS pass reads. The argument
+    // wins, so a caller can pin one read without disturbing the session's identity.
+    expect(bindEvaluationPass(ctx, none, { reader: 'reader:EXPLICIT' }).generation).toContain(
+      'reader:EXPLICIT',
+    );
+    expect(bindEvaluationPass(ctx, none).generation).toContain('reader:A');
+  });
+});
+
+// ─── evaluator wiring ────────────────────────────────────────────────────────
 /** A soul port WITH a generation signal + call counters (unit fakes without one must never cache). */
 function fakeSoulWithGeneration(
   opts: {
@@ -398,7 +544,15 @@ describe('MemoryApi.search freshness metadata', () => {
 
   beforeEach(() => {
     home = mkdtempSync(join(tmpdir(), 'gen3-api-home-'));
-    env = { ...process.env, KCRIB_MEMORY_DIR: home, KCRIB_REGISTRY_DIR: home };
+    // KCRIB_PRINCIPAL_ID is pinned rather than inherited: the fixture store is migrated under
+    // `principal:local` (see migratedLocal), and a developer shell that exported a different id would
+    // otherwise stamp and gather under different owners, turning these tests environment-dependent.
+    env = {
+      ...process.env,
+      KCRIB_MEMORY_DIR: home,
+      KCRIB_REGISTRY_DIR: home,
+      KCRIB_PRINCIPAL_ID: 'principal:local',
+    };
     __resetMemoryLockGuardForTest();
   });
 
@@ -428,10 +582,30 @@ describe('MemoryApi.search freshness metadata', () => {
     };
   }
 
-  it('reports the dependency generation on provenance and the volatile trio per hit', () => {
+  /**
+   * A local store holding ONE recall-eligible record — the shape a private store has after
+   * `crib memory migrate` (WP1 item 12), built through that supported path rather than by hand.
+   *
+   * The **alias snapshot** `migrateToV2` writes is the half these tests actually need: a bare
+   * memory-2 record carries no `verdicts` field, so `effectiveVerdicts` projects it as `candidate`
+   * trust and `isRecallEligible` drops it. Hand-building a v2 record would therefore empty these
+   * tests for a silent reason.
+   *
+   * The **stamp** is not what admits it — the principal boundary is OFF unless `KCRIB_STRICT_PRINCIPAL`
+   * is set (see `resolveStrictPrincipal`, and D-2 in the WP1 spec for why it cannot be on by default).
+   * The stamp is kept so the fixture is the shape a real migrated store has rather than one that only
+   * works while the boundary is off, and `env` pins the principal so a developer shell that exported
+   * a different id cannot change which owner the fixture is built for.
+   */
+  function migratedLocal(): MemoryStore {
     const local = MemoryStore.local(REPO, { env, now: () => T0 });
-    const r = record();
-    local.upsertEntry('active', r);
+    local.upsertEntry('active', record());
+    local.migrateToV2({ provenance: { principalId: 'principal:local' } });
+    return local;
+  }
+
+  it('reports the dependency generation on provenance and the volatile trio per hit', () => {
+    const local = migratedLocal();
     const evaluator = new MemoryEvaluator();
     const evalCtx: MemoryEvalContext = { soul: freshSoul() };
     const api = new MemoryApi({
@@ -445,11 +619,11 @@ describe('MemoryApi.search freshness metadata', () => {
 
     const res = api.search(SUBJECT);
     expect(res.provenance.fresh).toBe(true);
-    expect(res.provenance.generation).toBe('gen-1|none|none|0:|0:|none|none');
+    expect(res.provenance.generation).toBe('gen-1|none|none|none|none|0:|0:|none|none');
     const hit = res.hits[0];
     if (!hit) throw new Error('no hit');
     // non-enumerable trio: readable explicitly, invisible to JSON (and thus to ifHash)
-    expect(hit.freshness.generation).toBe('gen-1|none|none|0:|0:|none|none');
+    expect(hit.freshness.generation).toBe('gen-1|none|none|none|none|0:|0:|none|none');
     expect(hit.freshness.evaluatedAtMs).toBe(5000);
     expect(hit.freshness.ageMs).toBe(0);
     const flat = JSON.parse(JSON.stringify(hit.freshness)) as Record<string, unknown>;
@@ -459,8 +633,7 @@ describe('MemoryApi.search freshness metadata', () => {
   });
 
   it('two identical searches stay byte-equal (the ifHash determinism invariant)', () => {
-    const local = MemoryStore.local(REPO, { env, now: () => T0 });
-    local.upsertEntry('active', record());
+    const local = migratedLocal();
     const api = new MemoryApi({
       stores: { local },
       env,
@@ -471,12 +644,14 @@ describe('MemoryApi.search freshness metadata', () => {
     });
     const a = api.search(SUBJECT);
     const b = api.search(SUBJECT);
+    // non-vacuous: two EMPTY responses would also be byte-equal, so pin that there is something to
+    // be equal ABOUT before comparing.
+    expect(a.hits).toHaveLength(1);
     expect(JSON.stringify(b)).toBe(JSON.stringify(a));
   });
 
   it('a generation-less soul port binds nothing (provenance.generation is null, fresh eval still runs)', () => {
-    const local = MemoryStore.local(REPO, { env, now: () => T0 });
-    local.upsertEntry('active', record());
+    const local = migratedLocal();
     const preG33: MemorySoulPort = {
       // resolves the anchor + matches the hash (the G3.3 short-circuit answers per item), but
       // carries NO generation() — the pre-G3.3 port shape. The pass must still evaluate FRESH.
