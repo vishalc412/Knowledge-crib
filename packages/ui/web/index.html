@@ -81,7 +81,7 @@
     .kc-topbar button, .kc-command-segment button { min-width:44px !important; min-height:44px !important; }
     .kc-command-segment { height:auto !important; }
     .kc-search input { height:44px !important; }
-    [data-kc-inspector-actions] button { min-height:44px !important; }
+    [data-kc-inspector-actions] button, [data-kc-inspector-section] > button, [data-kc-inspector-source] > button, .kc-memory-panel button, .kc-memory-panel summary { min-height:44px !important; }
     [data-kc-help] { position:fixed !important; top:auto !important; right:12px !important; bottom:12px !important; left:12px !important; width:auto !important; max-width:none !important; }
   }
   @media (max-width: 900px) {
@@ -113,36 +113,6 @@
 </helmet>
 <div ref="{{ rootRef }}" data-kc-shell="signal-console" data-kc-theme="{{ theme }}" class="{{ inspectorClass }}" style="--kc-rail-width:{{ railWidth }}; --kc-inspector-width:356px; position:fixed; inset:0; overflow:hidden; font-family:'IBM Plex Sans',system-ui,sans-serif; background:var(--kc-bg);">
 
-  <main data-kc-graph-stage aria-label="Knowledge graph stage">
-    <canvas ref="{{ canvasRef }}" class="kc-stage-canvas"></canvas>
-    <div class="kc-stage-chrome" style="top:10px; left:12px; right:12px; display:flex; align-items:flex-start; gap:8px;">
-      <div data-kc-stage-breadcrumbs class="kc-stage-float" aria-label="Graph location">
-        <button onClick="{{ showOverview }}" style="min-height:32px; padding:0 4px; border:0; background:none; color:var(--kc-text-interactive); cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">Overview</button>
-        <sc-if value="{{ stageSecondary }}" hint-placeholder-val="{{ true }}">
-          <span style="font:500 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">/</span>
-          <span style="max-width:190px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--kc-text-2); font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">{{ stageSecondary }}</span>
-        </sc-if>
-        <sc-if value="{{ stageTertiary }}" hint-placeholder-val="{{ true }}">
-          <span style="font:500 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">/</span>
-          <span style="max-width:190px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--kc-text); font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">{{ stageTertiary }}</span>
-        </sc-if>
-      </div>
-      <sc-if value="{{ stageOverflowOn }}" hint-placeholder-val="{{ true }}">
-        <button data-kc-stage-overflow onClick="{{ openRail }}" class="kc-stage-float" style="cursor:pointer; font:500 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">{{ stageOverflowLabel }}</button>
-      </sc-if>
-      <button ref="{{ inspectorToggleRef }}" data-kc-inspector-toggle onClick="{{ toggleInspector }}" aria-label="{{ inspectorToggleLabel }}" aria-expanded="{{ inspectorExpanded }}" class="kc-stage-float" style="margin-left:auto; cursor:pointer; color:var(--kc-text); font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">{{ inspectorToggleLabel }}</button>
-    </div>
-    <div class="kc-stage-chrome" style="right:12px; bottom:12px; display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
-      <div data-kc-minimap class="kc-stage-float" style="padding:6px;">
-        <canvas ref="{{ miniRef }}" onClick="{{ resetView }}" width="168" height="108" aria-label="Graph minimap; activate to fit" style="display:block; width:84px; height:54px; border-radius:5px; cursor:pointer;"></canvas>
-      </div>
-      <div data-kc-stage-zoom class="kc-stage-float" style="gap:3px; padding:3px;">
-        <button onClick="{{ zoomOut }}" title="Zoom out" class="kc-stage-tool">−</button>
-        <button onClick="{{ resetView }}" title="Fit to screen" style="min-width:52px; height:32px; padding:0 8px; border:0; border-radius:6px; background:transparent; color:var(--kc-muted); cursor:pointer; font:700 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">{{ zoomLabel }}</button>
-        <button onClick="{{ zoomIn }}" title="Zoom in" class="kc-stage-tool">+</button>
-      </div>
-    </div>
-  </main>
 
   <!-- Top bar -->
   <header class="kc-topbar" style="position:absolute; top:0; left:0; right:0; height:58px; display:flex; align-items:center; gap:14px; padding:0 20px; background: {{ t.panel }}; color: {{ t.text }}; border-bottom:1px solid {{ t.border }}; backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); box-shadow:0 10px 34px rgba(0,0,0,0.18); z-index:20;">
@@ -168,6 +138,7 @@
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="position:absolute; left:11px; bottom:9px; pointer-events:none; opacity:0.7; color:var(--kc-text-primary);"><circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" stroke-width="2"></circle><path d="M20 20L16 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
       <input id="kc-graph-search" ref="{{ searchRef }}" onInput="{{ onSearch }}" placeholder="Search code, docs, tables…" style="width:100%; height:32px; padding:0 50px 0 34px; border-radius:8px; border:1px solid var(--kc-border-control); background:var(--kc-bg); color: {{ t.text }}; font:500 14px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; outline:none;">
       <span data-kc-search-shortcut style="position:absolute; right:8px; bottom:7px; padding:2px 6px; border-radius:5px; border:1px solid var(--kc-border-separator); background:var(--kc-fill); color:var(--kc-muted); pointer-events:none; font:600 12px 'IBM Plex Mono',monospace;">{{ searchShortcut }}</span>
+      <div data-kc-search-live role="status" aria-live="polite" style="position:absolute; width:1px; height:1px; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap;">{{ searchAnnouncement }}</div>
       <sc-if value="{{ searchStatus }}" hint-placeholder-val="{{ true }}">
         <div data-kc-search-status style="position:absolute; top:calc(100% + 4px); left:0; min-width:230px; padding:7px 10px; border-radius:8px; border:1px solid {{ t.border }}; background:{{ t.panel }}; color:{{ searchStatusColor }}; box-shadow:0 8px 24px rgba(0,0,0,0.24); font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; white-space:nowrap;">{{ searchStatus }}</div>
       </sc-if>
@@ -178,7 +149,7 @@
     <button class="kc-memory-btn" data-kc-memory-trigger onClick="{{ toggleMemory }}" aria-expanded="{{ memExpanded }}" title="Memory ledger — what the agents recorded, and what went stale when the code moved" style="height:36px; padding:0 13px; display:flex; align-items:center; gap:7px; border-radius:9px; border:1px solid {{ memBorder }}; background: {{ memBg }}; color: {{ memFg }}; font:600 12.5px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; cursor:pointer;">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 5h16M4 10h16M4 15h10M4 20h7" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
       <span class="kc-memory-label">Memory</span>
-      <span data-kc-memory-badge style="min-width:16px; padding:1px 5px; border-radius:20px; background:var(--kc-fill); border:1px solid var(--kc-border-separator); color:var(--kc-text-risk); text-align:center; font:700 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">{{ memoryBadge }}</span>
+      <span data-kc-memory-badge style="min-width:16px; padding:1px 5px; border-radius:20px; background:var(--kc-surface-floating); border:1px solid var(--kc-border-separator); color:var(--kc-text-risk); text-align:center; font:700 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">{{ memoryBadge }}</span>
     </button>
 
      <button data-kc-theme-toggle onClick="{{ toggleTheme }}" title="{{ themeToggleLabel }}" aria-label="{{ themeToggleLabel }}" style="width:36px; height:36px; flex:none; display:flex; align-items:center; justify-content:center; border-radius:9px; border:1px solid var(--kc-border-control); background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer;">
@@ -222,6 +193,37 @@
     </div>
   </aside>
 
+  <main data-kc-graph-stage aria-label="Knowledge graph stage">
+    <canvas ref="{{ canvasRef }}" class="kc-stage-canvas" role="img" aria-label="{{ canvasLabel }}"></canvas>
+    <div class="kc-stage-chrome" style="top:10px; left:12px; right:12px; display:flex; align-items:flex-start; gap:8px;">
+      <div data-kc-stage-breadcrumbs class="kc-stage-float" aria-label="Graph location">
+        <button onClick="{{ showOverview }}" style="min-height:32px; padding:0 4px; border:0; background:none; color:var(--kc-text-interactive); cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">Overview</button>
+        <sc-if value="{{ stageSecondary }}" hint-placeholder-val="{{ true }}">
+          <span style="font:500 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">/</span>
+          <span style="max-width:190px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--kc-text-2); font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">{{ stageSecondary }}</span>
+        </sc-if>
+        <sc-if value="{{ stageTertiary }}" hint-placeholder-val="{{ true }}">
+          <span style="font:500 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">/</span>
+          <span style="max-width:190px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--kc-text); font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">{{ stageTertiary }}</span>
+        </sc-if>
+      </div>
+      <sc-if value="{{ stageOverflowOn }}" hint-placeholder-val="{{ true }}">
+        <button data-kc-stage-overflow onClick="{{ openRail }}" class="kc-stage-float" style="cursor:pointer; font:500 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">{{ stageOverflowLabel }}</button>
+      </sc-if>
+      <button ref="{{ inspectorToggleRef }}" data-kc-inspector-toggle onClick="{{ toggleInspector }}" aria-label="{{ inspectorToggleLabel }}" aria-expanded="{{ inspectorExpanded }}" class="kc-stage-float" style="margin-left:auto; cursor:pointer; color:var(--kc-text); font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">{{ inspectorToggleLabel }}</button>
+    </div>
+    <div class="kc-stage-chrome" style="right:12px; bottom:12px; display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
+      <div data-kc-minimap class="kc-stage-float" style="padding:6px;">
+        <canvas ref="{{ miniRef }}" onClick="{{ resetView }}" width="168" height="108" aria-label="Graph minimap; activate to fit" style="display:block; width:84px; height:54px; border-radius:5px; cursor:pointer;"></canvas>
+      </div>
+      <div data-kc-stage-zoom class="kc-stage-float" style="gap:3px; padding:3px;">
+        <button onClick="{{ zoomOut }}" title="Zoom out" class="kc-stage-tool">−</button>
+        <button onClick="{{ resetView }}" title="Fit to screen" style="min-width:52px; height:32px; padding:0 8px; border:0; border-radius:6px; background:transparent; color:var(--kc-muted); cursor:pointer; font:700 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">{{ zoomLabel }}</button>
+        <button onClick="{{ zoomIn }}" title="Zoom in" class="kc-stage-tool">+</button>
+      </div>
+    </div>
+  </main>
+
   <sc-if value="{{ inspectorEmpty }}" hint-placeholder-val="{{ true }}">
     <aside data-kc-inspector-placeholder class="kc-inspector-empty" role="{{ inspectorRole }}" aria-modal="{{ inspectorModal }}" aria-label="Inspector">
       <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
@@ -250,6 +252,7 @@
         <b style="font-family:'IBM Plex Mono',ui-monospace,monospace;">M</b><span>Open memory</span>
         <b style="font-family:'IBM Plex Mono',ui-monospace,monospace;">Esc</b><span>Close the current layer</span>
       </div>
+      <button data-kc-single-key-toggle role="switch" aria-checked="{{ singleKeysChecked }}" onClick="{{ toggleSingleKeys }}" style="margin-top:10px; width:100%; min-height:32px; display:flex; align-items:center; justify-content:space-between; gap:8px; padding:0 10px; border-radius:7px; border:1px solid var(--kc-border-control); background:var(--kc-fill); color:var(--kc-text); cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;"><span>Single-key shortcuts (F, M)</span><span>{{ singleKeysLabel }}</span></button>
     </div>
   </sc-if>
 
@@ -274,7 +277,7 @@
         <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
           <div style="display:flex; align-items:center; gap:8px; min-width:0;">
             <span style="width:11px; height:11px; border-radius:50%; flex:none; background: {{ sel.color }}; box-shadow:0 0 0 4px {{ sel.glow }};"></span>
-            <span style="font-size:12px; font-weight:600; letter-spacing:0.07em; text-transform:uppercase; color: {{ sel.color }};">{{ sel.kindLabel }}</span>
+            <span style="font-size:12px; font-weight:600; letter-spacing:0.07em; text-transform:uppercase; color: {{ t.sub }};">{{ sel.kindLabel }}</span>
           </div>
           <div style="display:flex; gap:6px; flex:none;">
             <sc-if value="{{ sel.backAction }}" hint-placeholder-val="{{ true }}">
@@ -299,7 +302,7 @@
         <sc-if value="{{ sel.blastOn }}" hint-placeholder-val="{{ true }}">
           <div style="display:flex; gap:10px; align-items:flex-start; padding:11px 12px; border-radius:11px; background: rgba(248,113,113,0.12); border:1px solid rgba(248,113,113,0.4); margin-bottom:15px;">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" style="flex:none; margin-top:1px;"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" fill="#f87171"></path></svg>
-            <div style="font-size:12.5px; line-height:1.45;"><b style="color:#f87171;">{{ sel.blastCount }} nodes affected.</b> <span style="color: {{ t.sub }};">Changing this can ripple out to everything that depends on it.</span></div>
+            <div style="font-size:12.5px; line-height:1.45;"><b style="color:var(--kc-text-risk);">{{ sel.blastCount }} nodes affected.</b> <span style="color: {{ t.sub }};">Changing this can ripple out to everything that depends on it.</span></div>
           </div>
         </sc-if>
 
@@ -325,9 +328,9 @@
         <div data-kc-inspector-connections>
         <sc-for list="{{ sel.sections }}" as="sec" hint-placeholder-count="3">
           <div data-kc-inspector-section style="margin-top:20px;">
-            <button onClick="{{ sec.onToggle }}" style="width:100%; display:flex; align-items:center; gap:8px; padding:0; margin:0 0 9px; border:0; background:transparent; text-align:left; cursor:pointer;">
+            <button onClick="{{ sec.onToggle }}" aria-expanded="{{ sec.expanded }}" style="width:100%; min-height:32px; display:flex; align-items:center; gap:8px; padding:0; margin:0 0 9px; border:0; background:transparent; text-align:left; cursor:pointer;">
               <span style="color:{{ t.sub }}; font:700 12px 'IBM Plex Mono',monospace;">{{ sec.caret }}</span>
-              <span style="font-size:12px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ sec.color }};">{{ sec.title }}</span>
+              <span style="font-size:12px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ t.sub }};">{{ sec.title }}</span>
               <span style="font-size:12px; color: {{ t.sub }}; background: {{ t.chip }}; padding:1px 7px; border-radius:20px;">{{ sec.count }}</span>
               <div style="flex:1; height:1px; background: {{ t.border }};"></div>
             </button>
@@ -338,7 +341,7 @@
                   <span style="width:9px; height:9px; border-radius:50%; flex:none; background: {{ it.color }};"></span>
                   <span style="flex:1; min-width:0;">
                     <span style="display:block; font-size:13px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ it.label }}</span>
-                    <span style="display:block; font-size:12px; color: {{ t.sub }}; margin-top:1px;"><span style="color: {{ it.relColor }}; font-weight:500;">{{ it.phrase }}</span>{{ it.tail }}</span>
+                    <span style="display:block; font-size:12px; color: {{ t.sub }}; margin-top:1px;"><span style="color: {{ t.text }}; font-weight:500;">{{ it.phrase }}</span>{{ it.tail }}</span>
                   </span>
                   <sc-if value="{{ it.badge }}" hint-placeholder-val="{{ true }}">
                     <span style="flex:none; font-size:12px; font-weight:600; padding:2px 6px; border-radius:5px; background: {{ it.badgeBg }}; color: {{ it.badgeFg }};">{{ it.badge }}</span>
@@ -354,7 +357,7 @@
         <!-- exact source preview follows impact and relationships, matching the reference's scan order -->
         <sc-if value="{{ sel.source }}" hint-placeholder-val="{{ true }}">
           <div data-kc-inspector-source style="margin-top:18px;">
-            <button onClick="{{ toggleInspectorSource }}" style="width:100%; display:flex; align-items:center; gap:8px; margin:0 0 8px; padding:0; border:0; background:transparent; text-align:left; cursor:pointer;">
+            <button onClick="{{ toggleInspectorSource }}" aria-expanded="{{ sourceExpanded }}" style="width:100%; min-height:32px; display:flex; align-items:center; gap:8px; margin:0 0 8px; padding:0; border:0; background:transparent; text-align:left; cursor:pointer;">
               <span style="color:{{ t.sub }}; font:700 12px 'IBM Plex Mono',monospace;">{{ sourceCaret }}</span>
               <span style="font-size:12px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ t.sub }};">Source</span>
               <div style="flex:1; height:1px; background: {{ t.border }};"></div>
@@ -367,14 +370,14 @@
               </div>
             <sc-if value="{{ sel.source.loading }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color: {{ t.sub }};">Loading source…</div></sc-if>
             <sc-if value="{{ sel.source.unavailable }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color: {{ t.sub }};">Source location unavailable for this node.</div></sc-if>
-            <sc-if value="{{ sel.source.failed }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color:#f87171;">{{ sel.source.message }}</div></sc-if>
+            <sc-if value="{{ sel.source.failed }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color:var(--kc-text-risk);">{{ sel.source.message }}</div></sc-if>
             <sc-if value="{{ sel.source.ready }}" hint-placeholder-val="{{ true }}">
               <div style="max-height:280px; overflow:auto; border-radius:9px; border:1px solid {{ t.border }}; background: {{ t.code }}; padding:8px 0;">
                 <sc-for list="{{ sel.source.lines }}" as="line" hint-placeholder-count="5">
                   <div style="display:flex; min-width:max-content; font:12px/1.55 'IBM Plex Mono',monospace; color: {{ t.codeText }};"><span style="width:48px; flex:none; padding-right:10px; text-align:right; user-select:none; color: {{ t.sub }};">{{ line.no }}</span><span style="white-space:pre; padding-right:12px;">{{ line.text }}</span></div>
                 </sc-for>
               </div>
-              <sc-if value="{{ sel.source.truncated }}" hint-placeholder-val="{{ true }}"><div style="margin-top:6px; font-size:12px; color:#f59e0b;">Preview truncated at 200 lines / 64 KiB.</div></sc-if>
+              <sc-if value="{{ sel.source.truncated }}" hint-placeholder-val="{{ true }}"><div style="margin-top:6px; font-size:12px; color:var(--kc-text-review);">Preview truncated at 200 lines / 64 KiB.</div></sc-if>
             </sc-if>
             </sc-if>
           </div>
@@ -433,7 +436,7 @@
               </sc-for>
             </div>
             <div style="margin-top:8px; padding:9px 10px; border-radius:8px; background:rgba(67,216,201,0.10); border:1px solid rgba(67,216,201,0.35); color: {{ t.text }}; font-size:12px; line-height:1.45;">
-              <b style="color:#43d8c9;">Next safe action</b><br>{{ mem.homeView.nextAction }}
+              <b style="color:var(--kc-text-knowledge);">Next safe action</b><br>{{ mem.homeView.nextAction }}
             </div>
             <sc-if value="{{ mem.homeAction }}" hint-placeholder-val="{{ true }}">
               <div tabindex="-1" data-kc-mem-action-head style="margin-top:8px; padding:10px; border-radius:8px; border:1px solid {{ t.border }}; background:{{ t.chip }}; outline:none;">
@@ -447,13 +450,13 @@
             <sc-if value="{{ mem.pendingView }}" hint-placeholder-val="{{ true }}">
               <div style="margin-top:8px;">
                 <sc-if value="{{ mem.pendingView.loading }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color: {{ t.sub }}; padding:6px 2px;">Loading the pending queue…</div></sc-if>
-                <sc-if value="{{ mem.pendingView.error }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color:#f87171; padding:6px 2px;">{{ mem.pendingView.error }}</div></sc-if>
+                <sc-if value="{{ mem.pendingView.error }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color:var(--kc-text-risk); padding:6px 2px;">{{ mem.pendingView.error }}</div></sc-if>
                 <sc-if value="{{ mem.pendingView.unwired }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color: {{ t.sub }}; padding:6px 2px;">No memory stores are wired for this repo.</div></sc-if>
                 <sc-if value="{{ mem.pendingView.notice }}" hint-placeholder-val="{{ true }}">
                   <div role="status" data-kc-mem-admit-notice style="margin:6px 0; padding:8px 10px; border-radius:8px; background:rgba(52,211,153,0.12); border:1px solid rgba(52,211,153,0.4); font-size:12px; color: {{ t.text }};">{{ mem.pendingView.notice }}</div>
                 </sc-if>
                 <sc-if value="{{ mem.pendingView.mutationError }}" hint-placeholder-val="{{ true }}">
-                  <div style="margin:6px 0; padding:8px 10px; border-radius:8px; background:rgba(248,113,113,0.12); border:1px solid rgba(248,113,113,0.4); font-size:12px; color:#f87171;">
+                  <div style="margin:6px 0; padding:8px 10px; border-radius:8px; background:rgba(248,113,113,0.12); border:1px solid rgba(248,113,113,0.4); font-size:12px; color:var(--kc-text-risk);">
                     {{ mem.pendingView.mutationError.message }}
                     <sc-if value="{{ mem.pendingView.mutationError.command }}" hint-placeholder-val="{{ true }}">
                       <div style="margin-top:5px; font-family:'IBM Plex Mono',monospace; font-size:12px; color: {{ t.text }}; word-break:break-all;">{{ mem.pendingView.mutationError.command }}</div>
@@ -463,12 +466,12 @@
                 <sc-if value="{{ mem.pendingView.wired }}" hint-placeholder-val="{{ true }}">
                   <div style="display:flex; gap:5px; margin:8px 0 4px;">
                     <span style="padding:4px 8px; border-radius:6px; background: {{ t.chip }}; border:1px solid {{ t.border }}; font-size:12px; color: {{ t.sub }};">captures {{ mem.pendingView.counts.captures }}</span>
-                    <span style="padding:4px 8px; border-radius:6px; background:rgba(52,211,153,0.12); border:1px solid rgba(52,211,153,0.4); font-size:12px; color:#34d399;">ready {{ mem.pendingView.counts.ready }}</span>
-                    <span style="padding:4px 8px; border-radius:6px; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.4); font-size:12px; color:#f59e0b;">terminal {{ mem.pendingView.counts.terminal }}</span>
-                    <span style="padding:4px 8px; border-radius:6px; background:rgba(248,113,113,0.12); border:1px solid rgba(248,113,113,0.4); font-size:12px; color:#f87171;">blocked {{ mem.pendingView.counts.blocked }}</span>
+                    <span style="padding:4px 8px; border-radius:6px; background:rgba(52,211,153,0.12); border:1px solid rgba(52,211,153,0.4); font-size:12px; color:var(--kc-text-positive);">ready {{ mem.pendingView.counts.ready }}</span>
+                    <span style="padding:4px 8px; border-radius:6px; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.4); font-size:12px; color:var(--kc-text-review);">terminal {{ mem.pendingView.counts.terminal }}</span>
+                    <span style="padding:4px 8px; border-radius:6px; background:rgba(248,113,113,0.12); border:1px solid rgba(248,113,113,0.4); font-size:12px; color:var(--kc-text-risk);">blocked {{ mem.pendingView.counts.blocked }}</span>
                   </div>
                   <!-- session maintenance: re-run today's verification over the whole backlog -->
-                  <button data-kc-mem-recheck onClick="{{ mem.pendingView.onRecheck }}" disabled="{{ mem.pendingView.recheckBusy }}" style="margin:4px 0 2px; padding:5px 12px; border-radius:7px; border:1px solid rgba(67,216,201,0.5); background:rgba(67,216,201,0.14); color:#43d8c9; cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">{{ mem.pendingView.recheckLabel }}</button>
+                  <button data-kc-mem-recheck onClick="{{ mem.pendingView.onRecheck }}" disabled="{{ mem.pendingView.recheckBusy }}" style="margin:4px 0 2px; padding:5px 12px; border-radius:7px; border:1px solid rgba(67,216,201,0.5); background:rgba(67,216,201,0.14); color:var(--kc-text-knowledge); cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">{{ mem.pendingView.recheckLabel }}</button>
                   <div style="font-size:12px; color: {{ t.sub }}; margin-bottom:4px;">Admits every capture whose evidence verifies against the code today. Nothing is deleted.</div>
                   <!-- captured learnings not admitted yet: re-check verifies them; dismiss retires one
                        into the dead-letter history (never a delete) -->
@@ -478,7 +481,7 @@
                       <div style="font-size:12px; font-weight:600; color: {{ t.text }}; word-break:break-word;">{{ r.subject }}</div>
                       <div style="font-size:12px; line-height:1.45; color: {{ t.sub }}; margin-top:3px; word-break:break-word;">{{ r.claim }}</div>
                       <div style="display:flex; align-items:center; gap:6px; margin-top:6px; flex-wrap:wrap;">
-                        <button data-kc-mem-dismiss="{{ r.id }}" onClick="{{ r.onDismiss }}" disabled="{{ r.busy }}" style="padding:4px 11px; border-radius:6px; border:1px solid rgba(248,113,113,0.5); background:rgba(248,113,113,0.12); color:#f87171; cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">{{ r.dismissLabel }}</button>
+                        <button data-kc-mem-dismiss="{{ r.id }}" onClick="{{ r.onDismiss }}" disabled="{{ r.busy }}" style="padding:4px 11px; border-radius:6px; border:1px solid rgba(248,113,113,0.5); background:rgba(248,113,113,0.12); color:var(--kc-text-risk); cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">{{ r.dismissLabel }}</button>
                         <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; color: {{ t.sub }}; background: {{ t.panel }}; border-radius:6px; padding:4px 7px; word-break:break-all; min-width:0;">{{ r.command }}</span>
                       </div>
                     </div>
@@ -503,11 +506,11 @@
                           <span style="padding:2px 6px; border-radius:5px; background: {{ t.panel }}; font-size:12px; color: {{ ev.color }};">{{ ev.label }}</span>
                         </sc-for>
                       </div>
-                      <sc-if value="{{ r.blockers }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color:#f87171; margin-top:4px; word-break:break-word;">{{ r.blockers }}</div></sc-if>
+                      <sc-if value="{{ r.blockers }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color:var(--kc-text-risk); margin-top:4px; word-break:break-word;">{{ r.blockers }}</div></sc-if>
                       <sc-if value="{{ r.notes }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color: {{ t.sub }}; margin-top:3px; word-break:break-word;">{{ r.notes }}</div></sc-if>
                       <div style="display:flex; align-items:center; gap:6px; margin-top:6px; flex-wrap:wrap;">
                         <sc-if value="{{ r.ready }}" hint-placeholder-val="{{ true }}">
-                          <button data-kc-mem-admit="{{ r.id }}" onClick="{{ r.onAdmit }}" disabled="{{ r.busy }}" style="padding:4px 11px; border-radius:6px; border:1px solid rgba(52,211,153,0.5); background:rgba(52,211,153,0.16); color:#34d399; cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">{{ r.admitLabel }}</button>
+                          <button data-kc-mem-admit="{{ r.id }}" onClick="{{ r.onAdmit }}" disabled="{{ r.busy }}" style="padding:4px 11px; border-radius:6px; border:1px solid rgba(52,211,153,0.5); background:rgba(52,211,153,0.16); color:var(--kc-text-positive); cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">{{ r.admitLabel }}</button>
                         </sc-if>
                         <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; color: {{ t.sub }}; background: {{ t.panel }}; border-radius:6px; padding:4px 7px; word-break:break-all; min-width:0;">{{ r.command }}</span>
                       </div>
@@ -541,13 +544,13 @@
                   <sc-for list="{{ mem.resumeView.choices }}" as="c" hint-placeholder-count="3">
                     <button data-kc-mem-choice="{{ c.intakeId }}" onClick="{{ c.onOpen }}" style="display:block; width:100%; text-align:left; padding:8px 9px; border-radius:8px; border:1px solid {{ t.border }}; background: {{ t.chip }}; margin-bottom:5px; cursor:pointer; font-family:'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">
                       <div style="display:flex; align-items:center; gap:6px;">
-                        <span style="padding:2px 7px; border-radius:5px; font-size:12px; font-weight:700; color:#5b8cff; background:rgba(91,140,255,0.16);">{{ c.status }}</span>
-                        <sc-if value="{{ c.staleLabel }}" hint-placeholder-val="{{ true }}"><span style="padding:2px 7px; border-radius:5px; font-size:12px; font-weight:700; color:#f59e0b; background:rgba(245,158,11,0.16);">{{ c.staleLabel }}</span></sc-if>
+                        <span style="padding:2px 7px; border-radius:5px; font-size:12px; font-weight:700; color:var(--kc-text-interactive); background:rgba(91,140,255,0.16);">{{ c.status }}</span>
+                        <sc-if value="{{ c.staleLabel }}" hint-placeholder-val="{{ true }}"><span style="padding:2px 7px; border-radius:5px; font-size:12px; font-weight:700; color:var(--kc-text-review); background:rgba(245,158,11,0.16);">{{ c.staleLabel }}</span></sc-if>
                         <span style="font-size:12px; font-weight:600; color: {{ t.text }}; min-width:0; word-break:break-word;">{{ c.title }}</span>
                       </div>
                       <div style="font-size:12px; color: {{ t.sub }}; margin-top:2px;">{{ c.activityLabel }}</div>
                       <sc-if value="{{ c.nextSafeAction }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color: {{ t.sub }}; margin-top:3px; word-break:break-word;">Next: {{ c.nextSafeAction }}</div></sc-if>
-                      <sc-if value="{{ c.cautions }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color:#f59e0b; margin-top:3px; word-break:break-word;">{{ c.cautions }}</div></sc-if>
+                      <sc-if value="{{ c.cautions }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color:var(--kc-text-review); margin-top:3px; word-break:break-word;">{{ c.cautions }}</div></sc-if>
                     </button>
                   </sc-for>
                   <sc-if value="{{ mem.resumeView.empty }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color: {{ t.sub }}; padding:4px 2px;">No work in progress.</div></sc-if>
@@ -562,7 +565,7 @@
                   <div style="margin-top:6px; border-top:1px solid {{ t.border }}; padding-top:8px;">
                     <button data-kc-mem-intake-back onClick="{{ mem.resumeView.intake.onBack }}" style="height:26px; padding:0 10px; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; margin-bottom:8px;">← Back to the list</button>
                     <sc-if value="{{ mem.resumeView.intake.loading }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color: {{ t.sub }};">Loading the saved work…</div></sc-if>
-                    <sc-if value="{{ mem.resumeView.intake.error }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color:#f87171;">{{ mem.resumeView.intake.error }}</div></sc-if>
+                    <sc-if value="{{ mem.resumeView.intake.error }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color:var(--kc-text-risk);">{{ mem.resumeView.intake.error }}</div></sc-if>
                     <sc-if value="{{ mem.resumeView.intake.original }}" hint-placeholder-val="{{ true }}">
                       <div style="padding:8px 9px; border-radius:8px; border:1px solid {{ t.border }}; background: {{ t.chip }}; margin-bottom:5px;">
                         <div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color: {{ t.sub }};">The saved request</div>
@@ -575,8 +578,8 @@
                         <span style="padding:3px 8px; border-radius:6px; background: {{ t.chip }}; border:1px solid {{ t.border }}; font-size:12px; color: {{ t.sub }};">{{ mem.resumeView.intake.checkpointCount }} checkpoints</span>
                       </div>
                       <div style="font-size:12px; color: {{ t.text }}; margin-top:6px;"><b>Next safe action</b> — {{ mem.resumeView.intake.nextSafeAction }}</div>
-                      <sc-if value="{{ mem.resumeView.intake.blockers }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color:#f87171; margin-top:4px; word-break:break-word;">{{ mem.resumeView.intake.blockers }}</div></sc-if>
-                      <sc-if value="{{ mem.resumeView.intake.drift }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color:#f59e0b; margin-top:4px;">The repository moved since the saved checkpoint — re-check the plan against the current tree.</div></sc-if>
+                      <sc-if value="{{ mem.resumeView.intake.blockers }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color:var(--kc-text-risk); margin-top:4px; word-break:break-word;">{{ mem.resumeView.intake.blockers }}</div></sc-if>
+                      <sc-if value="{{ mem.resumeView.intake.drift }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color:var(--kc-text-review); margin-top:4px;">The repository moved since the saved checkpoint — re-check the plan against the current tree.</div></sc-if>
                       <div style="margin-top:8px;">
                         <div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color: {{ t.sub }}; margin-bottom:4px;">Checkpoint history</div>
                         <sc-for list="{{ mem.resumeView.intake.checkpoints }}" as="cp" hint-placeholder-count="3">
@@ -584,16 +587,16 @@
                         </sc-for>
                       </div>
                       <sc-if value="{{ mem.resumeView.intake.notice }}" hint-placeholder-val="{{ true }}"><div role="status" style="margin:6px 0; padding:8px 10px; border-radius:8px; background:rgba(52,211,153,0.12); border:1px solid rgba(52,211,153,0.4); font-size:12px; color: {{ t.text }};">{{ mem.resumeView.intake.notice }}</div></sc-if>
-                      <sc-if value="{{ mem.resumeView.intake.mutationError }}" hint-placeholder-val="{{ true }}"><div style="margin:6px 0; padding:8px 10px; border-radius:8px; background:rgba(248,113,113,0.12); border:1px solid rgba(248,113,113,0.4); font-size:12px; color:#f87171;">{{ mem.resumeView.intake.mutationError.message }}</div></sc-if>
+                      <sc-if value="{{ mem.resumeView.intake.mutationError }}" hint-placeholder-val="{{ true }}"><div style="margin:6px 0; padding:8px 10px; border-radius:8px; background:rgba(248,113,113,0.12); border:1px solid rgba(248,113,113,0.4); font-size:12px; color:var(--kc-text-risk);">{{ mem.resumeView.intake.mutationError.message }}</div></sc-if>
                       <sc-if value="{{ mem.resumeView.intake.resumable }}" hint-placeholder-val="{{ true }}">
                         <div style="margin-top:8px;">
                           <label style="display:block; font-size:12px; color: {{ t.sub }}; margin-bottom:4px;">Next action for the record (leave empty to reuse the saved one)</label>
                           <input data-kc-mem-next onInput="{{ mem.resumeView.intake.onInputNext }}" placeholder="What resuming means, in one line" style="width:100%; box-sizing:border-box; height:28px; padding:0 9px; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; font:500 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; outline:none;">
-                          <button data-kc-mem-resume-btn onClick="{{ mem.resumeView.intake.onResume }}" disabled="{{ mem.resumeView.intake.busy }}" style="margin-top:6px; padding:5px 13px; border-radius:7px; border:1px solid rgba(91,140,255,0.5); background:rgba(91,140,255,0.16); color:#5b8cff; cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">{{ mem.resumeView.intake.resumeLabel }}</button>
+                          <button data-kc-mem-resume-btn onClick="{{ mem.resumeView.intake.onResume }}" disabled="{{ mem.resumeView.intake.busy }}" style="margin-top:6px; padding:5px 13px; border-radius:7px; border:1px solid rgba(91,140,255,0.5); background:rgba(91,140,255,0.16); color:var(--kc-text-interactive); cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">{{ mem.resumeView.intake.resumeLabel }}</button>
                           <div style="font-size:12px; color: {{ t.sub }}; margin-top:4px;">Records the resume against checkpoint {{ mem.resumeView.intake.lastCheckpoint }}. Nothing is executed.</div>
                           <!-- session maintenance: close the work so it stops showing as in progress -->
                           <div style="display:flex; gap:6px; margin-top:10px; padding-top:8px; border-top:1px solid {{ t.border }};">
-                            <button data-kc-mem-intake-done onClick="{{ mem.resumeView.intake.onDone }}" disabled="{{ mem.resumeView.intake.closing }}" style="padding:5px 13px; border-radius:7px; border:1px solid rgba(52,211,153,0.5); background:rgba(52,211,153,0.14); color:#34d399; cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">{{ mem.resumeView.intake.doneLabel }}</button>
+                            <button data-kc-mem-intake-done onClick="{{ mem.resumeView.intake.onDone }}" disabled="{{ mem.resumeView.intake.closing }}" style="padding:5px 13px; border-radius:7px; border:1px solid rgba(52,211,153,0.5); background:rgba(52,211,153,0.14); color:var(--kc-text-positive); cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">{{ mem.resumeView.intake.doneLabel }}</button>
                             <button data-kc-mem-intake-cancel onClick="{{ mem.resumeView.intake.onCancel }}" disabled="{{ mem.resumeView.intake.closing }}" style="padding:5px 13px; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">{{ mem.resumeView.intake.cancelLabel }}</button>
                           </div>
                           <div style="font-size:12px; color: {{ t.sub }}; margin-top:4px;">Closing appends a checkpoint; the work and its history stay readable.</div>
@@ -611,7 +614,7 @@
         <sc-if value="{{ mem.conflicts.length }}" hint-placeholder-val="{{ true }}">
           <div style="display:flex; gap:10px; align-items:flex-start; padding:11px 12px; border-radius:11px; background: rgba(248,113,113,0.12); border:1px solid rgba(248,113,113,0.4); margin-bottom:12px;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex:none; margin-top:1px;"><path d="M12 9v4m0 4h.01M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" stroke="#f87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-            <div style="font-size:12.5px; line-height:1.5;"><b style="color:#f87171;">{{ mem.conflicts.length }} conflicting claim group{{ mem.conflictsPlural }}.</b>
+            <div style="font-size:12.5px; line-height:1.5;"><b style="color:var(--kc-text-risk);">{{ mem.conflicts.length }} conflicting claim group{{ mem.conflictsPlural }}.</b>
               <sc-for list="{{ mem.conflicts }}" as="cf" hint-placeholder-count="2">
                 <div style="font-size:12px; color: {{ t.sub }}; margin-top:3px; word-break:break-word;">{{ cf.subject }} — {{ cf.count }} records disagree</div>
               </sc-for>
@@ -632,7 +635,7 @@
             <button data-kc-mem-detail-back onClick="{{ mem.detail.onBack }}" style="height:26px; padding:0 10px; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; margin-bottom:12px;">{{ mem.detail.backLabel }}</button>
             <sc-if value="{{ mem.detail.loading }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color: {{ t.sub }};">Loading record…</div></sc-if>
             <sc-if value="{{ mem.detail.error }}" hint-placeholder-val="{{ true }}">
-              <div style="font-size:12px; color:#f87171;">{{ mem.detail.error }}</div>
+              <div style="font-size:12px; color:var(--kc-text-risk);">{{ mem.detail.error }}</div>
             </sc-if>
             <sc-if value="{{ mem.detail.ready }}" hint-placeholder-val="{{ true }}">
               <div>
@@ -714,7 +717,7 @@
                 <sc-if value="{{ mem.detail.graph }}" hint-placeholder-val="{{ true }}">
                   <section data-kc-mem-graph aria-label="Connections and history" style="margin-top:12px;">
                     <sc-if value="{{ mem.detail.graph.loading }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color: {{ t.sub }};">Loading connections…</div></sc-if>
-                    <sc-if value="{{ mem.detail.graph.error }}" hint-placeholder-val="{{ true }}"><div role="status" style="font-size:12px; color:#f87171;">Connections unavailable: {{ mem.detail.graph.error }}</div></sc-if>
+                    <sc-if value="{{ mem.detail.graph.error }}" hint-placeholder-val="{{ true }}"><div role="status" style="font-size:12px; color:var(--kc-text-risk);">Connections unavailable: {{ mem.detail.graph.error }}</div></sc-if>
                     <sc-if value="{{ mem.detail.graph.ready }}" hint-placeholder-val="{{ true }}">
                       <div>
                         <sc-if value="{{ mem.detail.graph.historicalNote }}" hint-placeholder-val="{{ true }}"><div data-kc-mem-graph-state style="margin-bottom:8px; padding:7px 9px; border-radius:8px; border:1px solid rgba(245,158,11,0.45); background:rgba(245,158,11,0.10); font-size:12px; color: {{ t.text }};">{{ mem.detail.graph.historicalNote }}</div></sc-if>
@@ -898,20 +901,20 @@
   <sc-if value="{{ tour.on }}" hint-placeholder-val="{{ true }}">
     <div style="position:absolute; left:50%; bottom:22px; transform:translateX(-50%); z-index:25; width:440px; max-width:calc(100% - 320px); padding:15px 16px 14px; border-radius:14px; background: {{ t.panel }}; color: {{ t.text }}; border:1px solid {{ t.border }}; backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); box-shadow:0 18px 50px rgba(0,0,0,0.34); animation: kc-fade-in 0.22s ease;">
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
-        <span style="font-size:12px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:#5b8cff;">Guided tour · {{ tour.step }} / {{ tour.total }}</span>
+        <span style="font-size:12px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--kc-text-interactive);">Guided tour · {{ tour.step }} / {{ tour.total }}</span>
         <button onClick="{{ tour.onExit }}" style="width:24px; height:24px; display:flex; align-items:center; justify-content:center; border-radius:6px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font-size:14px; line-height:1;">×</button>
       </div>
       <div style="font-size:15.5px; font-weight:600; letter-spacing:-0.01em; margin-bottom:5px;">{{ tour.title }}</div>
       <div style="font-size:13px; line-height:1.5; color: {{ t.sub }};">{{ tour.text }}</div>
       <div style="display:flex; gap:8px; margin-top:14px;">
         <button onClick="{{ tour.onPrev }}" style="flex:1; height:34px; border-radius:9px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; font:600 12.5px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; cursor:pointer; opacity: {{ tour.prevOp }};">Back</button>
-        <button onClick="{{ tour.onNext }}" style="flex:1.5; height:34px; border-radius:9px; border:none; background:#5b8cff; color:#fff; font:600 12.5px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; cursor:pointer;">{{ tour.nextLabel }}</button>
+        <button onClick="{{ tour.onNext }}" style="flex:1.5; height:34px; border-radius:9px; border:none; background:var(--kc-selected-surface); color:var(--kc-selected-text); font:600 12.5px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; cursor:pointer;">{{ tour.nextLabel }}</button>
       </div>
     </div>
   </sc-if>
 
   <!-- tooltip -->
-  <div ref="{{ tipRef }}" style="position:absolute; z-index:30; pointer-events:none; display:none; max-width:260px; padding:9px 11px; border-radius:10px; background: {{ t.tip }}; color: {{ t.tipText }}; border:1px solid {{ t.border }}; box-shadow:0 8px 26px rgba(0,0,0,0.32); font-family:'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; animation: kc-fade-in 0.12s ease;"></div>
+  <div ref="{{ tipRef }}" data-kc-tooltip role="tooltip" style="position:absolute; z-index:30; pointer-events:auto; display:none; max-width:260px; padding:9px 11px; border-radius:10px; background: {{ t.tip }}; color: {{ t.tipText }}; border:1px solid {{ t.border }}; box-shadow:0 8px 26px rgba(0,0,0,0.32); font-family:'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; animation: kc-fade-in 0.12s ease;"></div>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:&quot;100%&quot;},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;dark&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;linkDistance&quot;:{&quot;editor&quot;:&quot;float&quot;,&quot;default&quot;:1.6,&quot;min&quot;:0.6,&quot;max&quot;:1.6,&quot;step&quot;:0.1,&quot;tsType&quot;:&quot;number&quot;}}">
@@ -940,6 +943,7 @@ class Component extends DCLogic {
   // Ledger groups in display order (stale first — they demand attention), mirroring the backend
   // LEDGER_GROUPS ordering the /memory.json projection ships.
   THEME_KEY='knowledge-crib:theme';
+  SINGLE_KEYS_KEY='knowledge-crib:single-key-shortcuts';
   COMPACT_QUERY='(max-width: 760px)';
   MEM_PAGE=50;
   // Needs-review reasons in plain language: what each means for recall, not just its code.
@@ -972,7 +976,7 @@ class Component extends DCLogic {
     // graph state — initialised empty so the RAF draw loop no-ops safely before loadGraph() resolves.
     this.nodes=[]; this.edges=[]; this.clusters=[]; this.byId={}; this.deg={}; this.adj={}; this.revDep={}; this.archAdj={}; this.graphIndexes={membersByCluster:{},incidentByNode:{},archAdj:{}}; this.anchors={}; this.layoutScale=1; this.stats=''; this.largeGraph=false; this.previewNodeIds=[]; this.previewNodeIdsByModule={}; this.overview=[]; this._overviewAll=[]; this.overviewOverflow=0; this.overviewById={}; this.overviewEdges=[]; this.overviewZoom=1; this._sourceSeq=0; this._sourceAbort=null; this._searchProjection=null; this._memSeq=0; this._memAbort=null;
     this._modality='pointer'; this._inerted=new Set(); this._inspectorKey=null; this._inspectorReturn=null; this._railReturn=null; this._themeChosen=false;
-    this.state={...this.state, theme:this.initialTheme(), compact:this.matchesQuery(this.COMPACT_QUERY)};
+    this.state={...this.state, theme:this.initialTheme(), compact:this.matchesQuery(this.COMPACT_QUERY), singleKeys:this.storedSingleKeys()};
   }
 
   componentDidMount(){
@@ -1003,6 +1007,11 @@ class Component extends DCLogic {
   // choice, then the system preference. Storage can be missing, blocked, or hold junk, so every
   // read and write is guarded: the toggle still works for the session when nothing persists.
   storedTheme(){ try{ const v=window.localStorage.getItem(this.THEME_KEY); return v==='light'||v==='dark'?v:null; }catch(_e){ return null; } }
+  // WCAG 2.1.4: single-character shortcuts can be turned off (speech-input users trigger them by
+  // dictation). The choice persists under its own guarded key; default on, as today.
+  storedSingleKeys(){ try{ return window.localStorage.getItem(this.SINGLE_KEYS_KEY)!=='off'; }catch(_e){ return true; } }
+  toggleSingleKeys(){ const next=!this.state.singleKeys; try{ window.localStorage.setItem(this.SINGLE_KEYS_KEY,next?'on':'off'); }catch(_e){} this.setState({singleKeys:next}); this.announceShell(next?'Single-key shortcuts on.':'Single-key shortcuts off.'); }
+  announceShell(text){ this.setState({shellAnnounce:text}); }
   systemTheme(){ return this.matchesQuery('(prefers-color-scheme: light)')?'light':'dark'; }
   initialTheme(){ const p=this.props&&this.props.theme; return (p==='light'||p==='dark')?p:(this.storedTheme()||this.systemTheme()); }
   /** The canvas palette comes from the active tokens, read once per theme change, not per frame. */
@@ -1037,6 +1046,19 @@ class Component extends DCLogic {
     for(const el of this._inerted) if(!want.has(el)&&el.hasAttribute('inert')) el.removeAttribute('inert');
     for(const el of want) if(!el.hasAttribute('inert')) el.setAttribute('inert','');
     this._inerted=want; }
+  /**
+   * WAI-APG modal dialog: Tab and Shift+Tab wrap inside the layer that owns the keyboard (plus its
+   * own trigger) instead of escaping to the browser chrome past the inert background.
+   */
+  wrapModalTab(e){ const modal=this.activeModal(); if(!modal||!modal.el) return false;
+    const sel='button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"])';
+    const items=[...(modal.keep?[modal.keep]:[]), ...modal.el.querySelectorAll(sel)].filter((el)=>el.getClientRects().length&&!el.closest('[inert]'));
+    if(!items.length) return false;
+    const first=items[0], last=items[items.length-1], active=document.activeElement;
+    const inside=items.includes(active)||modal.el.contains(active);
+    if(e.shiftKey&&(active===first||!inside)){ e.preventDefault(); last.focus(); return true; }
+    if(!e.shiftKey&&(active===last||!inside)){ e.preventDefault(); first.focus(); return true; }
+    return false; }
   focusable(el){ return !!(el&&el.isConnected&&!el.closest('[inert]')&&el.getClientRects().length); }
   /** Return focus after a layer closes: the invoking control when it is still usable, else a fallback. */
   restoreFocus(el,fallbackSelector){ setTimeout(()=>{ const target=this.focusable(el)?el:document.querySelector(fallbackSelector); if(target&&typeof target.focus==='function') target.focus(); },0); }
@@ -1876,11 +1898,19 @@ class Component extends DCLogic {
         if(p.chip){ p.x=e.offsetX; p.y=e.offsetY; return; }
         if(p.block){ p.x=e.offsetX; p.y=e.offsetY; return; }
         if(p.node){ const [wx,wy]=this.s2w(e.offsetX,e.offsetY); p.node.x=wx; p.node.y=wy; p.node.vx=0; p.node.vy=0; this.reheat(0.3); } else { this._vt=null; this._fitOnResize=false; this.view.cx-=dx/this.view.k; this.view.cy-=dy/this.view.k; } p.x=e.offsetX; p.y=e.offsetY; return; }
-      const chip=this.hitExpandChip(e.offsetX,e.offsetY); const block=!chip&&this.state.mode==='overview'&&this.overview.length?this.hitOverview(e.offsetX,e.offsetY):null; const n=(chip||block)?null:this.hit(e.offsetX,e.offsetY); this.hoverId=n?n.id:null; c.style.cursor=(chip||n||block)?'pointer':'grab'; this.tip(n,e.offsetX,e.offsetY);
+      const chip=this.hitExpandChip(e.offsetX,e.offsetY); const block=!chip&&this.state.mode==='overview'&&this.overview.length?this.hitOverview(e.offsetX,e.offsetY):null; const n=(chip||block)?null:this.hit(e.offsetX,e.offsetY); this.hoverId=n?n.id:null; c.style.cursor=(chip||n||block)?'pointer':'grab'; this.hoverTip(n,e.offsetX,e.offsetY);
     };
-    this.onLeave=()=>{ this.hoverId=null; this.tip(null,0,0); };
+    // WCAG 1.4.13: hover content stays while the pointer travels onto it and while it is hovered;
+    // it hides a moment after the pointer leaves both, and Escape dismisses it at any time.
+    this.onLeave=()=>{ this.hoverId=null; this.hoverTip(null,0,0); };
+    const tipEl=this.tipRef.current;
+    if(tipEl){ this.onTipEnter=()=>{ this._tipHover=true; clearTimeout(this._tipHide); }; this.onTipLeave=()=>{ this._tipHover=false; this.tip(null,0,0); };
+      tipEl.addEventListener('pointerenter',this.onTipEnter); tipEl.addEventListener('pointerleave',this.onTipLeave); }
     this.onUp=(e)=>{ const p=this._p; this._p=null; c.style.cursor='grab'; if(!p)return; if(p.node)p.node.pin=false; if(!p.moved){ if(p.chip) this.toggleFocusDepth(); else if(p.block&&p.block.isModule) this.selectModule(p.block.moduleId); else if(p.block&&p.block.isBack) this.clearModule(); else if(p.block&&p.block.isNode) this.select(p.block.nodeId); else if(p.block) this.selectCluster(p.block.id); else if(p.node) this.select(p.node.id); else this.closePanel(); } };
     this.onKey=(e)=>{ const k=e.key; const tag=(e.target&&e.target.tagName)||'';
+      if(k==='Tab'&&this.wrapModalTab(e)) return;
+      // Content shown on hover is dismissible without moving the pointer, wherever focus is (1.4.13).
+      if(k==='Escape'){ clearTimeout(this._tipHide); this._tipHover=false; this.tip(null,0,0); }
       if((e.metaKey||e.ctrlKey)&&k.toLowerCase()==='k'){e.preventDefault();if(this.searchRef.current)this.searchRef.current.focus();return;}
       if(tag==='INPUT'){ if(k==='Escape')e.target.blur(); return; }
       if(this.state.tour){ if(k==='ArrowRight'||k===' '||k==='ArrowDown'){e.preventDefault(); this.tourGo(this.state.tourStep+1);} else if(k==='ArrowLeft'||k==='ArrowUp'){e.preventDefault(); this.tourGo(this.state.tourStep-1);} else if(k==='Escape'){this.exitTour();} return; }
@@ -1892,8 +1922,9 @@ class Component extends DCLogic {
       if(k==='Escape'&&this.state.compact&&this.state.railDrawerOpen){ this.closeRailDrawer(); return; }
       if(k==='Escape'){ this._cand=null; this.closePanel(); return; }
       if(this.state.compact&&this.state.railDrawerOpen) return;
-      if(k.toLowerCase()==='m'){this.toggleMemory();return;}
-      if(k.toLowerCase()==='f'){this.resetView();return;}
+      const plain=!e.metaKey&&!e.ctrlKey&&!e.altKey;
+      if(plain&&this.state.singleKeys!==false&&k.toLowerCase()==='m'){this.toggleMemory();return;}
+      if(plain&&this.state.singleKeys!==false&&k.toLowerCase()==='f'){this.resetView();return;}
       const sel=this.state.selectedId; if(!sel)return; const nb=this._nb||[]; if(!nb.length)return;
       if(k==='ArrowRight'||k==='ArrowDown'){ e.preventDefault(); this._nIdx=((this._nIdx==null?-1:this._nIdx)+1)%nb.length; this._cand=nb[this._nIdx]; }
       else if(k==='ArrowLeft'||k==='ArrowUp'){ e.preventDefault(); this._nIdx=((this._nIdx==null?0:this._nIdx)-1+nb.length)%nb.length; this._cand=nb[this._nIdx]; }
@@ -1901,7 +1932,8 @@ class Component extends DCLogic {
     };
     c.addEventListener('wheel',this.onWheel,{passive:false}); c.addEventListener('pointerdown',this.onDown); c.addEventListener('pointermove',this.onMove); c.addEventListener('pointerup',this.onUp); c.addEventListener('pointerleave',this.onLeave); window.addEventListener('keydown',this.onKey);
   }
-  unbind(){ const c=this.canvas; if(!c)return; c.removeEventListener('wheel',this.onWheel); c.removeEventListener('pointerdown',this.onDown); c.removeEventListener('pointermove',this.onMove); c.removeEventListener('pointerup',this.onUp); c.removeEventListener('pointerleave',this.onLeave); window.removeEventListener('keydown',this.onKey); }
+  unbind(){ const c=this.canvas; if(!c)return; c.removeEventListener('wheel',this.onWheel); c.removeEventListener('pointerdown',this.onDown); c.removeEventListener('pointermove',this.onMove); c.removeEventListener('pointerup',this.onUp); c.removeEventListener('pointerleave',this.onLeave); window.removeEventListener('keydown',this.onKey);
+    clearTimeout(this._tipHide); const tipEl=this.tipRef.current; if(tipEl&&this.onTipEnter){ tipEl.removeEventListener('pointerenter',this.onTipEnter); tipEl.removeEventListener('pointerleave',this.onTipLeave); } }
   hit(sx,sy){ let best=null,bd=1e9; for(const n of this.visibleNodes()){ if(this.state.hidden[n.kind])continue; const [x,y]=this.w2s(n.x,n.y); const d=Math.hypot(x-sx,y-sy); if(d<Math.max(2,this.nodeRadius(n)*this.view.k)+5 && d<bd){bd=d;best=n;} } return best; }
   hitExpandChip(sx,sy){ const r=this._expandChipRect; if(!r) return false; return sx>=r.x0 && sx<=r.x1 && sy>=r.y0 && sy<=r.y1; }
   hitOverview(sx,sy){
@@ -1915,8 +1947,15 @@ class Component extends DCLogic {
     } }
     return null;
   }
-  tip(n,x,y){ const el=this.tipRef.current; if(!el)return; if(!n){ el.style.display='none'; return; } const col=this.KIND[n.kind]||'#888'; el.style.display='block'; el.style.left=Math.min(x+16,this.W-270)+'px'; el.style.top=(y+16)+'px';
-    el.innerHTML='<div style="display:flex;align-items:center;gap:7px;margin-bottom:5px"><span style="width:8px;height:8px;border-radius:50%;background:'+col+'"></span><span style="font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:'+col+'">'+this.esc(this.KLABEL[n.kind]||n.kind)+'</span></div><div style="font-size:13px;font-weight:600;margin-bottom:3px">'+this.esc(n.qualified||n.label)+'</div><div style="font-size:11.5px;line-height:1.45;opacity:.75">'+this.esc(n.summary)+'</div>'; }
+  hoverTip(n,x,y){ clearTimeout(this._tipHide);
+    if(n){ this.tip(n,x,y); return; }
+    this._tipHide=setTimeout(()=>{ if(!this._tipHover) this.tip(null,0,0); },300); }
+  tip(n,x,y){ const el=this.tipRef.current; if(!el)return; if(!n){ el.style.display='none'; return; } const col=this.KIND[n.kind]||'#888'; el.style.display='block';
+    // x/y are canvas-relative, the tooltip is positioned in the shell: add the canvas's offset so it
+    // sits beside the node rather than on top of it (it now receives the pointer, WCAG 1.4.13).
+    const cr=this.canvas.getBoundingClientRect(), sr=(this.rootRef.current||this.canvas.parentElement).getBoundingClientRect();
+    el.style.left=(cr.left-sr.left+Math.min(x+16,this.W-270))+'px'; el.style.top=(cr.top-sr.top+y+16)+'px';
+    el.innerHTML='<div style="display:flex;align-items:center;gap:7px;margin-bottom:5px"><span style="width:8px;height:8px;border-radius:50%;background:'+col+'"></span><span style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--kc-text-secondary)">'+this.esc(this.KLABEL[n.kind]||n.kind)+'</span></div><div style="font-size:14px;font-weight:600;margin-bottom:3px">'+this.esc(n.qualified||n.label)+'</div><div style="font-size:12px;line-height:1.45;color:var(--kc-text-secondary)">'+this.esc(n.summary)+'</div>'; }
 
   // A fresh selection always starts at 1-hop (focusDepth:1) — lean by default — regardless of
   // whether the previous node had been expanded to 2-hop; expansion is a per-node choice, not a
@@ -2384,7 +2423,7 @@ class Component extends DCLogic {
   }
 
   buildDetail(){ const sel=this.state.selectedId; if(!sel) return this.buildClusterDetail(); const n=this.byId[sel]; const col=this.KIND[n.kind]||'#888';
-    const mk=(rel,otherId,dir)=>{ const o=this.byId[otherId]; const e=this._lastE; return { id:otherId, label:o.qualified||o.label, color:this.KIND[o.kind]||'#888', relColor:this.REL[rel]||'#888', phrase:(dir==='out'?this.PHRASE[rel]:this.RPHRASE[rel])||rel, tail:' '+(o.qualified||o.label), onGo:()=>this.select(otherId), badge: e&&e.provenance? (e.provenance==='INFERRED'?'inferred':'verified'):null, badgeBg: e&&e.provenance==='INFERRED'?'rgba(245,158,11,0.18)':'rgba(52,211,153,0.18)', badgeFg: e&&e.provenance==='INFERRED'?'#f59e0b':'#34d399' }; };
+    const mk=(rel,otherId,dir)=>{ const o=this.byId[otherId]; const e=this._lastE; return { id:otherId, label:o.qualified||o.label, color:this.KIND[o.kind]||'#888', relColor:this.REL[rel]||'#888', phrase:(dir==='out'?this.PHRASE[rel]:this.RPHRASE[rel])||rel, tail:' '+(o.qualified||o.label), onGo:()=>this.select(otherId), badge: e&&e.provenance? (e.provenance==='INFERRED'?'inferred':'verified'):null, badgeBg: e&&e.provenance==='INFERRED'?'rgba(245,158,11,0.18)':'rgba(52,211,153,0.18)', badgeFg: e&&e.provenance==='INFERRED'?'var(--kc-text-review)':'var(--kc-text-positive)' }; };
     const buckets={deps:[],depBy:[],docs:[],struct:[],guards:[]}; let evidence=null;
     const incident=(this.graphIndexes.incidentByNode[sel]||[]).map(i=>this.edges[i]).filter(Boolean);
     for(const e of incident){ this._lastE=e; if(e.src===sel){ const it=mk(e.rel,e.dst,'out');
@@ -2446,7 +2485,7 @@ class Component extends DCLogic {
     const members=allMembers.filter(member=>!selectedKind||member.kind===selectedKind).sort((a,b)=>String(a.qualified||a.label||a.id).localeCompare(String(b.qualified||b.label||b.id)));
     const projection=this.clusterProjection(id,selectedKind,this.state.clusterContext);
     const compositionItems=[{
-      id:'all',label:'All members',color:c.color||'#5b8cff',relColor:c.color||'#5b8cff',phrase:String(allMembers.length),tail:' nodes',onGo:()=>this.setClusterKind(null),badge:!selectedKind?'active':null,badgeBg:'rgba(91,140,255,0.18)',badgeFg:'#5b8cff'
+      id:'all',label:'All members',color:c.color||'#5b8cff',relColor:c.color||'#5b8cff',phrase:String(allMembers.length),tail:' nodes',onGo:()=>this.setClusterKind(null),badge:!selectedKind?'active':null,badgeBg:'rgba(91,140,255,0.18)',badgeFg:'var(--kc-text-interactive)'
     },...counts.map(([kind,count])=>({
       id:kind,
       label:this.KLABEL[kind]||kind,
@@ -2457,11 +2496,11 @@ class Component extends DCLogic {
       onGo:()=>this.setClusterKind(kind),
       badge:selectedKind===kind?'active':null,
       badgeBg:'rgba(91,140,255,0.18)',
-      badgeFg:'#5b8cff',
+      badgeFg:'var(--kc-text-interactive)',
     }))];
     const memberItems=members.map(member=>{
       const location=member.file?(member.file+(member.span?':'+member.span.start+(member.span.end!==member.span.start?'-'+member.span.end:''):'')):'';
-      return {id:member.id,label:member.qualified||member.label||member.id,color:this.KIND[member.kind]||'#888',relColor:this.KIND[member.kind]||'#888',phrase:member.signature||(this.KLABEL[member.kind]||member.kind),tail:location?' · '+location:'',onGo:()=>this.select(member.id,id),badge:'extracted',badgeBg:'rgba(52,211,153,0.18)',badgeFg:'#34d399'};
+      return {id:member.id,label:member.qualified||member.label||member.id,color:this.KIND[member.kind]||'#888',relColor:this.KIND[member.kind]||'#888',phrase:member.signature||(this.KLABEL[member.kind]||member.kind),tail:location?' · '+location:'',onGo:()=>this.select(member.id,id),badge:'extracted',badgeBg:'rgba(52,211,153,0.18)',badgeFg:'var(--kc-text-positive)'};
     });
     const sections=[{
       title:'Composition',
@@ -2520,7 +2559,7 @@ class Component extends DCLogic {
     if(sel)sel.sections=(sel.sections||[]).map((section,index)=>{
       const defaultOpen=index===0&&section.title!=='Members';
       const open=this.state.openInspectorSections[section.title]!==undefined?this.state.openInspectorSections[section.title]:defaultOpen;
-      return {...section,open,caret:open?'▾':'▸',onToggle:()=>this.toggleInspectorSection(section.title,defaultOpen)};
+      return {...section,open,expanded:open?'true':'false',caret:open?'▾':'▸',onToggle:()=>this.toggleInspectorSection(section.title,defaultOpen)};
     });
     const inspectorOpen=this.state.inspectorOpen;
     const compact=!!this.state.compact; const drawerOpen=compact&&!!this.state.railDrawerOpen; const railExpanded=compact?drawerOpen:!!this.state.railOpen;
@@ -2535,7 +2574,7 @@ class Component extends DCLogic {
     const searchQuery=(this.state.query||'').trim();
     const searchProjection=searchQuery?this.searchProjection(searchQuery):null;
     const searchStatus=searchProjection?(searchProjection.totalMatches?searchProjection.totalMatches+' match'+(searchProjection.totalMatches===1?'':'es')+' · '+searchProjection.contextIds.length+' related':'No graph matches'):null;
-     const searchStatusColor=searchProjection&&searchProjection.totalMatches===0?'#f87171':t.sub;
+     const searchStatusColor=searchProjection&&searchProjection.totalMatches===0?'var(--kc-text-risk)':t.sub;
     const selectedNode=this.state.selectedId&&this.byId[this.state.selectedId];
     const selectedBlock=this.state.selectedClusterId&&this.overviewById[this.state.selectedClusterId];
     const selectedModule=this.selectedModule&&railSource.find(m=>m.id===this.selectedModule);
@@ -2578,11 +2617,11 @@ class Component extends DCLogic {
       const openHomeAction=(kind)=>()=>this.openMemoryHomeAction(kind);
       const homeView=onHome&&mh&&mh.configured?{
         sections:[
-          {key:'active',label:'Active',count:(hs.active&&hs.active.count)||0,color:'#34d399',help:'Open the claims agents can recall now',onGo:openHomeAction('active')},
-          {key:'pending',label:'Pending',count:(hs.pending&&hs.pending.count)||0,color:'#f59e0b',help:'Review pending outcomes',onGo:openHomeAction('pending')},
-          {key:'needsReview',label:'Needs review',count:(hs.needsReview&&hs.needsReview.count)||0,color:'#f87171',help:'Open the claims that need review, with the reason for each',onGo:openHomeAction('needsReview')},
-          {key:'history',label:'History',count:(hs.history&&hs.history.count)||0,color:'#8b97a8',help:'Open the full append-only ledger',onGo:openHomeAction('history')},
-          {key:'resume',label:'Resumable work',count:(hs.resume&&hs.resume.count)||0,color:'#5b8cff',help:'Continue, finish or cancel saved work',onGo:openHomeAction('resume')}],
+          {key:'active',label:'Active',count:(hs.active&&hs.active.count)||0,color:'var(--kc-text-positive)',help:'Open the claims agents can recall now',onGo:openHomeAction('active')},
+          {key:'pending',label:'Pending',count:(hs.pending&&hs.pending.count)||0,color:'var(--kc-text-review)',help:'Review pending outcomes',onGo:openHomeAction('pending')},
+          {key:'needsReview',label:'Needs review',count:(hs.needsReview&&hs.needsReview.count)||0,color:'var(--kc-text-risk)',help:'Open the claims that need review, with the reason for each',onGo:openHomeAction('needsReview')},
+          {key:'history',label:'History',count:(hs.history&&hs.history.count)||0,color:'var(--kc-text-secondary)',help:'Open the full append-only ledger',onGo:openHomeAction('history')},
+          {key:'resume',label:'Resumable work',count:(hs.resume&&hs.resume.count)||0,color:'var(--kc-text-interactive)',help:'Continue, finish or cancel saved work',onGo:openHomeAction('resume')}],
         overlapNote:'Active and Needs review can overlap: a claim with degraded evidence stays usable, with caution, and still asks for review.',
         health:[
           {label:'Retrieval mode',value:(hh.retrieval&&hh.retrieval.mode)||'unknown',color:hh.retrieval&&hh.retrieval.mode==='on-device-semantic'?'#34d399':'#f59e0b'},
@@ -2613,9 +2652,9 @@ class Component extends DCLogic {
             onNext:()=>this.loadMemoryPending(offset+PEND_LIMIT) }; };
         const captures=mkPager('captures');
         const staged=mkPager('staged');
-        const standingColor=(s)=>s==='ready'?'#34d399':(s==='terminal'?'#f59e0b':'#f87171');
-        const evChip=(ev)=>{ if(ev.admissible===false)return {label:ev.kind+' · ignored for this kind',color:'#8b97a8'};
-          return ev.browserSupported?{label:ev.kind+' · ready',color:'#34d399'}:{label:ev.kind+' · needs a terminal step',color:'#f59e0b'}; };
+        const standingColor=(s)=>s==='ready'?'var(--kc-text-positive)':(s==='terminal'?'var(--kc-text-review)':'var(--kc-text-risk)');
+        const evChip=(ev)=>{ if(ev.admissible===false)return {label:ev.kind+' · ignored for this kind',color:'var(--kc-text-secondary)'};
+          return ev.browserSupported?{label:ev.kind+' · ready',color:'var(--kc-text-positive)'}:{label:ev.kind+' · needs a terminal step',color:'var(--kc-text-review)'}; };
         const stagedRows=staged?staged.rows.map((r)=>({
           id:r.id, kind:r.kind, subject:r.subject, claim:r.claim, scope:r.scope,
           scopeLabel:(r.scope&&r.scope.boundary)?r.scope.boundary:'',
@@ -2731,7 +2770,9 @@ class Component extends DCLogic {
       tourBg: tOn?'rgba(91,140,255,0.16)':t.chip, tourBorder: tOn?'rgba(91,140,255,0.5)':t.border, tourFg: tOn?'#5b8cff':t.text,
        rootRef:this.rootRef, canvasRef:this.canvasRef, miniRef:this.miniRef, tipRef:this.tipRef, searchRef:this.searchRef, inspectorToggleRef:this.inspectorToggleRef,
         t, stats:this.stats||'…', compactStats, kindList, moduleList, sel, focusEmpty, searchStatus, searchStatusColor,
-      theme, searchShortcut:this.searchShortcut(), themeToggleLabel:theme==='dark'?'Switch to light theme':'Switch to dark theme',
+      theme, searchShortcut:this.searchShortcut(),
+      singleKeysChecked:this.state.singleKeys!==false?'true':'false', singleKeysLabel:this.state.singleKeys!==false?'On':'Off', toggleSingleKeys:()=>this.toggleSingleKeys(),
+      searchAnnouncement:(searchStatus||'')+(this.state.shellAnnounce?(' '+this.state.shellAnnounce):''), themeToggleLabel:theme==='dark'?'Switch to light theme':'Switch to dark theme',
       railClass:compact?(drawerOpen?'kc-mobile-open':'kc-rail-collapsed'):(this.state.railOpen?'':'kc-rail-collapsed'), railWidth:this.state.railOpen?'256px':'64px',
       railRole:compact&&drawerOpen?'dialog':undefined, railModal:compact&&drawerOpen?'true':undefined, railExpanded:railExpanded?'true':'false',
       inspectorRole:compact?'dialog':'region', inspectorModal:compact?'true':undefined,
@@ -2739,16 +2780,18 @@ class Component extends DCLogic {
       inspectorClass:inspectorOpen?'':'kc-inspector-closed', inspectorEmpty:inspectorOpen&&!sel, inspectorDetail:inspectorOpen&&!!sel,
       inspectorExpanded:inspectorOpen?'true':'false', inspectorToggleLabel:inspectorOpen?'Hide inspector':'Open inspector',
        railNodeCount:this.nodes.length.toLocaleString(), railEdgeCount:this.edges.length.toLocaleString(), railModuleCount:String(railSource.length),
-        stageSecondary, stageTertiary, stageOverflowOn:this.overviewOverflow>0, stageOverflowLabel:'+'+this.overviewOverflow+' more modules', memoryBadge, helpOpen:this.state.helpOpen, sourceOpen:this.state.sourceOpen, sourceCaret:this.state.sourceOpen?'▾':'▸',
+        stageSecondary, stageTertiary, stageOverflowOn:this.overviewOverflow>0, stageOverflowLabel:'+'+this.overviewOverflow+' more modules', memoryBadge, helpOpen:this.state.helpOpen, sourceOpen:this.state.sourceOpen, sourceCaret:this.state.sourceOpen?'▾':'▸', sourceExpanded:this.state.sourceOpen?'true':'false',
        statusLabel:(this.state.mode==='overview'?'Architecture overview':'Focused graph')+' · '+railSource.length+' modules · '+this.nodes.length+' nodes',
        statusHint:'Drag to pan · Scroll to zoom · Fit to reset · M memory · Esc back',
       railToggleIcon:compact?(drawerOpen?'×':'☰'):(this.state.railOpen?'‹':'›'), railToggleLabel:compact?(drawerOpen?'Close navigation':'Open navigation'):(this.state.railOpen?'Collapse navigation':'Expand navigation'),
+      // Interim text alternative until the textual List presentation (deferred Phase 3) exists.
+      canvasLabel:(this.state.mode==='overview'?'Architecture overview map':'Focused graph')+' of '+this.nodes.length+' nodes. Use Search, the navigation rail and the inspector for the same information as text.',
       zoomLabel, overviewPressed:overviewOn?'true':'false', focusPressed:focusOn&&!blastOn?'true':'false', blastPressed:blastOn?'true':'false',
       overviewBg: overviewOn?'var(--kc-selected-surface)':'transparent', overviewFg: overviewOn?'var(--kc-selected-text)':t.text,
       focusBg: focusOn&&!blastOn?'var(--kc-selected-surface)':'transparent', focusFg: focusOn&&!blastOn?'var(--kc-selected-text)':t.text,
       blastSegmentBg:blastOn?'var(--kc-fill)':'transparent', blastSegmentFg:blastOn?'var(--kc-text-risk)':t.text,
        themeIcon: theme==='dark'?'☾':'☀',
-      blastBg: blastOn?'rgba(248,113,113,0.16)':t.chip, blastBorder: blastOn?'rgba(248,113,113,0.5)':t.border, blastFg: blastOn?'#f87171':t.text,
+      blastBg: blastOn?'rgba(248,113,113,0.16)':t.chip, blastBorder: blastOn?'rgba(248,113,113,0.5)':t.border, blastFg: blastOn?'var(--kc-text-risk)':t.text,
        showOverview:()=>this.showOverview(), showFocus:()=>this.showFocus(), showBlast:()=>this.showBlast(), toggleHelp:()=>this.toggleHelp(), toggleInspectorSource:()=>this.toggleInspectorSource(),
       toggleInspector:()=>this.toggleInspector(), closeInspector:()=>this.closeInspector(),
       toggleRail:()=>this.toggleRail(), resetFilters:()=>this.resetFilters(),
