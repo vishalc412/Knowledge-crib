@@ -85,6 +85,7 @@ import {
   DEFAULT_MIGRATION_PRINCIPAL_ID,
   DEFAULT_RETENTION_POLICY_ID,
   type DistillVerifyContext,
+  type FeedbackSignal,
   FileSyncObjectStore,
   type GateReceipt,
   HttpSyncObjectStore,
@@ -340,6 +341,7 @@ import {
 } from './stop-nudge.js';
 import { buildSupportBundle, readProductVersion } from './support-bundle.js';
 import {
+  CONCERN_RECORDED_MESSAGE,
   CSRF_HEADER,
   VizHttpError,
   VizMutationError,
@@ -348,11 +350,15 @@ import {
   mutationErrorPayload,
   parseAdmissionBody,
   parseDismissBody,
+  parseEvidenceQuery,
+  parseFeedbackBody,
   parseIntakeCloseBody,
   parseMemoryLedgerQuery,
   parseMemoryPendingQuery,
   parseResumeBody,
   parseRevalidateFlag,
+  projectVizHealth,
+  readMemoryEvidence,
   readMemoryGraphDetail,
   readMemoryHome,
   readMemoryIntakeDetail,
@@ -4336,6 +4342,7 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
 
   const MIME: Record<string, string> = {
     '.html': 'text/html; charset=utf-8',
+    '.css': 'text/css; charset=utf-8',
     '.js': 'text/javascript; charset=utf-8',
     '.json': 'application/json; charset=utf-8',
     '.svg': 'image/svg+xml',
@@ -4386,6 +4393,15 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
         const latest = (kind: 'memory.observed' | 'sync.applied') =>
           [...events].reverse().find((event) => event.kind === kind)?.recordedAt;
         const freshness = freshnessStatus(resolved.repoRoot);
+        const readerManifest = rt.soul.getManifest();
+        const projectedHealth = projectVizHealth(
+          { behindHead: freshness.behindHead, lastKnownGood: freshness.lastKnownGood },
+          coldReaderFreshness(resolved.repoRoot, resolved.cribDir),
+          {
+            head: readerManifest.repo?.vcsHead ?? null,
+            lastSuccessfulAt: readerManifest.stats.lastUpdated ?? null,
+          },
+        );
         const repoId = readRepoId(resolved.cribDir);
         const syncConfigured = Boolean(
           repoId &&
@@ -4420,8 +4436,7 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
                 : {}),
             },
             codeIndex: {
-              lastSuccessfulAt: rt.soul.getManifest().stats.lastUpdated,
-              behindHead: freshness.behindHead,
+              ...projectedHealth.codeIndex,
               workerRunning: freshness.workerRunning,
             },
             sync: {
@@ -4430,7 +4445,7 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
             },
             // WP4.7 — the viz server has no refresh loop of its own; it reports the cold
             // committed-index shape so the home page shows honest reader staleness.
-            readerFreshness: coldReaderFreshness(resolved.repoRoot, resolved.cribDir),
+            readerFreshness: projectedHealth.readerFreshness,
           },
           currentRepositoryAnchor(resolved.repoRoot),
         );
@@ -4449,6 +4464,22 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
           'cache-control': 'no-store',
         });
         res.end(JSON.stringify(readMemoryGraphDetail(memoryApi, id)));
+        return;
+      }
+      // Phase 4 — one evidence item, explained display-safe; any source excerpt is read by node id.
+      if (requestUrl.pathname === '/memory/evidence.json') {
+        if (!memoryApi) throw new VizHttpError(404, 'memory not configured');
+        const inspected = await readMemoryEvidence(
+          memoryApi,
+          rt.soul,
+          rt.repoRoot,
+          parseEvidenceQuery(requestUrl.searchParams),
+        );
+        res.writeHead(200, {
+          'content-type': 'application/json; charset=utf-8',
+          'cache-control': 'no-store',
+        });
+        res.end(JSON.stringify(inspected));
         return;
       }
       if (requestUrl.pathname === '/memory/record.json') {
@@ -4516,6 +4547,7 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
         requestUrl.pathname === '/memory/intake/close' ||
         requestUrl.pathname === '/memory/pending/recheck' ||
         requestUrl.pathname === '/memory/pending/dismiss' ||
+        requestUrl.pathname === '/memory/feedback' ||
         requestUrl.pathname === '/memory/mutation-grant.json'
       ) {
         const sendJson = (status: number, payload: unknown): void => {
@@ -4585,6 +4617,33 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
               recordedAt: new Date().toISOString(),
             });
             sendJson(200, { closed: true, outcome: body.outcome, checkpointId: checkpoint.id });
+            return;
+          }
+          // Phase 4 — report a concern: a LOCAL contradicted feedback event with NO counter-evidence,
+          // so it is surfaced for review and never quarantines, retracts or supersedes anything.
+          // The actor is the server's operator, never a browser-supplied field; the event id is
+          // content-addressed over (subject, actor, reason), so a repeated report is idempotent.
+          if (requestUrl.pathname === '/memory/feedback') {
+            const body = parseFeedbackBody(await readMutationBody(req));
+            const got = memoryApi.get(body.recordId);
+            if (!got.found || !got.record) {
+              throw new VizMutationError('not-found', 404, 'memory record not found');
+            }
+            const result = applyLocalFeedback(memoryDeps.local, resolved.cribDir, {
+              subject: got.record.id,
+              signal: 'contradicted',
+              actor: operator,
+              context: body.reason,
+              claimKind: got.record.kind as MemoryRecordKind,
+              counterEvidence: [],
+            });
+            sendJson(200, {
+              recorded: true,
+              feedbackId: result.feedbackId,
+              recordId: got.record.id,
+              quarantined: result.suppression.suppress,
+              message: CONCERN_RECORDED_MESSAGE,
+            });
             return;
           }
           if (requestUrl.pathname === '/memory/pending/recheck') {
@@ -10070,6 +10129,65 @@ function cmdMemoryCheck(args: string[], ctx?: CmdCtx): number {
 }
 
 /**
+ * Record a LOCAL feedback event (and, for supported `contradicted` feedback, the local quarantine)
+ * with its sync staging inside the same lock hold. Shared by `crib memory feedback` and the viz
+ * concern report, so the browser writes exactly what the CLI writes. Without a known claim kind no
+ * counter-evidence is admissible, so nothing is suppressed.
+ */
+function applyLocalFeedback(
+  local: MemoryStore,
+  cribDir: string,
+  input: {
+    subject: string;
+    signal: FeedbackSignal;
+    actor: string;
+    context?: string;
+    claimKind: MemoryRecordKind | undefined;
+    counterEvidence: MemoryEvidence[];
+  },
+) {
+  // The stable cross-clone id the sync config records, when one is initialized (undefined otherwise —
+  // the stage helper falls back to the manifest repo.id, which is correct pre-init too).
+  const syncRepoIdRef = readSyncConfig('local', readRepoId(cribDir) ?? '', process.env)?.syncRepoId;
+  return applyContradictedFeedback(local, {
+    record: { id: input.subject, kind: input.claimKind ?? 'fact' },
+    feedback: {
+      id: '',
+      schemaVersion: '1',
+      signal: input.signal,
+      subject: input.subject,
+      actor: input.actor,
+      ...(input.context ? { context: input.context } : {}),
+      ts: new Date().toISOString(),
+    },
+    counterEvidence: input.claimKind ? input.counterEvidence : [],
+    now: () => new Date().toISOString(),
+    // ADR-003 D3/D4: the feedback row and (on suppression) the quarantine decision stage for
+    // cross-device sync INSIDE the same lock hold that writes them — a contradicted-feedback
+    // quarantine must survive to the next device, or it resurrects there.
+    syncStage: {
+      stageWrite: (collection, entry) => {
+        stageSyncableWrite(
+          local,
+          collection === 'decisions' ? 'decision.append' : 'feedback.append',
+          entry,
+          {
+            // G1.1: `principalId` is OWNERSHIP — the sync stream this device's events belong to —
+            // resolved from the same chain every other write site uses. `actor` is provenance (who
+            // authored the feedback) and is already recorded on the feedback row itself; stamping it
+            // here would put an agent/author string where the owner principal belongs.
+            principalId: process.env.KCRIB_PRINCIPAL_ID ?? DEFAULT_MIGRATION_PRINCIPAL_ID,
+            env: process.env,
+            now: () => new Date().toISOString(),
+            ...(syncRepoIdRef !== undefined ? { syncRepoId: syncRepoIdRef } : {}),
+          },
+        );
+      },
+    },
+  });
+}
+
+/**
  * `crib memory feedback <mem-id> --signal <useful|unhelpful|contradicted> [--actor <id>]
  *   [--context <text>] [--counter-evidence <json-file>]` (W5 Slice 3, PRD line 241 + W5 line 361).
  *
@@ -10143,48 +10261,13 @@ function cmdMemoryFeedback(args: string[], ctx?: CmdCtx): number {
       return EXIT.BAD_ARGS;
     }
   }
-  // The stable cross-clone id the sync config records, when one is initialized (undefined otherwise —
-  // the stage helper falls back to the manifest repo.id, which is correct pre-init too).
-  const syncRepoIdRef = readSyncConfig(
-    'local',
-    readRepoId(resolved.cribDir) ?? '',
-    process.env,
-  )?.syncRepoId;
-  const result = applyContradictedFeedback(deps.local, {
-    record: { id: subject, kind: claimKind ?? 'fact' },
-    feedback: {
-      id: '',
-      schemaVersion: '1',
-      signal,
-      subject,
-      actor,
-      ...(context ? { context } : {}),
-      ts: new Date().toISOString(),
-    },
-    counterEvidence: claimKind ? counterEvidence : [],
-    now: () => new Date().toISOString(),
-    // ADR-003 D3/D4: the feedback row and (on suppression) the quarantine decision stage for
-    // cross-device sync INSIDE the same lock hold that writes them — a contradicted-feedback
-    // quarantine must survive to the next device, or it resurrects there.
-    syncStage: {
-      stageWrite: (collection, entry) => {
-        stageSyncableWrite(
-          deps.local,
-          collection === 'decisions' ? 'decision.append' : 'feedback.append',
-          entry,
-          {
-            // G1.1: `principalId` is OWNERSHIP — the sync stream this device's events belong to —
-            // resolved from the same chain every other write site uses. `actor` is provenance (who
-            // authored the feedback) and is already recorded on the feedback row itself; stamping it
-            // here would put an agent/author string where the owner principal belongs.
-            principalId: process.env.KCRIB_PRINCIPAL_ID ?? DEFAULT_MIGRATION_PRINCIPAL_ID,
-            env: process.env,
-            now: () => new Date().toISOString(),
-            ...(syncRepoIdRef !== undefined ? { syncRepoId: syncRepoIdRef } : {}),
-          },
-        );
-      },
-    },
+  const result = applyLocalFeedback(deps.local, resolved.cribDir, {
+    subject,
+    signal,
+    actor,
+    ...(context ? { context } : {}),
+    claimKind,
+    counterEvidence,
   });
   const summary: Record<string, unknown> = {
     feedbackId: result.feedbackId,

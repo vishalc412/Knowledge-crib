@@ -19,6 +19,8 @@ test.afterAll(async () => {
 async function openCurrentClaim(page: import('@playwright/test').Page) {
   await page.goto(backend.url);
   await page.locator('[data-kc-memory-trigger]').click();
+  // Memory home is a hub of count tiles; History is the view that lists every record.
+  await page.locator('[data-kc-memory-home-action="history"]').click();
   const row = page.locator(`[data-kc-mem-row="${backend.graph.current}"]`);
   await row.waitFor({ state: 'visible', timeout: 20_000 });
   await row.click();

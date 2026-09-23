@@ -70,6 +70,136 @@
     });
   }
 
+  /** Discover actual architectural hops, then select a readable connected subset for each ring.
+   *  A traversal limit is disclosed, never mistaken for the end of the graph. */
+  function focusProjection(rootId, maxDepth, indexes, byId, caps = [60, 120, 80, 60], maxVisited = 5000) {
+    const depth = Math.max(1, Math.min(4, maxDepth || 1));
+    const rings = Array.from({ length: depth }, () => []);
+    const countsByDepth = Array(depth + 1).fill(0);
+    const hiddenByDepth = Array(depth + 1).fill(0);
+    if (!byId[rootId]) return { rings, countsByDepth, hiddenByDepth, depthMap: new Map(), truncated: false, truncatedAtDepth: null };
+    const discovered = new Map([[rootId, 0]]);
+    const queue = [rootId];
+    let truncated = false;
+    let truncatedAtDepth = null;
+    for (let head = 0; head < queue.length; head++) {
+      const id = queue[head];
+      const hop = discovered.get(id);
+      if (hop >= depth) continue;
+      for (const neighbor of indexes.archAdj[id] || []) {
+        if (!byId[neighbor] || discovered.has(neighbor)) continue;
+        if (discovered.size >= maxVisited) { truncated = true; truncatedAtDepth = hop + 1; break; }
+        discovered.set(neighbor, hop + 1);
+        queue.push(neighbor);
+      }
+      if (truncated) break;
+    }
+    const byDepth = Array.from({ length: depth + 1 }, () => []);
+    for (const [id, hop] of discovered) byDepth[hop].push(id);
+    countsByDepth[0] = 1;
+    let visiblePrevious = new Set([rootId]);
+    for (let hop = 1; hop <= depth; hop++) {
+      const connected = byDepth[hop].filter((id) =>
+        (indexes.archAdj[id] || []).some((parent) => visiblePrevious.has(parent)));
+      rings[hop - 1] = rankIds(connected, byId).slice(0, caps[hop - 1] || 60);
+      visiblePrevious = new Set(rings[hop - 1]);
+      countsByDepth[hop] = byDepth[hop].length;
+      hiddenByDepth[hop] = Math.max(0, countsByDepth[hop] - rings[hop - 1].length);
+    }
+    return { rings, countsByDepth, hiddenByDepth, depthMap: discovered, truncated, truncatedAtDepth };
+  }
+
+  /** The spanning backbone positions nodes; every real architectural edge among those visible
+   *  nodes remains in edgeIndexes, including sibling/cross-ring links. */
+  function focusLayout(rootId, ring1Ids, ring2Ids, edges, indexes, extraRings = []) {
+    const positions = Object.create(null);
+    const parentById = Object.create(null);
+    const backboneEdgeIndexes = [];
+    const ring1 = [];
+    const childrenByParent = Object.create(null);
+    positions[rootId] = { x: 0, y: 0 };
+
+    const connectingEdge = (a, b) => (indexes.incidentByNode[a] || []).find((index) => {
+      const edge = edges[index];
+      return edge && ARCHITECTURAL_RELS.has(edge.rel) &&
+        ((edge.src === a && edge.dst === b) || (edge.src === b && edge.dst === a));
+    });
+    for (const id of ring1Ids) {
+      const index = connectingEdge(rootId, id);
+      if (index === undefined) continue;
+      ring1.push(id);
+      parentById[id] = rootId;
+      childrenByParent[id] = [];
+      backboneEdgeIndexes.push(index);
+    }
+
+    const innerX = Math.max(220, ring1.length * 14);
+    const innerY = Math.max(260, ring1.length * 17);
+    const outerX = innerX + 155;
+    const outerY = innerY + 185;
+    const angles = Object.create(null);
+    ring1.forEach((id, index) => {
+      const angle = -Math.PI / 2 + index * Math.PI * 2 / ring1.length;
+      angles[id] = angle;
+      positions[id] = { x: Math.cos(angle) * innerX, y: Math.sin(angle) * innerY };
+    });
+
+    for (const id of ring2Ids) {
+      for (const parent of ring1) {
+        const index = connectingEdge(parent, id);
+        if (index === undefined) continue;
+        parentById[id] = parent;
+        childrenByParent[parent].push(id);
+        backboneEdgeIndexes.push(index);
+        break;
+      }
+    }
+    for (const parent of ring1) {
+      const children = childrenByParent[parent];
+      const wedge = Math.PI * 2 / Math.max(1, ring1.length);
+      children.forEach((id, index) => {
+        const angle = angles[parent] + ((index + 1) / (children.length + 1) - 0.5) * wedge * 0.88;
+        positions[id] = { x: Math.cos(angle) * outerX, y: Math.sin(angle) * outerY };
+      });
+    }
+    let previousRing = ring2Ids.filter((id) => positions[id]);
+    for (let ringIndex = 0; ringIndex < extraRings.length; ringIndex++) {
+      const nextRing = [];
+      const descendants = Object.create(null);
+      for (const id of extraRings[ringIndex]) {
+        for (const parent of previousRing) {
+          const index = connectingEdge(parent, id);
+          if (index === undefined) continue;
+          parentById[id] = parent;
+          (descendants[parent] || (descendants[parent] = [])).push(id);
+          backboneEdgeIndexes.push(index);
+          nextRing.push(id);
+          break;
+        }
+      }
+      const radiusX = outerX + (ringIndex + 1) * 175;
+      const radiusY = outerY + (ringIndex + 1) * 195;
+      for (const parent of previousRing) {
+        const siblings = descendants[parent] || [];
+        const parentPoint = positions[parent];
+        const parentAngle = Math.atan2(parentPoint.y / (outerY + ringIndex * 195),
+          parentPoint.x / (outerX + ringIndex * 175));
+        const wedge = Math.PI * 2 / Math.max(1, previousRing.length);
+        siblings.forEach((id, index) => {
+          const angle = parentAngle + ((index + 1) / (siblings.length + 1) - 0.5) * wedge * 0.8;
+          positions[id] = { x: Math.cos(angle) * radiusX, y: Math.sin(angle) * radiusY };
+        });
+      }
+      previousRing = nextRing;
+    }
+    const visibleIds = new Set(Object.keys(positions));
+    const edgeIndexes = edgeIndexesForNodeIds(visibleIds, edges, indexes)
+      .filter((index) => ARCHITECTURAL_RELS.has(edges[index].rel)).sort((a, b) => a - b);
+    const backboneSet = new Set(backboneEdgeIndexes);
+    const crossEdgeIndexes = edgeIndexes.filter((index) => !backboneSet.has(index));
+    return { positions, parentById, edgeIndexes, backboneEdgeIndexes, crossEdgeIndexes };
+  }
+
   function searchText(node) {
     return [
       node.label,
@@ -108,6 +238,7 @@
       return {
         query,
         matchIds: [],
+        allMatchIds: [],
         contextIds: [],
         nodeIds: new Set(),
         edgeIndexes: [],
@@ -140,6 +271,7 @@
     return {
       query,
       matchIds,
+      allMatchIds: allMatches.map((node) => node.id),
       contextIds,
       nodeIds,
       edgeIndexes: edgeIndexesForNodeIds(nodeIds, edges, indexes),
@@ -256,6 +388,8 @@
     edgeIndexesForNodeIds,
     ellipsize,
     esc,
+    focusLayout,
+    focusProjection,
     hex,
     rr,
     searchProjection,

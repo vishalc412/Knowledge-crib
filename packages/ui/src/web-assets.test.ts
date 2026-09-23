@@ -44,6 +44,7 @@ function strippedSource(name: (typeof SERVED_ASSETS)[number]): string {
 }
 
 const html = readFileSync(`${vizAssetsDir()}/index.html`, 'utf8');
+const tokens = readFileSync(`${vizAssetsDir()}/tokens.css`, 'utf8');
 
 /** The asset with JS comments removed (string literals and markup stay). */
 const code = strippedSource('index.html');
@@ -54,9 +55,11 @@ describe('viz web asset: memory ledger panel (G5.4)', () => {
     expect(html).toContain('/memory.json');
     expect(html).toContain('/memory/record.json');
     expect(html).toContain('/memory/home.json');
-    expect(html).toContain('Work in progress');
+    expect(html).toContain('Resumable work');
+    expect(html).toContain('data-kc-mem-view-heading');
     expect(html).toContain('Needs review');
-    expect(html).toContain('Retrieval mode');
+    expect(html).toContain('data-kc-health="{{ signal.key }}"');
+    expect(html).toContain('./memory-view-projection.js');
     expect(html).toContain('focus-visible');
   });
 
@@ -101,6 +104,105 @@ describe('viz web asset: memory ledger panel (G5.4)', () => {
   it('opens on the architecture Overview by default, whatever the graph size', () => {
     expect(html).toContain("mode:this.overview.length?'overview':'focus'");
     expect(html).not.toContain("mode:this.largeGraph?'overview':'focus'");
+  });
+
+  it('ships the supplied design system’s grid workspace and inclusive motion rules', () => {
+    expect(html).toContain('data-kc-shell="signal-console"');
+    expect(html).toContain('data-kc-navigation-rail');
+    expect(html).toContain('data-kc-graph-stage');
+    expect(html).toContain('data-kc-inspector');
+    expect(html).toContain('data-kc-statusline');
+    expect(html).toContain('<link rel="stylesheet" href="./tokens.css">');
+    expect(tokens).toContain('--kc-accent-code');
+    expect(html).toContain('@media (prefers-reduced-motion: reduce)');
+    expect(html).toContain('grid-template-rows:52px minmax(0,1fr) 26px');
+    expect(html).toContain(
+      'grid-template-columns:var(--kc-rail-width) minmax(0,1fr) var(--kc-inspector-width)',
+    );
+    expect(html).toContain('grid-area:2 / 2');
+    expect(html).toContain('grid-area:2 / 1 / 3 / 4');
+    expect(html).toContain('z-index:40 !important');
+  });
+
+  it('ships a local token sheet whose light and dark themes define the same tokens', () => {
+    // Offline: no remote stylesheet, import or font request.
+    expect(tokens).not.toMatch(/@import|url\(/);
+    const block = (theme: string) => {
+      const start = tokens.indexOf(`[data-kc-theme="${theme}"]`);
+      expect(start).toBeGreaterThan(-1);
+      return tokens.slice(start, tokens.indexOf('}', start));
+    };
+    const names = (css: string) => [...css.matchAll(/(--kc-[\w-]+)\s*:/g)].map((m) => m[1]).sort();
+    expect(names(block('dark'))).toEqual(names(block('light')));
+    for (const token of [
+      '--kc-surface-floating',
+      '--kc-text-primary',
+      '--kc-text-secondary',
+      '--kc-text-interactive',
+      '--kc-focus',
+      '--kc-border-control',
+      '--kc-canvas-label',
+    ]) {
+      expect(names(block('dark'))).toContain(token);
+    }
+    // Theme choice: system preference first, then the one documented, validated storage key.
+    expect(html).toContain("THEME_KEY='knowledge-crib:theme'");
+    expect(html).toContain("v==='light'||v==='dark'?v:null");
+    expect(html).toContain('(prefers-color-scheme: light)');
+  });
+
+  it('turns structural module IDs into readable navigation labels', () => {
+    expect(html).toContain('formatRailLabel(value)');
+    expect(html).toContain(".replace(/^module:/,'')");
+    expect(html).toContain("return 'Workspace';");
+    expect(html).toContain("const initialisms={cli:'CLI',mcp:'MCP',ui:'UI'};");
+    expect(html).toContain('label:this.formatRailLabel(m.label||m.id)');
+    expect(html).toContain('block.isModule?this.formatRailLabel(block.label||block.id)');
+    expect(html).toContain('railNodeCount:this.nodes.length.toLocaleString()');
+  });
+
+  it('keeps the primary command path contiguous in the reference header', () => {
+    const firstFlexibleSpacer = html.indexOf('<div style="flex:1;"></div>');
+    expect(firstFlexibleSpacer).toBeGreaterThan(html.indexOf('data-kc-command="blast"'));
+  });
+
+  it('implements the supplied command bar instead of the legacy toolbar', () => {
+    expect(html).toContain('data-kc-command-segment');
+    expect(html).toContain('data-kc-command="overview"');
+    expect(html).toContain('data-kc-command="focus"');
+    expect(html).toContain('data-kc-command="blast"');
+    expect(html).toContain('data-kc-search-shortcut');
+    expect(html).toContain('⌘K');
+    expect(html).toContain('data-kc-memory-badge');
+    expect(html).not.toContain('>Tour\n');
+    expect(html).not.toContain('>Blast radius\n');
+  });
+
+  it('ships the supplied graph-stage chrome and compact overview geometry', () => {
+    expect(html).toContain('data-kc-stage-breadcrumbs');
+    expect(html).toContain('data-kc-stage-overflow');
+    expect(html).toContain('data-kc-minimap');
+    expect(html).toContain('data-kc-stage-zoom');
+    expect(html).toContain('const CARD_W=196,CARD_H=118,GAP_X=22,GAP_Y=16;');
+    expect(html).not.toContain("ctx.fillText('Architecture overview'");
+  });
+
+  it('uses the supplied inspector hierarchy for real graph detail', () => {
+    expect(html).toContain('data-kc-inspector-actions');
+    expect(html).toContain('data-kc-inspector-summary');
+    expect(html).toContain('data-kc-inspector-signature');
+    expect(html).toContain('data-kc-inspector-connections');
+    expect(html).toContain('data-kc-inspector-source');
+    expect(html).toContain('data-kc-inspector-evidence');
+    expect(html).toContain('data-kc-inspector-section');
+    expect(html).toContain('toggleInspectorSection');
+    expect(html).toContain('toggleInspectorSource');
+    expect(html).toContain('sourceOpen');
+    expect(html).toContain('sec.open');
+    // Template order (CSS selectors mention the same hooks earlier in the helmet).
+    expect(html.indexOf('<div data-kc-inspector-source')).toBeGreaterThan(
+      html.indexOf('<div data-kc-inspector-connections>'),
+    );
   });
 
   it('renders a ledger row verdict from evidenceVerdict, never the evidence array', () => {

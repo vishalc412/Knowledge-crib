@@ -28,9 +28,11 @@ import {
   correlateAnchors,
   decisionId,
   derivePropositionKey,
+  feedbackId,
   ledgerGroupOf,
   memoryRecordId,
   memoryRecordV2Id,
+  reviewReasonsOf,
   standingOf,
 } from './index.js';
 
@@ -451,5 +453,257 @@ describe('MemoryApi.ledger', () => {
     expect(ledgerRow.lifecycle).toBe(gotten.verdicts?.lifecycle);
     expect(ledgerRow.quarantined).toBe(gotten.verdicts?.quarantined);
     expect(ledgerRow.quarantined).toBe(true);
+  });
+});
+
+// ─── working views: Active / Needs review (UI remediation Phase 2) ───────────
+
+describe('reviewReasonsOf', () => {
+  const base = {
+    standing: 'local' as const,
+    evidenceVerdict: 'valid' as const,
+    applicability: 'current' as const,
+    lifecycle: 'active' as const,
+    quarantined: false,
+    eligible: true,
+    conflicts: [],
+    concern: false,
+  };
+
+  it('a healthy active record needs nothing', () => {
+    expect(reviewReasonsOf(base)).toEqual([]);
+  });
+
+  it('degraded evidence asks for review without blocking recall', () => {
+    expect(reviewReasonsOf({ ...base, evidenceVerdict: 'degraded' })).toEqual([
+      { code: 'evidence-degraded', blocking: false },
+    ]);
+  });
+
+  it('names every recall exclusion, blocking reasons before advisory ones', () => {
+    const reasons = reviewReasonsOf({
+      ...base,
+      standing: 'staged',
+      evidenceVerdict: 'invalid',
+      applicability: 'orphaned',
+      quarantined: true,
+      eligible: false,
+      conflicts: [{}],
+      concern: true,
+    });
+    expect(reasons.map((r) => r.code)).toEqual([
+      'not-admitted',
+      'evidence-invalid',
+      'applicability-orphaned',
+      'quarantined',
+      'conflict',
+      'concern',
+    ]);
+    const firstAdvisory = reasons.findIndex((r) => !r.blocking);
+    expect(reasons.slice(firstAdvisory).every((r) => !r.blocking)).toBe(true);
+  });
+
+  it('an ineligible row is never classified as needing nothing', () => {
+    expect(reviewReasonsOf({ ...base, eligible: false })).toEqual([
+      { code: 'not-recall-eligible', blocking: true },
+    ]);
+  });
+
+  it('retired records carry no review reasons — their lifecycle settled them', () => {
+    expect(
+      reviewReasonsOf({ ...base, lifecycle: 'retracted', evidenceVerdict: 'invalid' }),
+    ).toEqual([]);
+    expect(reviewReasonsOf({ ...base, lifecycle: 'superseded', concern: true })).toEqual([]);
+  });
+});
+
+describe('MemoryApi.ledger working views', () => {
+  // One live symbol per fixture record: records sharing a subject with different claims form a
+  // conflict group, which would blur every other state under test.
+  const subjectFor = (name: string) => `sym:src/${name}.ts#S.${name}@L1`;
+  const liveNodes = [
+    'valid',
+    'degraded',
+    'invalid',
+    'stale',
+    'quarantined',
+    'conflict',
+    'concerned',
+    'retired',
+    'staged',
+    'many',
+  ].map((name) =>
+    node({ id: subjectFor(name), file: `src/${name}.ts`, qualifiedName: `S.${name}` }),
+  );
+  const at = (name: string, claim: string, over: Partial<MemoryRecord['verdicts']> = {}) =>
+    v1Record({ subject: subjectFor(name), claim, verdicts: verdicts(over) });
+  function apiOver(local: MemoryStore) {
+    return new MemoryApi({
+      stores: { local },
+      env,
+      now: () => T0,
+      soul: {
+        getNode: (id: string) => liveNodes.find((n) => n.id === id),
+        allNodes: () => liveNodes,
+        rehydrate: () => ({ text: '', truncated: false, totalLines: 1, startLine: 1 }),
+      } as unknown as MemoryAnchorPort,
+    });
+  }
+  const verdicts = (over: Partial<MemoryRecord['verdicts']>): MemoryRecord['verdicts'] => ({
+    trust: 'local',
+    evidence: 'valid',
+    applicability: 'current',
+    lifecycle: 'active',
+    ...over,
+  });
+
+  function seedEveryState() {
+    const local = MemoryStore.local(REPO, { env, now: () => T0 });
+    const valid = at('valid', 'valid claim');
+    const degraded = at('degraded', 'degraded claim', { evidence: 'degraded' });
+    const invalid = at('invalid', 'invalid claim', { evidence: 'invalid' });
+    const stale = at('stale', 'stale claim', { applicability: 'needs-review' });
+    const moved = v1Record({
+      subject: MOVED_ID,
+      appliesTo: [MOVED_ID],
+      claim: 'moved claim',
+      verdicts: verdicts({ applicability: 'orphaned' }),
+    });
+    const quarantined = at('quarantined', 'quarantined claim');
+    const conflictA = at('conflict', 'S.conflict returns a');
+    const conflictB = at('conflict', 'S.conflict returns b');
+    const concerned = at('concerned', 'reported claim');
+    const retired = at('retired', 'retired claim');
+    const staged = at('staged', 'staged claim', { trust: 'candidate' });
+    local.upsertEntries('active', [
+      valid,
+      degraded,
+      invalid,
+      stale,
+      moved,
+      quarantined,
+      conflictA,
+      conflictB,
+      concerned,
+      retired,
+      staged,
+    ]);
+    local.upsertEntries('decisions', [
+      decisionOn(quarantined.id, 'quarantine'),
+      decisionOn(retired.id, 'retract'),
+    ]);
+    const signal = 'contradicted' as const;
+    local.upsertEntries('feedback', [
+      {
+        id: feedbackId({ signal, subject: concerned.id, actor: 'human:reviewer' }),
+        schemaVersion: '1' as const,
+        signal,
+        subject: concerned.id,
+        actor: 'human:reviewer',
+        ts: T0,
+      },
+    ]);
+    return {
+      api: apiOver(local),
+      ids: {
+        valid,
+        degraded,
+        invalid,
+        stale,
+        moved,
+        quarantined,
+        conflictA,
+        conflictB,
+        concerned,
+        retired,
+        staged,
+      },
+    };
+  }
+
+  it('Active is exactly the recall gate; Needs review names why; they overlap on degraded', () => {
+    const { api, ids } = seedEveryState();
+    const all = api.ledger({ limit: 200 });
+    const active = api.ledger({ view: 'active', limit: 200 });
+    const review = api.ledger({ view: 'needs-review', limit: 200 });
+
+    expect(active.rows.every((r) => r.eligible)).toBe(true);
+    expect(active.total).toBe(all.rows.filter((r) => r.eligible).length);
+    const activeIds = new Set(active.rows.map((r) => r.id));
+    expect(activeIds.has(ids.valid.id)).toBe(true);
+    expect(activeIds.has(ids.degraded.id)).toBe(true);
+    expect(activeIds.has(ids.concerned.id)).toBe(true);
+
+    const reasonsOf = (id: string) =>
+      review.rows.find((r) => r.id === id)?.reviewReasons.map((x) => x.code) ?? [];
+    expect(reasonsOf(ids.valid.id)).toEqual([]);
+    expect(reasonsOf(ids.degraded.id)).toEqual(['evidence-degraded']);
+    expect(reasonsOf(ids.invalid.id)).toEqual(['evidence-invalid']);
+    expect(reasonsOf(ids.stale.id)).toContain('applicability-needs-review');
+    expect(reasonsOf(ids.moved.id)).toContain('applicability-orphaned');
+    expect(reasonsOf(ids.quarantined.id)).toContain('quarantined');
+    expect(reasonsOf(ids.conflictA.id)).toContain('conflict');
+    expect(reasonsOf(ids.conflictB.id)).toContain('conflict');
+    expect(reasonsOf(ids.concerned.id)).toEqual(['concern']);
+    expect(reasonsOf(ids.staged.id)).toContain('not-admitted');
+    // Retired records live in History, not in the working review queue.
+    expect(review.rows.some((r) => r.id === ids.retired.id)).toBe(false);
+    expect(all.rows.some((r) => r.id === ids.retired.id)).toBe(true);
+
+    // The overlap is real and explained by the reasons: eligible rows in review are advisory-only.
+    const overlap = review.rows.filter((r) => activeIds.has(r.id));
+    expect(overlap.map((r) => r.id).sort()).toEqual(
+      [ids.degraded.id, ids.conflictA.id, ids.conflictB.id, ids.concerned.id].sort(),
+    );
+    expect(overlap.every((r) => r.reviewReasons.every((x) => !x.blocking))).toBe(true);
+  });
+
+  it('whole-ledger view counts equal the totals of the views they open', () => {
+    const { api } = seedEveryState();
+    const counts = api.ledger({ limit: 1 }).views;
+    expect(counts.active).toBe(api.ledger({ view: 'active', limit: 1 }).total);
+    expect(counts.needsReview).toBe(api.ledger({ view: 'needs-review', limit: 1 }).total);
+    // Views never change History: the unfiltered total and group counts are the whole ledger.
+    const history = api.ledger({ limit: 1 });
+    expect(history.total).toBe(11);
+    expect(Object.values(history.views).every((n) => n <= history.total)).toBe(true);
+  });
+
+  it('Needs review sorts blocking reasons first, then newest, then id', () => {
+    const { api } = seedEveryState();
+    const rows = api.ledger({ view: 'needs-review', limit: 200 }).rows;
+    const rank = rows.map((r) => (r.reviewReasons.some((x) => x.blocking) ? 0 : 1));
+    expect([...rank].sort((a, b) => a - b)).toEqual(rank);
+    const blockingIds = rows.filter((r) => rank[rows.indexOf(r)] === 0).map((r) => r.id);
+    expect([...blockingIds].sort()).toEqual(blockingIds); // equal times → stable id order
+  });
+
+  it('pages every record beyond the first page and rejects group combined with view', () => {
+    const local = MemoryStore.local(REPO, { env, now: () => T0 });
+    const many = Array.from({ length: 230 }, (_, i) =>
+      at('many', `claim ${String(i).padStart(3, '0')}`, { evidence: 'degraded' }),
+    );
+    local.upsertEntries('active', many);
+    const api = apiOver(local);
+    const seen = new Set<string>();
+    const total = api.ledger({ limit: 1 }).views.needsReview;
+    expect(total).toBe(230);
+    for (let offset = 0; offset < total; offset += 50) {
+      const page = api.ledger({ view: 'needs-review', offset, limit: 50 });
+      expect(page.rows.length).toBeLessThanOrEqual(50);
+      for (const row of page.rows) seen.add(row.id);
+    }
+    expect(seen.size).toBe(230);
+    expect(() => api.ledger({ view: 'active', group: 'stale' })).toThrow(/cannot be combined/);
+  });
+
+  it('keeps the unfiltered History ordering and adds no banned vocabulary', () => {
+    const { api } = seedEveryState();
+    const history = api.ledger({ limit: 200 });
+    const ranks = history.rows.map((r) => LEDGER_GROUPS.indexOf(r.group));
+    expect([...ranks].sort((a, b) => a - b)).toEqual(ranks);
+    expect(JSON.stringify(api.ledger({ view: 'needs-review', limit: 200 }))).not.toMatch(
+      /candidate|trust/i,
+    );
   });
 });

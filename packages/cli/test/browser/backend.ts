@@ -103,6 +103,17 @@ export interface MemoryBackendOptions {
    * start on a repo without `.crib/crib.json`, which is the same file the memory API keys on).
    */
   seed?: boolean;
+  /**
+   * `reviewClaims` seeds that many extra active claims with degraded evidence (recall-eligible, yet
+   * listed in Needs review), plus one claim carrying a reported concern — enough to page past the
+   * first screen of both working views. Zero keeps the default fixture unchanged. Ignored when
+   * `seed` is false, like every other seeded record.
+   */
+  reviewClaims?: number;
+  /** one claim carrying all five evidence kinds, with receipts the evidence route must sanitize. */
+  evidenceKinds?: boolean;
+  /** long, mixed-script claim text for the reflow matrix. */
+  longContent?: boolean;
 }
 
 export class MemoryBackend {
@@ -120,11 +131,13 @@ export class MemoryBackend {
   /** WP5 T19 — the record id `observe()` had admitted for the claim it saved. */
   observedId = '';
   private readonly seed: boolean;
+  private readonly options: MemoryBackendOptions;
   private server: ReturnType<typeof spawn> | null = null;
   private readonly env: NodeJS.ProcessEnv;
 
   constructor(opts: MemoryBackendOptions = {}) {
     this.seed = opts.seed !== false;
+    this.options = opts;
     this.repo = mkdtempSync(join(tmpdir(), 'crib-browser-repo-'));
     this.home = mkdtempSync(join(tmpdir(), 'crib-browser-home-'));
     this.env = {
@@ -239,6 +252,9 @@ export class MemoryBackend {
 
       // 7c. WP5 T18 — one admitted claim whose evidence has stopped grounding.
       await this.seedExclusions();
+      if (this.options.reviewClaims) await this.seedReviewClaims(this.options.reviewClaims);
+      if (this.options.evidenceKinds) await this.seedEvidenceKinds();
+      if (this.options.longContent) await this.seedLongContent();
     }
 
     // 8. The real viz server, headless (`--no-open`), on an ephemeral port.
@@ -491,6 +507,210 @@ export class MemoryBackend {
     };
   }
 
+  private async seedReviewClaims(count: number): Promise<void> {
+    const mem = (await import('@knowledge-crib/memory')) as {
+      MemoryStore: { local: (repoId: string, opts: unknown) => MemoryStorePort };
+      memoryRecordId: (input: unknown) => string;
+      feedbackId: (input: unknown) => string;
+    };
+    const store = mem.MemoryStore.local(this.repoId, { env: this.env, now: () => T0 });
+    const record = (index: number, evidence: 'valid' | 'degraded') => {
+      // A distinct subject per claim: same-subject claims with different text form conflicts.
+      const input = {
+        kind: 'fact',
+        subject: `topic:review-${String(index).padStart(3, '0')}`,
+        claim: `review claim ${String(index).padStart(3, '0')}`,
+        scope: { boundary: 'repo', repoId: this.repoId },
+        appliesTo: [this.sym.id],
+        evidence: [
+          {
+            kind: 'source-quote',
+            verdict: evidence,
+            checkedAt: T0,
+            soulId: this.sym.id,
+            quote: 'Normalizes input before hashing.',
+            targetHash: this.sym.hash,
+          },
+        ],
+        authorship: { actor: 'claude-code', kind: 'agent', tool: 'claude-code' },
+      };
+      return {
+        id: mem.memoryRecordId(input),
+        schemaVersion: '1',
+        ...input,
+        verdicts: { trust: 'local', evidence, applicability: 'current', lifecycle: 'active' },
+        createdAt: T0,
+      };
+    };
+    const degraded = Array.from({ length: count }, (_, i) => record(i, 'degraded'));
+    const concerned = record(count, 'valid');
+    store.upsertEntries('active', [...degraded, concerned]);
+    const concern = { signal: 'contradicted', subject: concerned.id, actor: 'human:reviewer' };
+    store.upsertEntry('feedback', {
+      id: mem.feedbackId(concern),
+      schemaVersion: '1',
+      ...concern,
+      ts: T0,
+    });
+    this.concernClaim = concerned.claim;
+  }
+
+  /**
+   * One active claim carrying every evidence kind, in order: a live source quote, a source quote
+   * whose node no longer exists, an execution assertion, a committed policy, a human attestation,
+   * and a receipt pair whose passing receipt is missing. Receipts carry {@link EVIDENCE_SENTINEL}
+   * in argv and `meta` — fields the inspector must never disclose.
+   */
+  private async seedEvidenceKinds(): Promise<void> {
+    const mem = (await import('@knowledge-crib/memory')) as {
+      MemoryStore: { local: (repoId: string, opts: unknown) => MemoryStorePort };
+      memoryRecordId: (input: unknown) => string;
+    };
+    const store = mem.MemoryStore.local(this.repoId, { env: this.env, now: () => T0 });
+    const receipt = (id: string, ts: string, passed: boolean) => ({
+      id,
+      schemaVersion: '1',
+      policyHash: 'blake3:aa11',
+      profileHash: 'blake3:bb22',
+      executable: 'node',
+      args: ['--version', EVIDENCE_SENTINEL],
+      head: 'c'.repeat(40),
+      worktreeDigest: 'blake3:cc33',
+      exitCode: passed ? 0 : 1,
+      durationMs: 5,
+      outputDigest: 'blake3:dd44',
+      assertions: [{ name: 'exit-ok', passed }],
+      runner: 'cli',
+      ts,
+      meta: { stdout: EVIDENCE_SENTINEL },
+    });
+    const passing = receipt('rcpt:e1e1', '2026-01-01T00:05:00.000Z', true);
+    const failing = receipt('rcpt:f0f0', '2026-01-01T00:01:00.000Z', false);
+    store.upsertEntries('receipts', [passing, failing]);
+    const input = {
+      kind: 'fact',
+      subject: this.sym.id,
+      claim: EVIDENCE_CLAIM,
+      scope: { boundary: 'repo', repoId: this.repoId },
+      appliesTo: [this.sym.id],
+      evidence: [
+        {
+          kind: 'source-quote',
+          verdict: 'valid',
+          checkedAt: T0,
+          soulId: this.sym.id,
+          quote: 'Normalizes input before hashing.',
+          targetHash: this.sym.hash,
+        },
+        {
+          kind: 'source-quote',
+          verdict: 'degraded',
+          checkedAt: T0,
+          soulId: 'sym:src/removed.ts#gone@L1',
+          quote: 'a function that was deleted',
+          targetHash: 'blake3:ee55',
+        },
+        {
+          kind: 'execution-assertion',
+          verdict: 'valid',
+          checkedAt: T0,
+          receiptId: passing.id,
+          assertion: 'exit-ok',
+        },
+        {
+          kind: 'committed-policy',
+          verdict: 'valid',
+          checkedAt: T0,
+          artifactId: 'art:docs/policy.md',
+          anchor: '#retention',
+        },
+        {
+          kind: 'human-attestation',
+          verdict: 'valid',
+          checkedAt: T0,
+          actor: 'human:reviewer',
+          attestedAt: T0,
+          attestationId: 'att:1',
+          tty: true,
+        },
+        {
+          kind: 'receipt-pair',
+          verdict: 'degraded',
+          checkedAt: T0,
+          failingReceiptId: failing.id,
+          passingReceiptId: 'rcpt:0a0a',
+        },
+      ],
+      authorship: { actor: 'claude-code', kind: 'agent', tool: 'claude-code' },
+    };
+    store.upsertEntries('active', [
+      {
+        id: mem.memoryRecordId(input),
+        schemaVersion: '1',
+        ...input,
+        verdicts: {
+          trust: 'local',
+          evidence: 'valid',
+          applicability: 'current',
+          lifecycle: 'active',
+        },
+        createdAt: T0,
+      },
+    ]);
+    this.evidenceRecordId = mem.memoryRecordId(input);
+  }
+
+  /** One active claim with long, multilingual text and an unbroken technical token. */
+  private async seedLongContent(): Promise<void> {
+    const mem = (await import('@knowledge-crib/memory')) as {
+      MemoryStore: { local: (repoId: string, opts: unknown) => MemoryStorePort };
+      memoryRecordId: (input: unknown) => string;
+    };
+    const store = mem.MemoryStore.local(this.repoId, { env: this.env, now: () => T0 });
+    const input = {
+      kind: 'fact',
+      subject: `topic:${'multilingual-subject-'.repeat(6)}end`,
+      claim: LONG_CLAIM,
+      scope: { boundary: 'repo', repoId: this.repoId },
+      appliesTo: [this.sym.id],
+      evidence: [
+        {
+          kind: 'source-quote',
+          verdict: 'valid',
+          checkedAt: T0,
+          soulId: this.sym.id,
+          quote: 'Normalizes input before hashing.',
+          targetHash: this.sym.hash,
+        },
+      ],
+      authorship: { actor: 'claude-code', kind: 'agent', tool: 'claude-code' },
+    };
+    this.longRecordId = mem.memoryRecordId(input);
+    store.upsertEntries('active', [
+      {
+        id: this.longRecordId,
+        schemaVersion: '1',
+        ...input,
+        verdicts: {
+          trust: 'local',
+          evidence: 'valid',
+          applicability: 'current',
+          lifecycle: 'active',
+        },
+        createdAt: T0,
+      },
+    ]);
+  }
+
+  /** The id of the long multilingual claim (set when `longContent` is seeded). */
+  longRecordId = '';
+
+  /** The id of the every-evidence-kind claim (set when `evidenceKinds` is seeded). */
+  evidenceRecordId = '';
+
+  /** The claim text of the reported-concern fixture (set when `reviewClaims` is seeded). */
+  concernClaim = '';
+
   private async seedGraph(): Promise<void> {
     const mem = (await import('@knowledge-crib/memory')) as {
       MemoryStore: { local: (repoId: string, opts: unknown) => MemoryStorePort };
@@ -714,6 +934,17 @@ function parseAck(stdout: string): CliAck {
     throw new Error(`could not parse a JSON acknowledgement from:\n${stdout}`);
   }
 }
+/** Long, mixed-script claim text: Japanese, Arabic (RTL), Hindi, emoji and an unbroken path. */
+export const LONG_CLAIM = [
+  'normalizeInput は入力を正規化してからハッシュ化します。',
+  'تقوم الدالة بتطبيع الإدخال قبل التجزئة.',
+  'यह फ़ंक्शन हैशिंग से पहले इनपुट को सामान्य करता है। 🧪',
+  `packages/${'very-long-directory-name/'.repeat(8)}index.ts#normalizeInput@L2`,
+].join(' ');
+
+/** Seeded into receipt argv and meta; it must never reach an evidence response. */
+export const EVIDENCE_SENTINEL = 'SENTINEL-do-not-disclose-4f1c';
+const EVIDENCE_CLAIM = 'normalizeInput has every kind of evidence';
 
 export const SEEDED_GRAPH = {
   currentClaim: GRAPH_CURRENT_CLAIM,
