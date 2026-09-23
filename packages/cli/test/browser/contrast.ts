@@ -24,7 +24,14 @@ export async function sampleTextContrast(
     type Rgba = [number, number, number, number];
     const parse = (value: string): Rgba => {
       const parts = [...value.matchAll(/[\d.]+/g)].map((match) => Number(match[0]));
-      return [parts[0] ?? 0, parts[1] ?? 0, parts[2] ?? 0, parts[3] ?? 1];
+      // color-mix() tokens compute to `color(srgb r g b / a)` with 0–1 channels, not rgb()'s 0–255.
+      const scale = value.startsWith('color(') ? 255 : 1;
+      return [
+        (parts[0] ?? 0) * scale,
+        (parts[1] ?? 0) * scale,
+        (parts[2] ?? 0) * scale,
+        parts[3] ?? 1,
+      ];
     };
     const over = (top: Rgba, bottom: Rgba): Rgba => {
       const alpha = top[3] + bottom[3] * (1 - top[3]);

@@ -9,8 +9,9 @@ Assess the whole local `crib viz` application (`packages/ui/web`, served by `cri
 | Area | States |
 | --- | --- |
 | Shell | Overview; search with results; search with no results; Help popover; theme switch; navigation rail (desktop) and navigation drawer (≤760px) |
-| Graph | Node selected, with the inspector, source preview, Horizon hops and Blast; hover tooltip; zoom and fit |
-| Memory | Home tiles; Active, Needs review and History views with paging; record detail; each of the five evidence kinds opened with Inspect; Report a concern (empty submit, success); Pending queue (Admit, Dismiss, Re-check); Resumable work (detail, Resume, Mark done, Cancel) |
+| Graph | Node selected, with the inspector, source preview (loading, truncated, failed + Retry), Horizon hops and Blast; hover tooltip; zoom and fit |
+| Explorer | Graph, List and Split presentations (Split ≥1280 px, List by default below 760 px); module → cluster → symbol rows; ranked search; Focus neighbors and hop controls; the Blast table; zero results with Clear search; graph load failure with Retry; empty index |
+| Memory | Home tiles and the published-index / reader-snapshot / retrieval / sync health cards; load failures with Retry; Active, Needs review and History views with paging; record detail; each of the five evidence kinds opened with Inspect; Report a concern (empty submit, success); Pending queue (Admit, Dismiss, Re-check); Resumable work (detail, Resume, Mark done, Cancel) |
 | Modals | Memory, the phone navigation drawer, and the phone inspector. Assess each against the [WAI-APG modal dialog pattern](https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/) |
 
 Start the application against a disposable memory store:
@@ -19,7 +20,7 @@ Start the application against a disposable memory store:
 KCRIB_MEMORY_DIR=$(mktemp -d) KCRIB_REGISTRY_DIR=$(mktemp -d) node packages/cli/dist/cli.js viz --no-open
 ```
 
-The browser suite's backend (`packages/cli/test/browser/backend.ts`, options `evidenceKinds` and `reviewClaims`) seeds a repository that reaches every state listed above.
+The browser suite's backend (`packages/cli/test/browser/backend.ts`, options `evidenceKinds`, `reviewClaims` and `longContent`) seeds a repository that reaches every state listed above.
 
 ## Environment matrix
 
@@ -84,7 +85,7 @@ For each task, record:
 
 ## What the implementation team already verified (supporting evidence only)
 
-- `phase-6-a11y-audit.browser.ts`: axe-core 4.13 WCAG 2.0–2.2 A/AA rules, composited text contrast, and target size. It covers 20 states × 2 themes at 1280 px and 375 px, with reduced motion on.
+- `phase-6-a11y-audit.browser.ts`: axe-core 4.13 WCAG 2.0–2.2 A/AA rules, composited text contrast, and target size. It covers 28 states × 2 themes at 1280, 1440 and 375 px, with reduced motion on, including List, Split, the Blast table and the failure/retry states.
 - `phase-6-keyboard.browser.ts`:
   - every tab stop shows a visible focus indicator that is not obscured
   - focus order matches the visual order
@@ -94,4 +95,5 @@ For each task, record:
   - the hover tooltip meets 1.4.13
   - single-key shortcuts can be turned off (2.1.4)
   - the live search status meets 4.1.3
-- `phase-1-shell.browser.ts`, `phase-2-memory.browser.ts` and `phase-4-evidence.browser.ts`: the per-phase acceptance cases.
+- `phase-5-matrix.browser.ts`: both themes at 320/375/768/1280/1440 px, hover/selected/focus/error contrast, long multilingual content, 200% zoom, stale/partial/failure fixtures, loading and empty index.
+- `phase-1-shell`, `phase-2-memory`, `phase-3-explorer`, `phase-4-evidence` and `phase-5-hierarchy` browser specs: the per-phase acceptance cases.

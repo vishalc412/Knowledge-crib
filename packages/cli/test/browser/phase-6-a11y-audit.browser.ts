@@ -92,6 +92,8 @@ async function openEvidenceDetail(page: Page) {
 interface AuditState {
   name: string;
   mobile?: boolean;
+  /** 1440 px: the widest audited layout, where Split is offered. */
+  wide?: boolean;
   /** runs before navigation (network fixtures). */
   setup?(page: Page): Promise<void>;
   go(page: Page): Promise<void>;
@@ -174,6 +176,82 @@ const STATES: AuditState[] = [
       await expect(page.locator('[data-kc-mem-concern-error]')).toBeVisible();
     },
   },
+  // Phase 3 — the textual explorer (List, Split, Blast table) and its recovery states.
+  {
+    name: 'list-overview',
+    go: async (page) => {
+      await page.locator('[data-kc-presentation="list"]').click();
+      await expect(page.locator('[data-kc-result-row]').first()).toBeVisible();
+    },
+  },
+  {
+    name: 'list-search',
+    go: async (page) => {
+      await page.locator('[data-kc-presentation="list"]').click();
+      await page.getByPlaceholder('Search code, docs, tables…').fill('normalize');
+      await expect(page.locator('[data-kc-result-row]').first()).toBeVisible();
+    },
+  },
+  {
+    name: 'list-zero-results',
+    go: async (page) => {
+      await page.locator('[data-kc-presentation="list"]').click();
+      await page.getByPlaceholder('Search code, docs, tables…').fill('no-such-symbol-2026');
+      await expect(page.getByRole('button', { name: 'Clear search' })).toBeVisible();
+    },
+  },
+  {
+    name: 'list-focus-and-blast',
+    setup: routeSmallGraph,
+    go: async (page) => {
+      await page.locator('[data-kc-presentation="list"]').click();
+      await page.getByPlaceholder('Search code, docs, tables…').fill('RootAnchor');
+      await page.locator('[data-kc-result-row] button').first().click();
+      await page.locator('[data-kc-command="blast"]').click();
+      await expect(page.getByRole('table', { name: 'Blast results' })).toBeVisible();
+    },
+  },
+  {
+    name: 'split',
+    wide: true,
+    go: async (page) => {
+      await page.locator('[data-kc-presentation="split"]').click();
+      await expect(page.locator('[data-kc-result-row]').first()).toBeVisible();
+    },
+  },
+  {
+    name: 'graph-load-failure',
+    setup: async (page) => {
+      await page.route('**/graph.json', (route) => route.fulfill({ status: 503, body: 'down' }));
+    },
+    go: async (page) => {
+      await expect(page.getByRole('alert').first()).toBeVisible();
+    },
+  },
+  // Phase 5 — health signals and failure/retry states.
+  {
+    name: 'memory-load-failure',
+    setup: async (page) => {
+      await page.route('**/memory.json?*', (route) => route.fulfill({ status: 503, body: 'down' }));
+    },
+    go: async (page) => {
+      await page.locator('[data-kc-memory-trigger]').click();
+      await expect(page.getByRole('button', { name: 'Retry Memory' })).toBeVisible();
+    },
+  },
+  {
+    name: 'memory-detail-failure',
+    setup: async (page) => {
+      await page.route('**/memory/record.json?*', (route) =>
+        route.fulfill({ status: 503, body: 'down' }),
+      );
+    },
+    go: async (page) => {
+      await openMemory(page, 'history');
+      await page.locator('[data-kc-mem-row]').first().click();
+      await expect(page.locator('[data-kc-detail-error]')).toBeVisible();
+    },
+  },
   { name: 'mobile-overview', mobile: true, go: async () => {} },
   {
     name: 'mobile-drawer',
@@ -191,7 +269,11 @@ for (const scheme of ['dark', 'light'] as const) {
     test(`${state.name} (${scheme}) has no WCAG 2.2 A/AA automated failures`, async ({ page }) => {
       await page.emulateMedia({ colorScheme: scheme, reducedMotion: 'reduce' });
       await page.setViewportSize(
-        state.mobile ? { width: 375, height: 812 } : { width: 1280, height: 900 },
+        state.mobile
+          ? { width: 375, height: 812 }
+          : state.wide
+            ? { width: 1440, height: 900 }
+            : { width: 1280, height: 900 },
       );
       if (state.setup) await state.setup(page);
       await page.goto(backend.url);

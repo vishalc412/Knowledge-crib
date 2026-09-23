@@ -230,4 +230,33 @@ describe('pure explorer projection', () => {
     expect(last.page).toBe(2);
     expect(last.rows).toHaveLength(21);
   });
+
+  it('an empty index has no overview results, not the synthetic fallback cluster', () => {
+    const { explorer, model } = fixture();
+    const fallback = [{ id: 'default', label: 'Project', blurb: 'All nodes' }];
+    const empty = explorer.project({
+      nodes: [],
+      edges: [],
+      byId: {},
+      indexes: model.buildIndexes([], []),
+      modules: [],
+      clusters: fallback,
+      page: 0,
+    });
+    expect(empty.scope).toBe('overview');
+    expect(empty.total).toBe(0);
+    expect(empty.rows).toEqual([]);
+    // With members, the same fallback cluster is a real result.
+    const nodes = [{ id: 'a', kind: 'function', label: 'a', cluster: 'default', importance: 1 }];
+    const populated = explorer.project({
+      nodes,
+      edges: [],
+      byId: { a: nodes[0] },
+      indexes: model.buildIndexes(nodes, []),
+      modules: [],
+      clusters: fallback,
+      page: 0,
+    });
+    expect(populated.rows.map((row: { id: string }) => row.id)).toEqual(['default']);
+  });
 });
