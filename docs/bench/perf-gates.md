@@ -3,7 +3,7 @@
 <!-- CURRENT STATE — maintained. Sections below are an append-only history; earlier rows that
      say "BLOCKED" or "not yet passing" for 100k were superseded by the final run. -->
 
-> ## Current state — 5 Sep 2026
+> ## Current state — recall rows 5 Sep 2026; watch-update row added 24 Sep 2026
 >
 > | gate | threshold | measured | verdict |
 > | --- | --- | --- | --- |
@@ -11,12 +11,13 @@
 > | Warm local recall p95 @ 100k | < 300 ms | **132.8 ms** | **PASS** |
 > | `git commit` blocking added | 0 ms | 0 ms | **PASS** |
 > | Failed refresh readability | prior generation preserved | covered by Gate 3.3 tests | **PASS** |
-> | One-file watch update → queryable | < 5 s p95 | — | **NOT MEASURED** (no E2E fixture) |
+> | One-file watch update → queryable | < 5 s p95 | 300-file fixture: **662.1–749.6 ms** p95 (3 runs). `--repo=` (786k LOC, crib-repo workload): **2644.7 ms** p95 @ n=50 | **PASS** at this file's 5 s — and **FAIL** at the plan's 2 s on the named workload; the two thresholds decide opposite verdicts. See *Watch-update visibility, measured* below |
 > | Sync convergence soak | no data loss | — | **NOT RUN** (unit-tested only) |
 >
 > Recall latency went 2074 ms → 8.3 ms at 10k and 3775 ms → 132.8 ms at 100k across seven
-> loop-invariant defects. The two open rows are open: they have never been measured, and no claim
-> should be made about either.
+> loop-invariant defects. **The watch-update row was measured on 24 Sep 2026** — it had stood as
+> "not measured" since 4 Sep. The sync convergence soak has still never been run, and no claim
+> should be made about it.
 
 
 Status: DESIGN (frozen before the launch-verification run). Existing measurements from
@@ -29,7 +30,7 @@ the gates below on the current build and appends results here.
 |------|-----------|----------------|
 | Warm local recall p95 @ 10k records | < 100 ms | `scripts/scale-bench.mjs` (J1 latency family; rank with fresh=false, warmed FTS) |
 | Warm local recall p95 @ 100k records | < 300 ms | same, scaled slice |
-| One-file watch update → queryable | < 5 s p95 (crib repo) | Gate 3 E2E watch fixture — re-run against the current build |
+| One-file watch update → queryable | < 5 s p95 (crib repo) | `npm run visibility:check` — `scripts/update-visibility.mjs` (real `WatchMode` + `RefreshCoordinator`, negative control included; `--repo=` to run against a copy of a real repo) |
 | `git commit` blocking added by crib | 0 ms blocking (hooks async/fire-and-forget) | freshness post-commit hook timing + freshness-worker lease path |
 | Failed refresh readability | prior readable generation preserved | GenerationCache law (Gate 3.3): a failed refresh never replaces the last good generation |
 | Sync convergence | duplicate / reordered / offline / interrupted events converge without data loss | Gate 4 engine tests + a dedicated soak scenario in the launch run |
@@ -293,3 +294,48 @@ bumped with the behaviour change, because `id` keys the vector cache and a silen
 under a stable id would serve vectors from the old space.
 
 **Gate restored: 8/8.**
+
+---
+
+## Watch-update visibility, measured (2026-09-24)
+
+This is the row that stood as *"not measured / BLOCKED (no E2E watch fixture wired)"* since 2026-09-04 (see the
+RESULTS table above, and *Still open*). The fixture now exists: **`npm run visibility:check`** →
+`scripts/update-visibility.mjs`, which drives the real `WatchMode` + `RefreshCoordinator` over a real
+`node:fs` recursive watch, and **ships a negative control**.
+
+**Machine:** darwin 25.6.0, single machine, single session, no induced background load.
+**Method:** ≥5 warmup + 50 measured iterations, 10 ms poll, p95 reported.
+
+| Workload | n | observed | p50 | p95 | vs < 5 s (this file) | vs ≤ 2 s (plan) |
+| --- | --- | --- | --- | --- | --- | --- |
+| generated fixture, 300 files | 50 | 50/50 | 655.4 ms | **749.6 ms** | PASS | PASS |
+| `--repo=` copy of a real repo, 786k LOC | 50 | 50/50 | 2490.7 ms | **2644.7 ms** | **PASS** | **FAIL** |
+| `--negative-control` (watcher never started) | 1 | 0/1 in 10 s | — | — | correctly invisible | — |
+
+**Reproducibility, with its limit stated.** The fixture workload ran **three times** — p95 **749.6 ms** (the
+row above, via the documented `npm run visibility:check`, exit 0) and **724.2 / 662.1 ms** in two earlier
+50-iteration runs whose p50 was not captured and is not reported. All three agree within ~13 %. The `--repo=`
+workload ran twice — **2644.7 ms** at n=50 and **2405.9 ms** at n=5, agreeing within ~10 %. Every number here
+is a run's own printed output; nothing is interpolated.
+
+**Read the third row, because it is the row this gate names.** The threshold above says `(crib repo)` — a real
+repository, not a generated fixture. On one, **p95 is 2644.7 ms**, which **passes this file's 5 s bound and
+fails the plan's 2 s bound.** Two thresholds for one quantity therefore produce opposite verdicts on the
+workload the gate specifies, and that is a decision, not a measurement: `scripts/update-visibility.mjs`
+**asserts against neither by default** and prints both.
+
+**Why the number is trustworthy enough to argue over.** With `--negative-control` the watcher is never started
+and the identical edit stays unqueryable for **10 s — about 4× the measured repo p95 and 14× the fixture's** —
+so the latencies are produced by the watch path, not by an incidental background scan. An iteration that never
+observes its own symbol is recorded as a **timeout, never as a latency**, and an all-timeout run **exits 2**
+declaring the instrument broken rather than printing a fabricated slow p95.
+
+**Not measured, and stated so the number is not over-read:** no process isolation (coordinator and probe share
+one process, so a cross-process `fs.watch` → separate client round trip is not in these figures); the probe
+reads the **live in-memory** reader index (`RefreshCoordinator` builds `new SqliteIndexStore()`,
+`refresh-coordinator.ts:536`), which is the only reader that can see a watch-mode update — a separate
+`crib query` process cannot, verified directly; and background load was neither induced nor controlled for.
+
+**The fixture PASS is not the gate passing.** 724.2 / 662.1 ms is a 300-file generated tree. The workload named
+above measures **2644.7 ms**, and this file's bound is the one it passes.

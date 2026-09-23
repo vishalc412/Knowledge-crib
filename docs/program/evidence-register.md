@@ -208,7 +208,10 @@ than a convenience. All six §11.3 regression suites also exist (`memory-crash-r
 Re-measurement per §12.2 steps 2–5 (notably the update-visibility p95 **with the change in place** —
 1956.6 ms / 2000 ms is tight, is a different code path from the mutation path measured, and now also carries
 the added flush cost inside lock holds, row WP1-D8) is **not** blocked by B3 and remains genuinely owed
-(**B5**).
+(**B5**). **Updated 2026-09-24: the update-visibility half of this is now measured (§4.6) — the fixture
+exists (`npm run visibility:check`) and the named `(crib repo)` workload is p95 2644.7 ms at n=50, i.e. FAIL
+at the plan's 2 s and PASS at `perf-gates.md`'s 5 s. What is owed here is now the threshold choice, not the
+number; the 1956.6 ms figure must not be differenced against it (unattributable workload, §3 line 347).**
 
 **Why this section under-reported, recorded because the direction of the error matters.** As of the
 2026-09-22 evaluation this block read *"Still to come (nothing below this line is started)"* and the
@@ -730,6 +733,126 @@ between those two dates. §4.4's hedge stands; it is now bounded more tightly.
 Filed as an observation for the same reason as §4.4 — it is not this program's work and says nothing about
 whether WP0–WP5 are correct — and recorded because §9's verdict leans on gate results, so it matters how much
 of the gate's cross-platform half is currently a number rather than a signal.
+
+### 4.6 B5's missing instrument now exists, and the number it produces decides the gate by threshold choice (MEASURED 2026-09-24)
+
+**B5 has been a measurement blocker since WP1: a plan acceptance criterion ("update visibility ≤2 s",
+`developer-trust-plan.md:127`) with no reproducible command behind it, and `perf-gates.md:32/79` recording the
+same quantity as NOT MEASURED / BLOCKED for want of an E2E watch fixture.** That fixture now exists
+(`scripts/update-visibility.mjs`, wired as `npm run visibility:check`), it has been run, and its numbers are
+below. **The blocker is not cleared by this — it is narrowed to a single question, and that question is now
+provably decisive rather than a formality.**
+
+**What the instrument drives — the production path, not a reimplementation of it:**
+
+```
+real node:fs recursive watch event
+  -> WatchMode's 300 ms debounce + isWatchable filter
+    -> RefreshCoordinator.requestRefresh (serialized, coalescing)
+      -> working-overlay refresh + candidate build
+        -> publication of a ReaderBundle
+          -> a BM25 query against that bundle's index returns the appended symbol
+```
+
+The probe is `{ text: <symbol>, semantic: false }` — pure BM25, deterministic exact-name match. That is
+deliberate: the question is *presence* ("is the change queryable yet"), not ranking quality, and a vector
+channel would add noise to a presence measurement without adding information.
+
+**Three properties, without which the number would only be printable:**
+
+1. **A negative control.** `--negative-control` runs the identical path with **the watcher never started**.
+   Measured: the appended symbol stays unqueryable for **10 s — ~4× the measured `--repo=` p95 and ~14× the
+   fixture's** (a control must be compared against the workload it is controlling for, so both are stated). A
+   PASS with no
+   control is unfalsifiable (an incidental background scan could produce it); with the control holding, the
+   latencies can only come from the watch path. This is the same discipline B4 was closed under.
+2. **Instrument failure is not reportable as system slowness.** An iteration that never observes its own
+   symbol is recorded as a **timeout**, never as a latency, and if *every* iteration times out the script
+   **exits 2** and states that the instrument failed to observe a change that definitely happened. A broken
+   probe must not read as a slow system.
+3. **The probe reads the only reader that can see the change.** `RefreshCoordinator` builds its reader index
+   as `new SqliteIndexStore()` (`refresh-coordinator.ts:536`), so a watch-mode update lives **in memory**.
+   The negative half of that was **verified rather than assumed**: in a fresh fixture, `crib query Alpha`
+   returns `sym:src/a.ts#Alpha@L1` before an uncommitted append, and `hits: []` for the appended symbol
+   after it — a separate `crib query` process does not observe an uncommitted edit at all. That the
+   *committed* index stays untouched *while watch mode is running* is **inferred** from the in-memory
+   construction, and is recorded as an inference in the script header rather than as a measurement.
+
+**Results (macOS, single machine, one session, no induced background load):**
+
+| workload | n | observed | p50 | p95 | plan 2 s | perf-gates 5 s |
+| --- | --- | --- | --- | --- | --- | --- |
+| generated fixture, 300 files | 50 | 50/50 | 655.4 | **749.6** | PASS | PASS |
+| `--repo=` copy of this repo, 786k LOC | 5 | 5/5 | 2345.5 | **2405.9** | **FAIL** | PASS |
+| `--repo=` copy of this repo, 786k LOC (settling run) | 50 | 50/50 | 2490.7 | **2644.7** | **FAIL** | PASS |
+| `--negative-control` (watcher never started) | 1 | 0/1 in 10 s | — | — | correctly invisible | — |
+
+**Reproducibility, stated with a limit.** The fixture workload was run **three times** in this session — p95
+**749.6 ms** (the row above, through the documented `npm run visibility:check`, which exits 0) and **724.2 /
+662.1 ms** in two earlier 50-iteration runs whose `p50` was **not captured** and is therefore not reported.
+All three agree within ~13 % and all three pass both bounds. The `--repo=` workload was run twice — 2644.7 ms
+at n=50 and 2405.9 ms at n=5 — agreeing within ~10 %. Every `p50`/`p95` in the table above comes from a run's
+own printed output; no cell is interpolated.
+
+**The load-bearing result is the `--repo=` rows, and it is not a pass.** `perf-gates.md:32` names the workload
+as *"One-file watch update → queryable | < 5 s p95 **(crib repo)**"* — the named workload is a real repository,
+not an arbitrary fixture. On a real one, **p95 is 2644.7 ms at n=50 (2405.9 ms at n=5): FAIL against the plan's
+2 s, PASS against this file's 5 s.** So the threshold disagreement that B5 recorded on 2026-09-23 as an
+unresolved question is not a formality to settle before measuring — **it is the entire verdict, on the workload
+the gate names**, and it survives the larger sample. The instrument therefore **asserts against neither bound
+by default** (`--assert=plan|perf-gates|both`) and prints both verdicts; picking one is a principal's decision,
+not the instrument's.
+
+**A precision on which workload the plan means, because it sharpens the decision rather than softening it.**
+The plan's criterion reads *"Preserve existing graph targets: … update visibility ≤2s **on the specified
+workload**"* (`developer-trust-plan.md:127`; the same row appears at `wp1-implementation-spec.md:48` and
+`wp4-implementation-spec.md:69`). **"The specified workload" is never defined in the plan or in either spec** —
+and the sentence's own verb is *"preserve **existing** graph targets"*, which points at the targets that
+already existed in the repo's gate documentation. The existing specification of this exact quantity is
+`perf-gates.md:32`, and it names the workload **`(crib repo)`**. So the plan does not leave the workload open:
+it inherits it from the existing gate, and the existing gate says *a real repository*. **That is the row this
+section measured at 2644.7 ms.** The tension is therefore not "plan 2 s vs perf-gates 5 s on an undefined
+workload" but something narrower and more awkward: **the plan says *preserve the existing target* and then
+states a number (2 s) that the existing target does not carry (5 s).** Either the plan meant to tighten the
+existing bound to 2 s, or it mis-cited the existing number — and which of those it is changes the verdict,
+because at the named workload the two produce opposite answers. This section records the tension rather than
+resolving it: resolving it means choosing which number is the gate, which is exactly the decision above.
+
+**Two things this must not be read as claiming:**
+
+- **The fixture PASS is not the acceptance criterion being met.** 662.1–749.6 ms is on a 300-file generated
+  fixture, which is *not* the workload `perf-gates.md:32` names. The named workload measures ≈2.4 s.
+- **The new number must not be differenced against `1956.6 ms`.** B5 carried `1956.6 / 2000 ms — TIGHT,
+  measured before the new write barriers`. That figure's workload is **unattributable** (register §3, line
+  347: *"the verifier's own run"*), so `2405.9 − 1956.6 = 449 ms of barrier cost` is **not derivable** and is
+  not claimed. The two numbers were taken on different, one of them unnamed, workloads. What *is* now answered
+  is B5's actual concern — the gate's status with the write barriers in place — and the answer is that on a
+  named real workload it is **over the plan's bound**.
+
+**Workloads that must not be fused.** Three distinct trees are now in play, and they are not interchangeable:
+the **300-file generated fixture** (this section's PASS rows), the **786k-LOC copy of this repo** (this
+section's named-workload FAIL at 2 s, and the only row `perf-gates.md:32`'s wording actually reaches), and the
+**111,316-node scale fixture** where the register's `88.60 s` one-file-update figure lives (lines 1450–1456 —
+lexical, and fixed-cost dominated per WP1-D13). A number from one is not a number for another.
+
+**Caveats carried with every figure above:** no process isolation (coordinator and probe share one process, so
+a cross-process `fs.watch` → separate MCP-client round trip is not measured); single machine, single session;
+`perf-gates.md:42` asks that background load be *noted*, and **none was induced and none was controlled for**;
+and the first `--repo=` row is **n=5, below the ≥50 that `perf-gates.md:42` requires of a gated p95**, so
+2405.9 ms is indicative only — which is why the settling run was taken. **At n=50 the named workload's p95 is
+2644.7 ms (p50 2490.7, max 2750.7, 50/50 observed, 0 timeouts) — the same split as the n=5 run: FAIL at the
+plan's 2 s, PASS at this file's 5 s.** The n=50 row is the gated figure; the n=5 row is kept because it was
+taken first and its agreement with the larger run is itself the reproducibility check.
+
+**What this section does not do, deliberately:** it does not wire the instrument into `release:verify`. A
+~40 s `fs.watch` E2E perf gate across 3 OSes × 2 Node versions would be flaky for reasons unrelated to what it
+measures, and a flaky gate is the failure mode this register exists to refuse. Wiring it is recorded here as a
+principal decision rather than taken quietly.
+
+**Effect on B5:** its clearer was *"first wire the `perf-gates.md:79` E2E watch fixture (never built), and
+settle whether the gate is the plan's 2 s or perf-gates' 5 s."* **The fixture is now built and run; the
+settling is not done, and it is now the whole of the blocker** — because the two thresholds produce opposite
+verdicts on the named workload. B5 §9.3 is updated to say exactly that and no more.
 
 ## 5. WP4 — Code retrieval + measured scale (SPEC WRITTEN 2026-09-23; §7 AND §8.6 LANDED (§5.1, §5.2); §5.3 is a product defect the measuring found, §5.4 a measurement that withdrew its own earlier explanation; §5.6 audited the R3 instruments before the run and named a blocker and two unmeasurable clauses; **§5.8 — R3 RAN and the candidate is NOT PROMOTED. The retrieval-quality numbers now exist, and they are negative.** **§5.9 — the scale run is now COMPLETE too: clause 4 UNPROVEN, clause 5 FAIL on one bullet of five, and one instrument that cannot answer its own question.**)
 
@@ -1995,7 +2118,7 @@ Ordered by what actually gates the acceptance criteria. Each is named with what 
 | ~~**B2**~~ **CLOSED 2026-09-23** | **WP5 implemented.** All nine §8 rows (T12–T20) land and pass; the browser suite is 18/18 in one pass (G-U2). **Both things that travelled with it have since been addressed, and neither is "done":** **G-U3 is no longer PARTIAL-for-want-of-evidence** — §6.7 *induced* stale index and unavailable model in a real process, so of the four states U3 names, **2 are proven, 1 (blocked extraction) remains UNPROVEN, and 1 (failed persistence) is unreachable by construction** — and **G-U5 is RUN** (§6.7, `ROUND_EXIT=0`), the post-WP5 E2E round the gate was owed. **The round's own by-product is B16**, a genuine defect in WP5's user-facing copy. Read §6.7, not this row, for the state of either gate | **CLOSED for implementation; G-U3 partial on one state only, G-U5 RUN** | §6.4 (rows + file:line), §6.5 (gates), §6.7 (the round) |
 | **B3** | **WP1 items 9 and 10 need a principal decision, and cannot be silently chosen.** Item 9: byte-capture at publish vs detect-and-degrade in the re-ground path. Item 10 / spec D-3: whether the persistent FTS corpus (`persistent-fts.ts:318-320`) becomes principal-scoped — the corpus is gathered with **no principal** while the scored pool is the caller's, so co-tenant BM25 term statistics influence a caller's *scores* (**a weak cross-principal channel, not a record disclosure**) | **decision** | a principal answer on both. This is the one blocker no amount of implementation work can clear |
 | ~~**B4**~~ **CLOSED 2026-09-23** | **Every item this blocker held is now credited.** It opened with eight items (1, 2, 4, 6, 7, 8, 12, 14) implemented but carrying no measured discrimination credit — *"a green test that has never been seen to fail is the exact artifact this register was built to refuse"* — and closed by taking the credit for all eight in one session: six through rows WP1-D9/D10/D11, the last two through row WP1-D14. **Two of the eight turned out to be not merely uncredited but UNTESTED, and both surfaced only because the credit was attempted rather than assumed:** item 4's lanes had no test asserting they call `appendLineDurable` at all (closed by `durable-lane-wiring.test.ts`), and item 14's doctor `fix:` line was read by no test in any package (closed by two tests written into `memory-migrate.test.ts`). For those two, the pre-fix state could have been restored with every suite still green — which is exactly what the kill table means by "covering nothing", and the blocker's own justification. The procedure it prescribed was followed eight times unchanged — restore the pre-fix body, fail on the *named* assertion, restore byte-identically (`diff`-verified), re-run green — with one correction earned twice the hard way (**row WP1-D15**): for `packages/cli` the regression must be **rebuilt** between the two runs, or the suite executes a stale `dist/cli.js` and reports a false green | **CLOSED 2026-09-23 — 8 of 8 credited; 2 untested gaps found and closed** | spec §10 kill table; rows WP1-D9, D10, D11, D14, D15 |
-| **B5** | **WP1 §12.2 steps 2–5 never run.** The update-visibility p95 is **1956.6 / 2000 ms — TIGHT, and measured *before* the new write barriers existed**, while those barriers now sit **inside the store's lock hold** (row WP1-D8). The one measurement that could show the durability change costs a gate has not been taken. **Sharpened 2026-09-23: re-measuring it is not a re-run — it needs a new instrument, and the program is currently of two minds about what the gate even is.** Three facts, each read from the tree, make the earlier wording too optimistic: **(1) no reproducible command exists.** `1956.6 ms` is attributed only to *"the verifier's own run"* (register §3, line 347) — no script, test or flag in the repo produces it. The only in-repo reference to the quantity is a *denominator* in `docs/program/tools/wp1-write-cost-probe.mjs:820` (`UPDATE_VISIBILITY_BUDGET_MS`), which consumes the budget but never measures it. **(2) The thresholds disagree.** The plan and WP1 spec set **≤ 2 s** (`wp1-implementation-spec.md:48,683`); `docs/bench/perf-gates.md:32` sets the same quantity at **< 5 s**. A re-measurement has to know which number it is being judged against, and that is unresolved. **(3) perf-gates.md already records the gate as never measured, for a stated structural reason:** its RESULTS table (`:79`) reads `One-file watch update → queryable \| < 5 s p95 \| **not measured** \| **BLOCKED (no E2E watch fixture wired)**`. So the fixture that would produce this number was named as missing on 2026-09-04 and is still not wired. Neighbouring harnesses measure *different* quantities and cannot substitute: `scripts/recall-latency.mjs` is warm recall p95 (a build-breaking gate, wired into `budget-check.mjs`), `budget-check.mjs` check 6b is the `updateRepo`/`indexRepo` **ratio**, and `packages/core/src/working-overlay-refresh.test.ts:119` proves edits become queryable via the in-memory overlay **without** dirtying the graph — which is a different promise from a wall-clock visibility budget. **What this changes:** B5's clearer is not "re-run §12.2 steps 3" but **wire the missing E2E watch fixture, resolve 2 s vs 5 s, then measure** — a new instrument whose method must be frozen before the number is read, on the same pre-registration discipline R3 is run under. That is strictly more work than the row used to imply, and it is why the earlier "steps 2–5 never run" framing understated it | measurement | re-measure update-visibility with the change in place, and re-run the full regression suite. **Amended 2026-09-23: first wire the `perf-gates.md:79` E2E watch fixture (never built), and settle whether the gate is the plan's 2 s or perf-gates' 5 s — otherwise a re-measurement has no threshold to be judged against and no command to produce it** |
+| **B5** | **WP1 §12.2 steps 2–5 never run.** The update-visibility p95 is **1956.6 / 2000 ms — TIGHT, and measured *before* the new write barriers existed**, while those barriers now sit **inside the store's lock hold** (row WP1-D8). The one measurement that could show the durability change costs a gate has not been taken. **Sharpened 2026-09-23: re-measuring it is not a re-run — it needs a new instrument, and the program is currently of two minds about what the gate even is.** Three facts, each read from the tree, make the earlier wording too optimistic: **(1) no reproducible command exists.** `1956.6 ms` is attributed only to *"the verifier's own run"* (register §3, line 347) — no script, test or flag in the repo produces it. The only in-repo reference to the quantity is a *denominator* in `docs/program/tools/wp1-write-cost-probe.mjs:820` (`UPDATE_VISIBILITY_BUDGET_MS`), which consumes the budget but never measures it. **(2) The thresholds disagree.** The plan and WP1 spec set **≤ 2 s** (`wp1-implementation-spec.md:48,683`); `docs/bench/perf-gates.md:32` sets the same quantity at **< 5 s**. A re-measurement has to know which number it is being judged against, and that is unresolved. **(3) perf-gates.md already records the gate as never measured, for a stated structural reason:** its RESULTS table (`:79`) reads `One-file watch update → queryable \| < 5 s p95 \| **not measured** \| **BLOCKED (no E2E watch fixture wired)**`. So the fixture that would produce this number was named as missing on 2026-09-04 and is still not wired. Neighbouring harnesses measure *different* quantities and cannot substitute: `scripts/recall-latency.mjs` is warm recall p95 (a build-breaking gate, wired into `budget-check.mjs`), `budget-check.mjs` check 6b is the `updateRepo`/`indexRepo` **ratio**, and `packages/core/src/working-overlay-refresh.test.ts:119` proves edits become queryable via the in-memory overlay **without** dirtying the graph — which is a different promise from a wall-clock visibility budget. **What this changes:** B5's clearer is not "re-run §12.2 steps 3" but **wire the missing E2E watch fixture, resolve 2 s vs 5 s, then measure** — a new instrument whose method must be frozen before the number is read, on the same pre-registration discipline R3 is run under. That is strictly more work than the row used to imply, and it is why the earlier "steps 2–5 never run" framing understated it. **UPDATE 2026-09-24 — two of the three facts above are now resolved, and the third is the whole blocker.** (1) *No reproducible command* is **fixed**: `npm run visibility:check` (`scripts/update-visibility.mjs`) drives the real `WatchMode` + `RefreshCoordinator` and carries a negative control. (2) *The fixture was never built* is **fixed**: it exists, and `perf-gates.md:32`'s "Where measured" cell now names it. (3) *The thresholds disagree* is **not a formality any more — it is the verdict.** Measured (§4.6): the 300-file fixture is p95 **662.1–749.6 ms over three runs** (PASS both bounds), but the workload the gate actually names — `(crib repo)` — is p95 **2644.7 ms at n=50** on a 786k-LOC copy, which is **FAIL at the plan's 2 s and PASS at perf-gates' 5 s simultaneously**. The old `1956.6 ms` must not be differenced against it (that figure's workload is unattributable — §3, line 347), so no barrier-cost delta is claimed. **What is left of B5 is one principal decision: which of the two bounds is the gate. Everything else this row asked for now has a command and a number.** | measurement → **decision** | **REMAINING 2026-09-24: settle whether the gate is the plan's 2 s or `perf-gates.md`'s 5 s — the two produce opposite verdicts on the named workload (2644.7 ms), so the choice decides the gate, and the instrument asserts against neither until it is made.** Done: the E2E watch fixture is built and run (`scripts/update-visibility.mjs`, negative control included; §4.6); the update-visibility number exists for the first time. Also still owed, unchanged: the full regression suite re-run with the change in place. **What the row read before 2026-09-24:** re-measure update-visibility with the change in place, and re-run the full regression suite. **Amended 2026-09-23: first wire the `perf-gates.md:79` E2E watch fixture (never built), and settle whether the gate is the plan's 2 s or perf-gates' 5 s — otherwise a re-measurement has no threshold to be judged against and no command to produce it** |
 | **B6** | **WP3 H7 not started, and H4's remaining substance is blocked *structurally* rather than by effort.** H4 landed its extractable slice on 2026-09-23 (four pure render helpers, 34 call sites, 12 behavioural tests, 13/13 browser acceptance tests, Gate-0 law widened to every served asset) — but the bullet's substance cannot follow: the **1,527-line `<script type="text/x-dc">` payload is read out of the served document** by `support.js` via `doc.querySelector("script[data-dc-script]")`, so a `<script src>` extraction is structurally impossible, and `support.js` is generated from an absent `dc-runtime/`. The memory-panel helpers are held by **B14**, not here. H7 is untouched (`packages/cli/src/cli.ts`, `packages/mcp/src/verbs.ts`) and its characterization net still exits 1 (B11/B13) | implementation / **structural** | H7 is the only part implementable as written; H4's residue needs the B14 decision and otherwise stays unreachable. **H6 is no longer part of this blocker** — it landed 2026-09-23 (row WP3-H6) |
 | **B7** | **The E2E round is thin — PARTLY ANSWERED 2026-09-23, and the partial is measured.** *(Original, §8:)* 7-file target; MCP surface never started; no vectors/reranker/fusion; no crash or torn-write path; the doctor's durability claim **not independently verified**; single-shot timings on a box at load 6. *(What the second round, §6.7, did clear:)* a **multi-package monorepo with a real cross-package import**, and **deliberately induced failure paths** — the two things this blocker named first. *(What it did NOT clear:)* `--vectors` was still off; the **MCP verbs were still not driven**; no crash or torn-write path; the doctor's durability claim is still not independently verified; and the timings are still single-shot. **So the blocker narrows rather than closes** — and one of the four states it was meant to reach turned out to be unreachable by construction, which is a result about the product, not about the round | evidence (narrowed by §6.7) | a third round with `--vectors` on, the MCP verbs driven, and a crash/torn-write path; plus an independent verification of the doctor's durability claim |
 | **B8** | **WP6 externally blocked** — needs real native certification hosts | external | hosts. Not actionable by this program |
@@ -2135,10 +2258,16 @@ Per the standing rule, escalation with options rather than a silent choice:
   run", and the sole in-repo reference is a denominator), two disagreeing thresholds (plan/spec ≤ 2 s vs
   `perf-gates.md:32` < 5 s), and a `perf-gates.md:79` RESULTS row that already reads *not measured —
   BLOCKED (no E2E watch fixture wired)*. So the clearable unit here is **wire the fixture, settle the
-  threshold, then measure** — a new instrument needing pre-registration, not a re-run. **WP5 is now implemented and its gates
+  threshold, then measure** — a new instrument needing pre-registration, not a re-run. **Done
+  2026-09-24 (§4.6): the fixture is wired (`npm run visibility:check`) and the measurement is taken —
+  p95 662.1–749.6 ms over three runs on a 300-file fixture, and 2644.7 ms at n=50 on a 786k-LOC repo, which is FAIL at
+  the plan's 2 s and PASS at perf-gates' 5 s. The threshold is therefore no longer a formality to settle
+  before measuring: it is the verdict, and it is now the whole of B5.** **WP5 is now implemented and its gates
   recorded (§6.4–§6.7), so it drops out of this order too**; **WP4 has now run and is DECIDED
   (§5.8)**, so it drops out as a *pending* item as well — **what remains is B5, B13, B14, B3 and
-  WP3-H7**, in that order. *(Corrected 2026-09-23: this option previously ended "**WP4 is what
+  WP3-H7**, in that order. *(2026-09-24: **B5's remaining content is now one threshold decision rather
+  than a measurement** (§4.6 — the fixture is wired and the number exists), so four of the five entries
+  here are now **decision**-shaped (B5, B13, B14, B3) and only **WP3-H7** is implementation work.)* *(Corrected 2026-09-23: this option previously ended "**WP4 is what
   remains**, and it proceeds with the register's existing evidence discipline" — accurate while R3 was
   unrun, superseded the moment it ran. WP4 leaves the order as a **decided** work package, not as a
   finished one; its residue is listed in §9.1 (iv).)*
@@ -2152,8 +2281,9 @@ Per the standing rule, escalation with options rather than a silent choice:
   unstarted work package, which R3 made false. The name has moved to **WP3-H7**, which is the only
   work package that is genuinely *not started* rather than partially landed or decided.)*
 - **C — do the cheap high-value items first** (B10's F1, **B11 done** — the net now down to **B13**,
-  **B5's fixture + threshold decision** (then the measurement; see the correction above — the old
-  "B5's re-measurement" phrasing implied a re-run that no longer exists to be run), **B14**'s two-word de-obfuscation) to make the
+  **B5's threshold decision** (the fixture and the measurement are now behind it, §4.6 — the old
+  "B5's re-measurement" phrasing implied a re-run that no longer exists to be run, and its fixture is
+  built), **B14**'s two-word de-obfuscation) to make the
   branch commit-ready and the test net trustworthy, deferring the large extractions in B6. This buys a
   defensible commit without pretending the program is done. Note B13 is *cheap to decide and cheap to
   implement* (a bounded retry on one branch) — it is on this list because it is a semantic change, not
