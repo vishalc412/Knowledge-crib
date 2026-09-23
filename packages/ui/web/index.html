@@ -1,8 +1,10 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Knowledge Crib — Knowledge graph</title>
+<link rel="stylesheet" href="./tokens.css">
 <!-- Offline-first: load vendored React/ReactDOM (SRI-verified, byte-identical to the
      hashes support.js pins) BEFORE support.js so loadReactUmd()'s
      `if (w.React && w.ReactDOM) return Promise.resolve()` short-circuits and the canvas
@@ -19,24 +21,11 @@
 <style>
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; }
-  [data-kc-shell="signal-console"] {
-    --kc-bg: #0a0d13;
-    --kc-panel: rgba(16,20,28,0.94);
-    --kc-raised: #161b25;
-    --kc-text: #e8edf5;
-    --kc-text-2: #b3bdcc;
-    --kc-muted: #8592a4;
-    --kc-line: rgba(255,255,255,0.08);
-    --kc-fill: rgba(255,255,255,0.045);
-    --kc-accent-code: #6e94ff;
-    --kc-accent-knowledge: #43d8c9;
-    --kc-accent-review: #f5b942;
-    --kc-accent-risk: #fb7b75;
-  }
+  [data-kc-shell="signal-console"] { color:var(--kc-text-primary); font-size:var(--kc-font-body); }
   ::-webkit-scrollbar { width: 9px; height: 9px; }
   ::-webkit-scrollbar-thumb { background: rgba(128,140,160,0.35); border-radius: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  button:focus-visible, input:focus-visible { outline: 3px solid #43d8c9 !important; outline-offset: 2px; }
+  button:focus-visible, input:focus-visible, [tabindex]:focus-visible { outline: 3px solid var(--kc-focus) !important; outline-offset: 2px; }
   button, input { font-family:'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif !important; }
   @keyframes kc-panel-in { from { opacity: 0; transform: translateX(18px); } to { opacity: 1; transform: translateX(0); } }
   @keyframes kc-fade-in { from { opacity: 0; } to { opacity: 1; } }
@@ -45,42 +34,61 @@
   .kc-brand { flex:0 0 180px !important; min-width:180px !important; }
   [data-kc-graph-stage] { grid-area:2 / 2; position:relative; min-width:0; min-height:0; overflow:hidden; background:var(--kc-bg); }
   .kc-stage-canvas { position:absolute; inset:0; width:100%; height:100%; display:block; cursor:grab; }
-  .kc-command-segment { height:32px; display:flex; align-items:center; padding:2px; gap:2px; border-radius:8px; border:1px solid var(--kc-line); background:var(--kc-fill); flex:none; }
+  .kc-command-segment { min-height:36px; display:flex; align-items:center; padding:2px; gap:2px; border-radius:8px; border:1px solid var(--kc-line); background:var(--kc-fill); flex:none; }
   .kc-stage-chrome { position:absolute; z-index:4; pointer-events:none; }
-  .kc-stage-float { pointer-events:auto; display:flex; align-items:center; gap:7px; padding:5px 9px; border-radius:8px; border:1px solid var(--kc-line); background:rgba(16,20,28,.9); color:var(--kc-muted); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); box-shadow:0 8px 24px rgba(0,0,0,.16); }
-  .kc-stage-tool { width:28px; height:26px; border:0; border-radius:6px; background:transparent; color:var(--kc-text); cursor:pointer; font:700 15px 'IBM Plex Sans'; }
+  .kc-stage-float { pointer-events:auto; display:flex; align-items:center; gap:7px; min-height:32px; padding:4px 9px; border-radius:8px; border:1px solid var(--kc-border-control); background:var(--kc-surface-floating); color:var(--kc-text-secondary); box-shadow:0 8px 24px rgba(0,0,0,.16); }
+  .kc-stage-tool { min-width:32px; min-height:32px; border:0; border-radius:6px; background:transparent; color:var(--kc-text-primary); cursor:pointer; font:700 15px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; }
   .kc-stage-tool:hover { background:var(--kc-fill); }
   .kc-navigation-rail { grid-column:1; grid-row:2; position:relative !important; top:auto !important; bottom:auto !important; left:auto !important; z-index:22; width:auto !important; display:flex; flex-direction:column; overflow:hidden; border:0; border-right:1px solid var(--kc-line); border-radius:0; background:var(--kc-panel); box-shadow:none; backdrop-filter:none; -webkit-backdrop-filter:none; transition:width 180ms ease; }
   .kc-rail-header { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:12px 12px 10px; border-bottom:1px solid var(--kc-line); }
   .kc-rail-body { flex:1; min-width:0; overflow:auto; padding:11px 8px 12px; }
-  .kc-rail-kicker { font-size:10px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--kc-muted); }
+  .kc-rail-kicker { font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--kc-muted); }
   .kc-rail-stats { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin:10px 4px 15px; }
   .kc-rail-stat { padding:9px; border:1px solid var(--kc-line); border-radius:8px; background:var(--kc-fill); }
-  .kc-rail-stat strong { display:block; color:var(--kc-text); font:700 15px 'IBM Plex Sans'; }
-  .kc-rail-stat span { display:block; margin-top:3px; color:var(--kc-muted); font:500 10px 'IBM Plex Sans'; }
-  .kc-rail-section { display:flex; align-items:center; justify-content:space-between; margin:0 4px 7px; color:var(--kc-muted); font:700 10px 'IBM Plex Sans'; letter-spacing:.09em; text-transform:uppercase; }
-  .kc-rail-item { width:100%; display:flex; align-items:center; gap:8px; padding:7px 8px; border:1px solid transparent; border-radius:7px; background:transparent; color:var(--kc-text); text-align:left; cursor:pointer; font-family:'IBM Plex Sans'; }
+  .kc-rail-stat strong { display:block; color:var(--kc-text); font:700 15px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; }
+  .kc-rail-stat span { display:block; margin-top:3px; color:var(--kc-muted); font:500 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; }
+  .kc-rail-section { display:flex; align-items:center; justify-content:space-between; margin:0 4px 7px; min-height:32px; color:var(--kc-muted); font:700 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; letter-spacing:.06em; text-transform:uppercase; }
+  .kc-rail-item { width:100%; min-height:32px; display:flex; align-items:center; gap:8px; padding:7px 8px; border:1px solid transparent; border-radius:7px; background:transparent; color:var(--kc-text); text-align:left; cursor:pointer; font-family:'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; }
   .kc-rail-item:hover { background:var(--kc-fill); border-color:var(--kc-line); }
   .kc-rail-item-label { min-width:0; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; font-weight:600; }
-  .kc-rail-item-count { color:var(--kc-muted); font:500 10.5px 'IBM Plex Mono'; }
+  .kc-rail-item-count { color:var(--kc-muted); font:500 12px 'IBM Plex Mono',ui-monospace,monospace; }
   .kc-rail-collapsed .kc-rail-body, .kc-rail-collapsed .kc-rail-title { display:none; }
   .kc-rail-collapsed { width:auto; align-items:center; }
   .kc-rail-collapsed .kc-rail-header { padding:8px; border-bottom:0; }
   .kc-legend { display:none !important; }
   .kc-inspector-empty, [data-kc-inspector] { grid-area:2 / 3; position:relative !important; top:auto !important; right:auto !important; bottom:auto !important; width:auto !important; max-width:none !important; border:0 !important; border-left:1px solid var(--kc-line) !important; border-radius:0 !important; background:var(--kc-panel) !important; box-shadow:none !important; }
   .kc-inspector-empty { z-index:19; padding:18px; color:var(--kc-muted); }
-  .kc-inspector-empty strong { display:block; color:var(--kc-text); font:600 15px 'IBM Plex Sans'; }
-  .kc-inspector-empty p { margin:7px 0 0; font:400 12px/1.55 'IBM Plex Sans'; }
+  .kc-inspector-empty strong { display:block; color:var(--kc-text); font:600 15px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; }
+  .kc-inspector-empty p { margin:7px 0 0; font:400 14px/1.55 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; }
   [data-kc-shell="signal-console"].kc-inspector-closed { --kc-inspector-width:0px !important; }
   .kc-memory-panel { grid-area:2 / 1 / 3 / 4; position:relative !important; inset:auto !important; width:auto !important; max-width:none !important; z-index:40 !important; border-radius:0 !important; background:var(--kc-panel) !important; }
-  .kc-statusline { grid-column:1 / -1; grid-row:3; position:relative; right:auto; bottom:auto; left:auto; z-index:18; display:flex; align-items:center; justify-content:space-between; padding:0 14px; border-top:1px solid var(--kc-line); color:var(--kc-muted); font:500 10px 'IBM Plex Sans'; letter-spacing:.01em; pointer-events:none; }
+  .kc-statusline { grid-column:1 / -1; grid-row:3; position:relative; right:auto; bottom:auto; left:auto; z-index:18; display:flex; align-items:center; justify-content:space-between; padding:0 14px; border-top:1px solid var(--kc-line); color:var(--kc-muted); font:500 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; letter-spacing:.01em; pointer-events:none; }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; scroll-behavior:auto !important; transition-duration:0.01ms !important; } }
   @media (max-width: 1100px) { [data-kc-shell="signal-console"]:not(.kc-inspector-closed) { --kc-inspector-width: 310px !important; } .kc-hide-compact { display:none !important; } }
-  @media (max-width: 760px) { [data-kc-shell="signal-console"], [data-kc-shell="signal-console"]:not(.kc-inspector-closed) { --kc-inspector-width: 0px !important; --kc-rail-width: 52px !important; } .kc-navigation-rail { width:auto !important; } .kc-navigation-rail .kc-rail-body, .kc-navigation-rail .kc-rail-title { display:none; } .kc-inspector-empty, [data-kc-inspector] { grid-area:2 / 2 !important; border-left:0 !important; } .kc-statusline { display:none; } }
+  @media (max-width: 760px) {
+    [data-kc-shell="signal-console"], [data-kc-shell="signal-console"]:not(.kc-inspector-closed) { --kc-inspector-width:0px !important; --kc-rail-width:52px !important; }
+    .kc-navigation-rail { width:auto !important; }
+    .kc-navigation-rail.kc-mobile-open { position:fixed !important; top:0 !important; bottom:0 !important; left:0 !important; width:min(320px,100vw) !important; z-index:50; background:var(--kc-surface-panel); box-shadow:0 0 0 100vmax rgba(0,0,0,.45); }
+    .kc-navigation-rail.kc-mobile-open .kc-rail-body, .kc-navigation-rail.kc-mobile-open .kc-rail-title { display:block; }
+    .kc-navigation-rail.kc-mobile-open .kc-rail-header { width:100%; padding:16px; border-bottom:1px solid var(--kc-line); }
+    .kc-navigation-rail.kc-mobile-open .kc-rail-body { width:100%; }
+    .kc-inspector-empty, [data-kc-inspector] { position:fixed !important; inset:0 !important; width:100vw !important; max-width:none !important; height:100dvh; z-index:51 !important; overflow:auto !important; border-left:0 !important; background:var(--kc-surface-panel) !important; }
+    .kc-statusline { display:none; }
+    .kc-navigation-rail.kc-mobile-open .kc-rail-kicker { font-size:16px; letter-spacing:.02em; text-transform:none; color:var(--kc-text-primary); }
+    .kc-stage-float, .kc-stage-float button { min-height:44px !important; }
+    .kc-stage-tool, [data-kc-stage-zoom] button { min-width:44px !important; min-height:44px !important; }
+    .kc-rail-header button, .kc-rail-item, .kc-rail-section button, [data-kc-inspector-close], [data-kc-help-close], [data-kc-memory-close] { min-width:44px !important; min-height:44px !important; }
+    .kc-topbar button, .kc-command-segment button { min-width:44px !important; min-height:44px !important; }
+    .kc-command-segment { height:auto !important; }
+    .kc-search input { height:44px !important; }
+    [data-kc-inspector-actions] button { min-height:44px !important; }
+    [data-kc-help] { position:fixed !important; top:auto !important; right:12px !important; bottom:12px !important; left:12px !important; width:auto !important; max-width:none !important; }
+  }
   @media (max-width: 900px) {
     .kc-topbar { gap: 8px !important; padding: 0 10px !important; }
     .kc-brand { flex: 0 0 34px !important; min-width: 34px !important; overflow: hidden !important; }
-    .kc-brand-title, .kc-brand-stats { display: none !important; }
+    .kc-brand-stats { display: none !important; }
+    .kc-brand-title { position:absolute !important; width:1px !important; height:1px !important; margin:-1px !important; overflow:hidden !important; clip:rect(0 0 0 0) !important; white-space:nowrap !important; }
     .kc-search input { width: 188px !important; }
     .kc-hide-compact { display: none !important; }
     /* Memory is the product's primary surface, not a convenience like Tour or Blast radius. It
@@ -103,26 +111,26 @@
   }
 </style>
 </helmet>
-<div ref="{{ rootRef }}" data-kc-shell="signal-console" class="{{ inspectorClass }}" style="--kc-bg:{{ t.bg }}; --kc-panel:{{ t.panel }}; --kc-raised:{{ t.code }}; --kc-text:{{ t.text }}; --kc-text-2:{{ t.sub }}; --kc-muted:{{ t.sub }}; --kc-line:{{ t.border }}; --kc-fill:{{ t.chip }}; --kc-rail-width:{{ railWidth }}; --kc-inspector-width:356px; position:fixed; inset:0; overflow:hidden; font-family:'IBM Plex Sans',system-ui,sans-serif; background:var(--kc-bg);">
+<div ref="{{ rootRef }}" data-kc-shell="signal-console" data-kc-theme="{{ theme }}" class="{{ inspectorClass }}" style="--kc-rail-width:{{ railWidth }}; --kc-inspector-width:356px; position:fixed; inset:0; overflow:hidden; font-family:'IBM Plex Sans',system-ui,sans-serif; background:var(--kc-bg);">
 
   <main data-kc-graph-stage aria-label="Knowledge graph stage">
     <canvas ref="{{ canvasRef }}" class="kc-stage-canvas"></canvas>
     <div class="kc-stage-chrome" style="top:10px; left:12px; right:12px; display:flex; align-items:flex-start; gap:8px;">
       <div data-kc-stage-breadcrumbs class="kc-stage-float" aria-label="Graph location">
-        <button onClick="{{ showOverview }}" style="padding:0; border:0; background:none; color:#9dbaff; cursor:pointer; font:600 11.5px 'IBM Plex Sans';">Overview</button>
+        <button onClick="{{ showOverview }}" style="min-height:32px; padding:0 4px; border:0; background:none; color:var(--kc-text-interactive); cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">Overview</button>
         <sc-if value="{{ stageSecondary }}" hint-placeholder-val="{{ true }}">
-          <span style="font:500 11px 'IBM Plex Sans';">/</span>
-          <span style="max-width:190px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--kc-text-2); font:600 11.5px 'IBM Plex Sans';">{{ stageSecondary }}</span>
+          <span style="font:500 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">/</span>
+          <span style="max-width:190px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--kc-text-2); font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">{{ stageSecondary }}</span>
         </sc-if>
         <sc-if value="{{ stageTertiary }}" hint-placeholder-val="{{ true }}">
-          <span style="font:500 11px 'IBM Plex Sans';">/</span>
-          <span style="max-width:190px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--kc-text); font:600 11.5px 'IBM Plex Sans';">{{ stageTertiary }}</span>
+          <span style="font:500 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">/</span>
+          <span style="max-width:190px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--kc-text); font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">{{ stageTertiary }}</span>
         </sc-if>
       </div>
       <sc-if value="{{ stageOverflowOn }}" hint-placeholder-val="{{ true }}">
-        <button data-kc-stage-overflow onClick="{{ toggleRail }}" class="kc-stage-float" style="cursor:pointer; font:500 11px 'IBM Plex Sans';">{{ stageOverflowLabel }}</button>
+        <button data-kc-stage-overflow onClick="{{ openRail }}" class="kc-stage-float" style="cursor:pointer; font:500 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">{{ stageOverflowLabel }}</button>
       </sc-if>
-      <button ref="{{ inspectorToggleRef }}" data-kc-inspector-toggle onClick="{{ toggleInspector }}" aria-label="{{ inspectorToggleLabel }}" aria-expanded="{{ inspectorExpanded }}" class="kc-stage-float" style="margin-left:auto; cursor:pointer; color:var(--kc-text); font:600 11px 'IBM Plex Sans';">{{ inspectorToggleLabel }}</button>
+      <button ref="{{ inspectorToggleRef }}" data-kc-inspector-toggle onClick="{{ toggleInspector }}" aria-label="{{ inspectorToggleLabel }}" aria-expanded="{{ inspectorExpanded }}" class="kc-stage-float" style="margin-left:auto; cursor:pointer; color:var(--kc-text); font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">{{ inspectorToggleLabel }}</button>
     </div>
     <div class="kc-stage-chrome" style="right:12px; bottom:12px; display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
       <div data-kc-minimap class="kc-stage-float" style="padding:6px;">
@@ -130,7 +138,7 @@
       </div>
       <div data-kc-stage-zoom class="kc-stage-float" style="gap:3px; padding:3px;">
         <button onClick="{{ zoomOut }}" title="Zoom out" class="kc-stage-tool">−</button>
-        <button onClick="{{ resetView }}" title="Fit to screen" style="min-width:52px; height:26px; padding:0 8px; border:0; border-radius:6px; background:transparent; color:var(--kc-muted); cursor:pointer; font:700 10.5px 'IBM Plex Sans';">{{ zoomLabel }}</button>
+        <button onClick="{{ resetView }}" title="Fit to screen" style="min-width:52px; height:32px; padding:0 8px; border:0; border-radius:6px; background:transparent; color:var(--kc-muted); cursor:pointer; font:700 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">{{ zoomLabel }}</button>
         <button onClick="{{ zoomIn }}" title="Zoom in" class="kc-stage-tool">+</button>
       </div>
     </div>
@@ -139,61 +147,62 @@
   <!-- Top bar -->
   <header class="kc-topbar" style="position:absolute; top:0; left:0; right:0; height:58px; display:flex; align-items:center; gap:14px; padding:0 20px; background: {{ t.panel }}; color: {{ t.text }}; border-bottom:1px solid {{ t.border }}; backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); box-shadow:0 10px 34px rgba(0,0,0,0.18); z-index:20;">
     <div class="kc-brand" style="display:flex; align-items:center; gap:10px; flex:0 0 280px; min-width:210px;">
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" style="flex:none;">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="flex:none; color:var(--kc-text-secondary);">
         <circle cx="6" cy="7" r="2.6" fill="#5b8cff"></circle>
         <circle cx="18" cy="6" r="2.2" fill="#34d399"></circle>
         <circle cx="16" cy="18" r="2.6" fill="#c084fc"></circle>
         <circle cx="6" cy="17" r="2.2" fill="#f59e0b"></circle>
-        <path d="M6 7L18 6M18 6L16 18M16 18L6 17M6 17L6 7M6 7L16 18" stroke="{{ t.sub }}" stroke-width="1.1" opacity="0.55"></path>
+        <path d="M6 7L18 6M18 6L16 18M16 18L6 17M6 17L6 7M6 7L16 18" stroke="currentColor" stroke-width="1.1" opacity="0.55"></path>
       </svg>
-      <div class="kc-brand-title" style="font-size:13.5px; font-weight:600; letter-spacing:-0.01em; line-height:1; white-space:nowrap;">Knowledge&#8209;crib</div>
+      <h1 class="kc-brand-title" style="font-size:18px; font-weight:600; letter-spacing:-0.01em; line-height:1; white-space:nowrap; margin:0;">Knowledge graph</h1>
     </div>
 
     <div data-kc-command-segment class="kc-command-segment">
-      <button data-kc-command="overview" onClick="{{ showOverview }}" title="Architecture overview" style="height:26px; padding:0 11px; border-radius:6px; border:none; background: {{ overviewBg }}; color: {{ overviewFg }}; font:600 11.5px 'IBM Plex Sans'; cursor:pointer;">Overview</button>
-      <button data-kc-command="focus" onClick="{{ showFocus }}" title="Neighborhood of the selected node" style="height:26px; padding:0 11px; border-radius:6px; border:none; background: {{ focusBg }}; color: {{ focusFg }}; font:600 11.5px 'IBM Plex Sans'; cursor:pointer;">Focus</button>
-      <button data-kc-command="blast" onClick="{{ showBlast }}" title="What breaks if the selected node changes" style="height:26px; padding:0 11px; border-radius:6px; border:none; background: {{ blastSegmentBg }}; color: {{ blastSegmentFg }}; font:600 11.5px 'IBM Plex Sans'; cursor:pointer;">Blast</button>
+      <button data-kc-command="overview" aria-pressed="{{ overviewPressed }}" onClick="{{ showOverview }}" title="Architecture overview" style="height:32px; min-width:32px; padding:0 11px; border-radius:6px; border:none; background: {{ overviewBg }}; color: {{ overviewFg }}; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; cursor:pointer;">Overview</button>
+      <button data-kc-command="focus" aria-pressed="{{ focusPressed }}" onClick="{{ showFocus }}" title="Neighborhood of the selected node" style="height:32px; min-width:32px; padding:0 11px; border-radius:6px; border:none; background: {{ focusBg }}; color: {{ focusFg }}; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; cursor:pointer;">Focus</button>
+      <button data-kc-command="blast" aria-pressed="{{ blastPressed }}" onClick="{{ showBlast }}" title="What breaks if the selected node changes" style="height:32px; min-width:32px; padding:0 11px; border-radius:6px; border:none; background: {{ blastSegmentBg }}; color: {{ blastSegmentFg }}; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; cursor:pointer;">Blast</button>
     </div>
 
-    <div class="kc-search" style="position:relative; display:flex; align-items:center; flex:1 1 auto; max-width:520px; min-width:150px;">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style="position:absolute; left:11px; pointer-events:none; opacity:0.55;"><circle cx="10.5" cy="10.5" r="6.5" stroke="{{ t.text }}" stroke-width="2"></circle><path d="M20 20L16 16" stroke="{{ t.text }}" stroke-width="2" stroke-linecap="round"></path></svg>
-      <input ref="{{ searchRef }}" onInput="{{ onSearch }}" placeholder="Search code, docs, tables…" style="width:100%; height:32px; padding:0 50px 0 34px; border-radius:8px; border:1px solid {{ t.border }}; background:var(--kc-bg); color: {{ t.text }}; font:500 12.5px 'IBM Plex Sans'; outline:none;">
-      <span data-kc-search-shortcut style="position:absolute; right:8px; padding:2px 6px; border-radius:5px; border:1px solid rgba(255,255,255,.14); background:var(--kc-fill); color:var(--kc-muted); pointer-events:none; font:600 10px 'IBM Plex Mono',monospace;">⌘K</span>
+    <div class="kc-search" style="position:relative; display:flex; flex-direction:column; justify-content:center; align-items:stretch; flex:1 1 auto; max-width:520px; min-width:150px;">
+      <label for="kc-graph-search" style="font:600 12px/1 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; color:var(--kc-text-secondary); margin-bottom:3px;">Search graph</label>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="position:absolute; left:11px; bottom:9px; pointer-events:none; opacity:0.7; color:var(--kc-text-primary);"><circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" stroke-width="2"></circle><path d="M20 20L16 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
+      <input id="kc-graph-search" ref="{{ searchRef }}" onInput="{{ onSearch }}" placeholder="Search code, docs, tables…" style="width:100%; height:32px; padding:0 50px 0 34px; border-radius:8px; border:1px solid var(--kc-border-control); background:var(--kc-bg); color: {{ t.text }}; font:500 14px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; outline:none;">
+      <span data-kc-search-shortcut style="position:absolute; right:8px; bottom:7px; padding:2px 6px; border-radius:5px; border:1px solid var(--kc-border-separator); background:var(--kc-fill); color:var(--kc-muted); pointer-events:none; font:600 12px 'IBM Plex Mono',monospace;">{{ searchShortcut }}</span>
       <sc-if value="{{ searchStatus }}" hint-placeholder-val="{{ true }}">
-        <div style="position:absolute; top:42px; left:0; min-width:230px; padding:7px 10px; border-radius:8px; border:1px solid {{ t.border }}; background:{{ t.panel }}; color:{{ searchStatusColor }}; box-shadow:0 8px 24px rgba(0,0,0,0.24); font:600 11px 'IBM Plex Sans'; white-space:nowrap;">{{ searchStatus }}</div>
+        <div data-kc-search-status style="position:absolute; top:calc(100% + 4px); left:0; min-width:230px; padding:7px 10px; border-radius:8px; border:1px solid {{ t.border }}; background:{{ t.panel }}; color:{{ searchStatusColor }}; box-shadow:0 8px 24px rgba(0,0,0,0.24); font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; white-space:nowrap;">{{ searchStatus }}</div>
       </sc-if>
     </div>
 
     <div style="flex:1;"></div>
 
-    <button class="kc-memory-btn" data-kc-memory-trigger onClick="{{ toggleMemory }}" title="Memory ledger — what the agents recorded, and what went stale when the code moved" style="height:36px; padding:0 13px; display:flex; align-items:center; gap:7px; border-radius:9px; border:1px solid {{ memBorder }}; background: {{ memBg }}; color: {{ memFg }}; font:600 12.5px 'IBM Plex Sans'; cursor:pointer;">
+    <button class="kc-memory-btn" data-kc-memory-trigger onClick="{{ toggleMemory }}" aria-expanded="{{ memExpanded }}" title="Memory ledger — what the agents recorded, and what went stale when the code moved" style="height:36px; padding:0 13px; display:flex; align-items:center; gap:7px; border-radius:9px; border:1px solid {{ memBorder }}; background: {{ memBg }}; color: {{ memFg }}; font:600 12.5px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; cursor:pointer;">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 5h16M4 10h16M4 15h10M4 20h7" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
       <span class="kc-memory-label">Memory</span>
-      <span data-kc-memory-badge style="min-width:16px; padding:1px 5px; border-radius:20px; background:rgba(248,113,113,.18); color:#f87171; text-align:center; font:700 9.5px 'IBM Plex Sans';">{{ memoryBadge }}</span>
+      <span data-kc-memory-badge style="min-width:16px; padding:1px 5px; border-radius:20px; background:var(--kc-fill); border:1px solid var(--kc-border-separator); color:var(--kc-text-risk); text-align:center; font:700 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">{{ memoryBadge }}</span>
     </button>
 
-     <button onClick="{{ toggleTheme }}" title="Toggle theme" style="width:36px; height:36px; flex:none; display:flex; align-items:center; justify-content:center; border-radius:9px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer;">
+     <button data-kc-theme-toggle onClick="{{ toggleTheme }}" title="{{ themeToggleLabel }}" aria-label="{{ themeToggleLabel }}" style="width:36px; height:36px; flex:none; display:flex; align-items:center; justify-content:center; border-radius:9px; border:1px solid var(--kc-border-control); background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer;">
       <span style="font-size:15px;">{{ themeIcon }}</span>
     </button>
 
-    <button onClick="{{ toggleHelp }}" title="Keyboard shortcuts and help" style="width:32px; height:32px; flex:none; display:flex; align-items:center; justify-content:center; border-radius:8px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font:700 13px 'IBM Plex Sans';">?</button>
+    <button data-kc-help-trigger onClick="{{ toggleHelp }}" aria-label="Keyboard shortcuts and help" title="Keyboard shortcuts and help" aria-expanded="{{ helpExpanded }}" style="width:32px; height:32px; flex:none; display:flex; align-items:center; justify-content:center; border-radius:8px; border:1px solid var(--kc-border-control); background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font:700 13px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">?</button>
   </header>
 
   <!-- Signal Console navigation rail: the graph remains the canvas, while module and type controls
        become a persistent orientation layer instead of obscuring the stage as a floating legend. -->
-  <aside data-kc-navigation-rail class="kc-navigation-rail {{ railClass }}" aria-label="Repository navigation">
+  <aside data-kc-navigation-rail class="kc-navigation-rail {{ railClass }}" role="{{ railRole }}" aria-label="Repository navigation" aria-modal="{{ railModal }}">
     <div class="kc-rail-header">
       <div class="kc-rail-title">
-        <div class="kc-rail-kicker">This repo</div>
+        <h2 data-kc-rail-heading tabindex="-1" class="kc-rail-kicker" style="margin:0;">Browse repository</h2>
       </div>
-      <button onClick="{{ toggleRail }}" title="{{ railToggleLabel }}" style="width:26px; height:26px; flex:none; border-radius:7px; border:1px solid var(--kc-line); background:var(--kc-fill); color:var(--kc-muted); cursor:pointer; font:700 14px 'IBM Plex Sans';">{{ railToggleIcon }}</button>
+      <button data-kc-rail-toggle onClick="{{ toggleRail }}" title="{{ railToggleLabel }}" aria-label="{{ railToggleLabel }}" aria-expanded="{{ railExpanded }}" style="width:32px; height:32px; flex:none; border-radius:7px; border:1px solid var(--kc-border-control); background:var(--kc-fill); color:var(--kc-text); cursor:pointer; font:700 14px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">{{ railToggleIcon }}</button>
     </div>
     <div class="kc-rail-body">
       <div class="kc-rail-stats">
         <div class="kc-rail-stat"><strong>{{ railNodeCount }}</strong><span>nodes</span></div>
         <div class="kc-rail-stat"><strong>{{ railEdgeCount }}</strong><span>edges</span></div>
       </div>
-      <div class="kc-rail-section"><span>Modules</span><span>{{ railModuleCount }}</span></div>
+      <h3 class="kc-rail-section"><span>Modules</span><span>{{ railModuleCount }}</span></h3>
       <sc-for list="{{ moduleList }}" as="m" hint-placeholder-count="8">
         <button class="kc-rail-item" onClick="{{ m.onGo }}" title="{{ m.help }}" style="background:{{ m.bg }}; border-color:{{ m.border }};">
           <span style="width:8px; height:8px; flex:none; border-radius:2px; background:{{ m.color }};"></span>
@@ -202,11 +211,11 @@
         </button>
       </sc-for>
       <div style="height:1px; margin:14px 4px 12px; background:var(--kc-line);"></div>
-      <div class="kc-rail-section"><span>Node types</span><button onClick="{{ resetFilters }}" style="padding:2px 6px; border:1px solid var(--kc-line); border-radius:5px; background:var(--kc-fill); color:var(--kc-muted); cursor:pointer; font:600 9px 'IBM Plex Sans';">Reset</button></div>
+      <h3 class="kc-rail-section"><span>Node types</span><button onClick="{{ resetFilters }}" aria-label="Reset node type filters" style="min-height:32px; padding:0 10px; border:1px solid var(--kc-border-control); border-radius:6px; background:var(--kc-fill); color:var(--kc-text-primary); cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">Reset</button></h3>
       <sc-for list="{{ kindList }}" as="k" hint-placeholder-count="8">
-        <button class="kc-rail-item" onClick="{{ k.onToggle }}" style="opacity:{{ k.op }};">
-          <span style="width:8px; height:8px; flex:none; border-radius:50%; background:{{ k.color }};"></span>
-          <span class="kc-rail-item-label" style="font-weight:500;">{{ k.label }}</span>
+        <button class="kc-rail-item" onClick="{{ k.onToggle }}" aria-pressed="{{ k.pressed }}" title="{{ k.help }}">
+          <span style="width:8px; height:8px; flex:none; border-radius:50%; background:{{ k.color }}; opacity:{{ k.op }};"></span>
+          <span class="kc-rail-item-label" style="font-weight:500; text-decoration:{{ k.decoration }};">{{ k.label }}</span>
           <span class="kc-rail-item-count">{{ k.count }}</span>
         </button>
       </sc-for>
@@ -214,10 +223,10 @@
   </aside>
 
   <sc-if value="{{ inspectorEmpty }}" hint-placeholder-val="{{ true }}">
-    <aside class="kc-inspector-empty" aria-label="Inspector placeholder">
+    <aside data-kc-inspector-placeholder class="kc-inspector-empty" role="{{ inspectorRole }}" aria-modal="{{ inspectorModal }}" aria-label="Inspector">
       <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-        <div class="kc-rail-kicker">Inspector</div>
-        <button data-kc-inspector-close onClick="{{ closeInspector }}" aria-label="Close inspector" title="Close inspector" style="width:26px; height:26px; display:flex; align-items:center; justify-content:center; border-radius:7px; border:1px solid {{ t.border }}; background:{{ t.chip }}; color:{{ t.sub }}; cursor:pointer; font:500 16px 'IBM Plex Sans';">×</button>
+        <h2 data-kc-inspector-heading tabindex="-1" class="kc-rail-kicker" style="margin:0;">Inspector</h2>
+        <button data-kc-inspector-close onClick="{{ closeInspector }}" aria-label="Close inspector" title="Close inspector" style="width:32px; height:32px; display:flex; align-items:center; justify-content:center; border-radius:7px; border:1px solid {{ t.border }}; background:{{ t.chip }}; color:{{ t.sub }}; cursor:pointer; font:500 16px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">×</button>
       </div>
       <strong style="margin-top:7px;">Follow the signal</strong>
       <p>Select a module, node, or search result to inspect provenance, evidence, connections, and downstream impact.</p>
@@ -230,58 +239,58 @@
   </footer>
 
   <sc-if value="{{ helpOpen }}" hint-placeholder-val="{{ true }}">
-    <div role="dialog" aria-label="Keyboard shortcuts" style="position:absolute; top:58px; right:12px; z-index:45; width:278px; padding:14px 15px; border-radius:10px; background:var(--kc-panel); border:1px solid var(--kc-line); color:var(--kc-text); box-shadow:0 20px 60px rgba(0,0,0,.42);">
+    <div data-kc-help role="dialog" aria-labelledby="kc-help-heading" style="position:absolute; top:58px; right:12px; z-index:55; width:278px; max-width:calc(100vw - 24px); padding:14px 15px; border-radius:10px; background:var(--kc-surface-floating); border:1px solid var(--kc-border-control); color:var(--kc-text); box-shadow:0 20px 60px rgba(0,0,0,.42);">
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-        <span class="kc-rail-kicker">Shortcuts</span>
-        <button onClick="{{ toggleHelp }}" aria-label="Close keyboard shortcuts" style="width:22px; height:22px; border-radius:6px; border:1px solid var(--kc-line); background:var(--kc-fill); color:var(--kc-muted); cursor:pointer;">×</button>
+        <h2 id="kc-help-heading" class="kc-rail-kicker" style="margin:0;">Keyboard shortcuts</h2>
+        <button data-kc-help-close onClick="{{ toggleHelp }}" aria-label="Close keyboard shortcuts" style="width:32px; height:32px; border-radius:6px; border:1px solid var(--kc-border-control); background:var(--kc-fill); color:var(--kc-text); cursor:pointer;">×</button>
       </div>
-      <div style="display:grid; grid-template-columns:48px 1fr; gap:8px 10px; align-items:center; font:400 11.5px 'IBM Plex Sans'; color:var(--kc-text-2);">
-        <b style="font-family:'IBM Plex Mono';">⌘K</b><span>Search the graph</span>
-        <b style="font-family:'IBM Plex Mono';">F</b><span>Fit the current view</span>
-        <b style="font-family:'IBM Plex Mono';">M</b><span>Open memory</span>
-        <b style="font-family:'IBM Plex Mono';">Esc</b><span>Close the current layer</span>
+      <div style="display:grid; grid-template-columns:48px 1fr; gap:8px 10px; align-items:center; font:400 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; color:var(--kc-text-2);">
+        <b style="font-family:'IBM Plex Mono',ui-monospace,monospace;">{{ searchShortcut }}</b><span>Search the graph</span>
+        <b style="font-family:'IBM Plex Mono',ui-monospace,monospace;">F</b><span>Fit the current view</span>
+        <b style="font-family:'IBM Plex Mono',ui-monospace,monospace;">M</b><span>Open memory</span>
+        <b style="font-family:'IBM Plex Mono',ui-monospace,monospace;">Esc</b><span>Close the current layer</span>
       </div>
     </div>
   </sc-if>
 
   <!-- Legend / kind filter -->
     <div class="kc-legend" style="position:absolute; left:14px; bottom:14px; z-index:20; max-width:240px; padding:11px 12px 9px; border-radius:10px; background: {{ t.panel }}; color: {{ t.text }}; border:1px solid {{ t.border }}; backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); box-shadow:0 10px 30px rgba(0,0,0,0.2);">
-    <div style="font-size:10.5px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color: {{ t.sub }}; margin-bottom:8px;">Node types — click to filter</div>
+    <div style="font-size:12px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color: {{ t.sub }}; margin-bottom:8px;">Node types — click to filter</div>
     <div style="display:flex; flex-wrap:wrap; gap:6px;">
       <sc-for list="{{ kindList }}" as="k" hint-placeholder-count="8">
-        <button onClick="{{ k.onToggle }}" style="display:flex; align-items:center; gap:6px; padding:4px 9px 4px 7px; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; font:500 11.5px 'IBM Plex Sans'; cursor:pointer; opacity: {{ k.op }};">
+        <button onClick="{{ k.onToggle }}" style="display:flex; align-items:center; gap:6px; padding:4px 9px 4px 7px; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; font:500 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; cursor:pointer; opacity: {{ k.op }};">
           <span style="width:9px; height:9px; border-radius:50%; background: {{ k.color }};"></span>{{ k.label }}
         </button>
       </sc-for>
     </div>
-    <div style="margin-top:9px; font-size:10.5px; color: {{ t.sub }}; line-height:1.5;">Scroll to zoom · drag to pan · click a node, then <b style="color: {{ t.text }};">← →</b> to walk neighbors, <b style="color: {{ t.text }};">↵</b> to jump</div>
+    <div style="margin-top:9px; font-size:12px; color: {{ t.sub }}; line-height:1.5;">Scroll to zoom · drag to pan · click a node, then <b style="color: {{ t.text }};">← →</b> to walk neighbors, <b style="color: {{ t.text }};">↵</b> to jump</div>
   </div>
 
   <!-- Inspector panel -->
   <sc-if value="{{ inspectorDetail }}" hint-placeholder-val="{{ true }}">
-    <div data-kc-inspector style="position:absolute; top:80px; right:14px; bottom:14px; width:360px; max-width:360px; z-index:21; display:flex; flex-direction:column; border-radius:10px; overflow:hidden; background: {{ t.panel }}; color: {{ t.text }}; border:1px solid {{ t.border }}; backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); box-shadow:0 18px 50px rgba(0,0,0,0.3); animation: kc-panel-in 0.26s cubic-bezier(0.2,0.7,0.2,1);">
+    <div data-kc-inspector role="{{ inspectorRole }}" aria-modal="{{ inspectorModal }}" aria-label="Inspector" style="position:absolute; top:80px; right:14px; bottom:14px; width:360px; max-width:360px; z-index:21; display:flex; flex-direction:column; border-radius:10px; overflow:hidden; background: {{ t.panel }}; color: {{ t.text }}; border:1px solid {{ t.border }}; backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); box-shadow:0 18px 50px rgba(0,0,0,0.3); animation: kc-panel-in 0.26s cubic-bezier(0.2,0.7,0.2,1);">
       <!-- header -->
       <div style="padding:16px 16px 14px; border-bottom:1px solid {{ t.border }};">
         <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
           <div style="display:flex; align-items:center; gap:8px; min-width:0;">
             <span style="width:11px; height:11px; border-radius:50%; flex:none; background: {{ sel.color }}; box-shadow:0 0 0 4px {{ sel.glow }};"></span>
-            <span style="font-size:10.5px; font-weight:600; letter-spacing:0.07em; text-transform:uppercase; color: {{ sel.color }};">{{ sel.kindLabel }}</span>
+            <span style="font-size:12px; font-weight:600; letter-spacing:0.07em; text-transform:uppercase; color: {{ sel.color }};">{{ sel.kindLabel }}</span>
           </div>
           <div style="display:flex; gap:6px; flex:none;">
             <sc-if value="{{ sel.backAction }}" hint-placeholder-val="{{ true }}">
-              <button onClick="{{ sel.backAction }}" title="Return to functionality members" style="height:26px; padding:0 9px; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font:600 10.5px 'IBM Plex Sans';">← {{ sel.backLabel }}</button>
+              <button onClick="{{ sel.backAction }}" title="Return to functionality members" style="height:26px; padding:0 9px; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">← {{ sel.backLabel }}</button>
             </sc-if>
-            <button data-kc-inspector-close onClick="{{ closeInspector }}" aria-label="Close inspector" title="Close inspector" style="width:26px; height:26px; display:flex; align-items:center; justify-content:center; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font-size:15px; line-height:1;">×</button>
+            <button data-kc-inspector-close onClick="{{ closeInspector }}" aria-label="Close inspector" title="Close inspector" style="width:32px; height:32px; display:flex; align-items:center; justify-content:center; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font-size:15px; line-height:1;">×</button>
           </div>
         </div>
-        <div style="font-size:18px; font-weight:600; letter-spacing:-0.01em; margin-top:9px; word-break:break-word;">{{ sel.name }}</div>
+        <h2 data-kc-inspector-heading tabindex="-1" style="font-size:18px; font-weight:600; letter-spacing:-0.01em; margin:9px 0 0; word-break:break-word;">{{ sel.name }}</h2>
         <sc-if value="{{ sel.qualified }}" hint-placeholder-val="{{ true }}">
-          <div style="font-family:'IBM Plex Mono',monospace; font-size:11.5px; color: {{ t.sub }}; margin-top:3px;">{{ sel.qualified }}</div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; color: {{ t.sub }}; margin-top:3px;">{{ sel.qualified }}</div>
         </sc-if>
         <div data-kc-inspector-actions style="display:grid; grid-template-columns:1fr 1fr auto; gap:6px; margin-top:13px;">
-          <button onClick="{{ showBlast }}" style="height:29px; border-radius:7px; border:1px solid {{ blastBorder }}; background:{{ blastBg }}; color:{{ blastFg }}; cursor:pointer; font:600 10.5px 'IBM Plex Sans';">Blast radius</button>
-          <button onClick="{{ showFocus }}" style="height:29px; border-radius:7px; border:1px solid {{ t.border }}; background:{{ t.chip }}; color:{{ t.text }}; cursor:pointer; font:600 10.5px 'IBM Plex Sans';">Neighbors</button>
-          <button onClick="{{ exportSub }}" title="Export this focused view as JSON" style="height:29px; padding:0 9px; border-radius:7px; border:1px solid {{ t.border }}; background:{{ t.chip }}; color:{{ t.sub }}; cursor:pointer; font:600 10.5px 'IBM Plex Sans';">Export</button>
+          <button onClick="{{ showBlast }}" style="height:32px; border-radius:7px; border:1px solid {{ blastBorder }}; background:{{ blastBg }}; color:{{ blastFg }}; cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">Blast radius</button>
+          <button onClick="{{ showFocus }}" style="height:32px; border-radius:7px; border:1px solid {{ t.border }}; background:{{ t.chip }}; color:{{ t.text }}; cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">Neighbors</button>
+          <button onClick="{{ exportSub }}" title="Export this focused view as JSON" style="height:32px; padding:0 9px; border-radius:7px; border:1px solid {{ t.border }}; background:{{ t.chip }}; color:{{ t.sub }}; cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">Export</button>
         </div>
       </div>
 
@@ -295,7 +304,7 @@
         </sc-if>
 
         <!-- summary -->
-        <div data-kc-inspector-summary style="font-size:13.5px; line-height:1.55; color: {{ t.text }};">{{ sel.summary }}</div>
+        <div data-kc-inspector-summary style="font-size:14px; line-height:1.55; color: {{ t.text }};">{{ sel.summary }}</div>
 
         <!-- signature -->
         <sc-if value="{{ sel.signature }}" hint-placeholder-val="{{ true }}">
@@ -305,10 +314,10 @@
         <!-- meta row -->
         <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:13px;">
           <sc-if value="{{ sel.file }}" hint-placeholder-val="{{ true }}">
-            <span style="display:inline-flex; align-items:center; gap:5px; padding:4px 9px; border-radius:6px; background: {{ t.chip }}; border:1px solid {{ t.border }}; font-family:'IBM Plex Mono',monospace; font-size:11px; color: {{ t.sub }};">{{ sel.fileDisplay }}</span>
+            <span style="display:inline-flex; align-items:center; gap:5px; padding:4px 9px; border-radius:6px; background: {{ t.chip }}; border:1px solid {{ t.border }}; font-family:'IBM Plex Mono',monospace; font-size:12px; color: {{ t.sub }};">{{ sel.fileDisplay }}</span>
           </sc-if>
           <sc-if value="{{ sel.lang }}" hint-placeholder-val="{{ true }}">
-            <span style="display:inline-flex; align-items:center; padding:4px 9px; border-radius:6px; background: {{ t.chip }}; border:1px solid {{ t.border }}; font-size:11px; color: {{ t.sub }};">{{ sel.lang }}</span>
+            <span style="display:inline-flex; align-items:center; padding:4px 9px; border-radius:6px; background: {{ t.chip }}; border:1px solid {{ t.border }}; font-size:12px; color: {{ t.sub }};">{{ sel.lang }}</span>
           </sc-if>
         </div>
 
@@ -317,22 +326,22 @@
         <sc-for list="{{ sel.sections }}" as="sec" hint-placeholder-count="3">
           <div data-kc-inspector-section style="margin-top:20px;">
             <button onClick="{{ sec.onToggle }}" style="width:100%; display:flex; align-items:center; gap:8px; padding:0; margin:0 0 9px; border:0; background:transparent; text-align:left; cursor:pointer;">
-              <span style="color:{{ t.sub }}; font:700 9px 'IBM Plex Mono',monospace;">{{ sec.caret }}</span>
-              <span style="font-size:11px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ sec.color }};">{{ sec.title }}</span>
-              <span style="font-size:10.5px; color: {{ t.sub }}; background: {{ t.chip }}; padding:1px 7px; border-radius:20px;">{{ sec.count }}</span>
+              <span style="color:{{ t.sub }}; font:700 12px 'IBM Plex Mono',monospace;">{{ sec.caret }}</span>
+              <span style="font-size:12px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ sec.color }};">{{ sec.title }}</span>
+              <span style="font-size:12px; color: {{ t.sub }}; background: {{ t.chip }}; padding:1px 7px; border-radius:20px;">{{ sec.count }}</span>
               <div style="flex:1; height:1px; background: {{ t.border }};"></div>
             </button>
             <sc-if value="{{ sec.open }}" hint-placeholder-val="{{ true }}">
             <div style="display:flex; flex-direction:column; gap:3px;">
               <sc-for list="{{ sec.items }}" as="it" hint-placeholder-count="2">
-                <button onClick="{{ it.onGo }}" disabled="{{ it.disabled }}" style="display:flex; align-items:center; gap:9px; width:100%; text-align:left; padding:8px 9px; border-radius:9px; border:1px solid transparent; background:transparent; color: {{ t.text }}; cursor:{{ it.disabled?'default':'pointer' }}; opacity:{{ it.disabled?0.75:1 }}; font-family:'IBM Plex Sans';" style-hover="background: rgba(127,127,127,0.12); border-color: rgba(127,127,127,0.25);">
+                <button onClick="{{ it.onGo }}" disabled="{{ it.disabled }}" style="display:flex; align-items:center; gap:9px; width:100%; text-align:left; padding:8px 9px; border-radius:9px; border:1px solid transparent; background:transparent; color: {{ t.text }}; cursor:{{ it.disabled?'default':'pointer' }}; opacity:{{ it.disabled?0.75:1 }}; font-family:'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;" style-hover="background: rgba(127,127,127,0.12); border-color: rgba(127,127,127,0.25);">
                   <span style="width:9px; height:9px; border-radius:50%; flex:none; background: {{ it.color }};"></span>
                   <span style="flex:1; min-width:0;">
                     <span style="display:block; font-size:13px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ it.label }}</span>
-                    <span style="display:block; font-size:11px; color: {{ t.sub }}; margin-top:1px;"><span style="color: {{ it.relColor }}; font-weight:500;">{{ it.phrase }}</span>{{ it.tail }}</span>
+                    <span style="display:block; font-size:12px; color: {{ t.sub }}; margin-top:1px;"><span style="color: {{ it.relColor }}; font-weight:500;">{{ it.phrase }}</span>{{ it.tail }}</span>
                   </span>
                   <sc-if value="{{ it.badge }}" hint-placeholder-val="{{ true }}">
-                    <span style="flex:none; font-size:9.5px; font-weight:600; padding:2px 6px; border-radius:5px; background: {{ it.badgeBg }}; color: {{ it.badgeFg }};">{{ it.badge }}</span>
+                    <span style="flex:none; font-size:12px; font-weight:600; padding:2px 6px; border-radius:5px; background: {{ it.badgeBg }}; color: {{ it.badgeFg }};">{{ it.badge }}</span>
                   </sc-if>
                 </button>
               </sc-for>
@@ -346,14 +355,14 @@
         <sc-if value="{{ sel.source }}" hint-placeholder-val="{{ true }}">
           <div data-kc-inspector-source style="margin-top:18px;">
             <button onClick="{{ toggleInspectorSource }}" style="width:100%; display:flex; align-items:center; gap:8px; margin:0 0 8px; padding:0; border:0; background:transparent; text-align:left; cursor:pointer;">
-              <span style="color:{{ t.sub }}; font:700 9px 'IBM Plex Mono',monospace;">{{ sourceCaret }}</span>
-              <span style="font-size:11px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ t.sub }};">Source</span>
+              <span style="color:{{ t.sub }}; font:700 12px 'IBM Plex Mono',monospace;">{{ sourceCaret }}</span>
+              <span style="font-size:12px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ t.sub }};">Source</span>
               <div style="flex:1; height:1px; background: {{ t.border }};"></div>
             </button>
             <sc-if value="{{ sourceOpen }}" hint-placeholder-val="{{ true }}">
               <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">
               <sc-if value="{{ sel.source.location }}" hint-placeholder-val="{{ true }}">
-                <button onClick="{{ sel.source.onCopy }}" title="Copy file and line range" style="height:24px; padding:0 8px; border-radius:6px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font:600 10px 'IBM Plex Sans';">Copy location</button>
+                <button onClick="{{ sel.source.onCopy }}" title="Copy file and line range" style="height:24px; padding:0 8px; border-radius:6px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">Copy location</button>
               </sc-if>
               </div>
             <sc-if value="{{ sel.source.loading }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color: {{ t.sub }};">Loading source…</div></sc-if>
@@ -362,10 +371,10 @@
             <sc-if value="{{ sel.source.ready }}" hint-placeholder-val="{{ true }}">
               <div style="max-height:280px; overflow:auto; border-radius:9px; border:1px solid {{ t.border }}; background: {{ t.code }}; padding:8px 0;">
                 <sc-for list="{{ sel.source.lines }}" as="line" hint-placeholder-count="5">
-                  <div style="display:flex; min-width:max-content; font:11.5px/1.55 'IBM Plex Mono',monospace; color: {{ t.codeText }};"><span style="width:48px; flex:none; padding-right:10px; text-align:right; user-select:none; color: {{ t.sub }};">{{ line.no }}</span><span style="white-space:pre; padding-right:12px;">{{ line.text }}</span></div>
+                  <div style="display:flex; min-width:max-content; font:12px/1.55 'IBM Plex Mono',monospace; color: {{ t.codeText }};"><span style="width:48px; flex:none; padding-right:10px; text-align:right; user-select:none; color: {{ t.sub }};">{{ line.no }}</span><span style="white-space:pre; padding-right:12px;">{{ line.text }}</span></div>
                 </sc-for>
               </div>
-              <sc-if value="{{ sel.source.truncated }}" hint-placeholder-val="{{ true }}"><div style="margin-top:6px; font-size:10.5px; color:#f59e0b;">Preview truncated at 200 lines / 64 KiB.</div></sc-if>
+              <sc-if value="{{ sel.source.truncated }}" hint-placeholder-val="{{ true }}"><div style="margin-top:6px; font-size:12px; color:#f59e0b;">Preview truncated at 200 lines / 64 KiB.</div></sc-if>
             </sc-if>
             </sc-if>
           </div>
@@ -374,7 +383,7 @@
         <!-- evidence -->
         <sc-if value="{{ sel.evidence }}" hint-placeholder-val="{{ true }}">
           <div data-kc-inspector-evidence style="margin-top:20px;">
-            <div style="font-size:11px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ t.sub }}; margin-bottom:9px;">Evidence</div>
+            <div style="font-size:12px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ t.sub }}; margin-bottom:9px;">Evidence</div>
             <div style="padding:11px 12px; border-radius:10px; border-left:3px solid {{ sel.color }}; background: {{ t.chip }}; font-size:12.5px; line-height:1.5; color: {{ t.sub }}; font-style:italic;">“{{ sel.evidence }}”</div>
           </div>
         </sc-if>
@@ -384,12 +393,12 @@
 
   <!-- Memory ledger panel (G5.4) — the agents' recorded claims next to the code graph -->
   <sc-if value="{{ mem }}" hint-placeholder-val="{{ true }}">
-    <div class="kc-memory-panel" role="dialog" aria-label="Knowledge Crib memory home" style="position:absolute; top:80px; left:14px; bottom:14px; width:460px; max-width:460px; z-index:21; display:flex; flex-direction:column; border-radius:10px; overflow:hidden; background: {{ t.panel }}; color: {{ t.text }}; border:1px solid {{ t.border }}; backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); box-shadow:0 18px 50px rgba(0,0,0,0.3); animation: kc-panel-in 0.26s cubic-bezier(0.2,0.7,0.2,1);">
+    <div data-kc-memory-panel class="kc-memory-panel" role="dialog" aria-modal="true" aria-label="Knowledge Crib memory home" style="position:absolute; top:80px; left:14px; bottom:14px; width:460px; max-width:460px; z-index:21; display:flex; flex-direction:column; border-radius:10px; overflow:hidden; background: {{ t.panel }}; color: {{ t.text }}; border:1px solid {{ t.border }}; backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); box-shadow:0 18px 50px rgba(0,0,0,0.3); animation: kc-panel-in 0.26s cubic-bezier(0.2,0.7,0.2,1);">
       <!-- header -->
       <div style="padding:15px 16px 12px; border-bottom:1px solid {{ t.border }};">
         <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-          <span style="font-size:10.5px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color: {{ memAccent }};">Memory home</span>
-          <button aria-label="Close memory home" data-kc-memory-close onClick="{{ closeMemory }}" style="width:26px; height:26px; display:flex; align-items:center; justify-content:center; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer; font-size:15px; line-height:1;">×</button>
+          <h2 data-kc-memory-heading style="margin:0; font-size:12px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color: {{ memAccent }};">Memory home</h2>
+          <button aria-label="Close memory home" data-kc-memory-close onClick="{{ closeMemory }}" style="width:32px; height:32px; display:flex; align-items:center; justify-content:center; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer; font-size:15px; line-height:1;">×</button>
         </div>
         <div style="font-size:12.5px; line-height:1.45; color: {{ t.sub }}; margin-top:6px;">What agents recorded about this repo — and what went stale when the code moved.</div>
         <!-- WP6.6 — polite live region: loading, failure and successful mutations are announced to
@@ -405,27 +414,27 @@
           <div style="margin-bottom:14px;">
             <div style="display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:5px;">
               <sc-for list="{{ mem.homeView.sections }}" as="section" hint-placeholder-count="5">
-                <button data-kc-memory-home-action title="{{ section.help }}" onClick="{{ section.onGo }}" style="min-width:0; padding:8px 6px; border-radius:9px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color:{{ t.text }}; text-align:center; cursor:pointer; font-family:'IBM Plex Sans';">
+                <button data-kc-memory-home-action title="{{ section.help }}" onClick="{{ section.onGo }}" style="min-width:0; padding:8px 6px; border-radius:9px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color:{{ t.text }}; text-align:center; cursor:pointer; font-family:'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">
                   <div style="font-size:18px; font-weight:700; line-height:1; color: {{ section.color }};">{{ section.count }}</div>
-                  <div style="font-size:9px; font-weight:700; letter-spacing:0.02em; color: {{ t.text }}; margin-top:5px; line-height:1.2;">{{ section.label }}</div>
+                  <div style="font-size:12px; font-weight:700; letter-spacing:0.02em; color: {{ t.text }}; margin-top:5px; line-height:1.2;">{{ section.label }}</div>
                 </button>
               </sc-for>
             </div>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px;">
               <sc-for list="{{ mem.homeView.health }}" as="signal" hint-placeholder-count="4">
                 <div style="padding:8px 9px; border-radius:8px; border-left:3px solid {{ signal.color }}; background: {{ t.chip }}; min-width:0;">
-                  <div style="font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color: {{ t.sub }};">{{ signal.label }}</div>
-                  <div style="font-size:11px; font-weight:600; color: {{ t.text }}; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ signal.value }}</div>
+                  <div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color: {{ t.sub }};">{{ signal.label }}</div>
+                  <div style="font-size:12px; font-weight:600; color: {{ t.text }}; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ signal.value }}</div>
                 </div>
               </sc-for>
             </div>
-            <div style="margin-top:8px; padding:9px 10px; border-radius:8px; background:rgba(67,216,201,0.10); border:1px solid rgba(67,216,201,0.35); color: {{ t.text }}; font-size:11px; line-height:1.45;">
+            <div style="margin-top:8px; padding:9px 10px; border-radius:8px; background:rgba(67,216,201,0.10); border:1px solid rgba(67,216,201,0.35); color: {{ t.text }}; font-size:12px; line-height:1.45;">
               <b style="color:#43d8c9;">Next safe action</b><br>{{ mem.homeView.nextAction }}
             </div>
             <sc-if value="{{ mem.homeAction }}" hint-placeholder-val="{{ true }}">
               <div tabindex="-1" data-kc-mem-action-head style="margin-top:8px; padding:10px; border-radius:8px; border:1px solid {{ t.border }}; background:{{ t.chip }}; outline:none;">
-                <div style="font-size:11px; font-weight:700; color:{{ t.text }};">{{ mem.homeAction.title }}</div>
-                <div style="font-size:11px; line-height:1.45; color:{{ t.sub }}; margin-top:4px;">{{ mem.homeAction.detail }}</div>
+                <div style="font-size:12px; font-weight:700; color:{{ t.text }};">{{ mem.homeAction.title }}</div>
+                <div style="font-size:12px; line-height:1.45; color:{{ t.sub }}; margin-top:4px;">{{ mem.homeAction.detail }}</div>
               </div>
             </sc-if>
             <!-- WP6.1–WP6.3 — the pending queue: two honest sections, per-row classification, and
@@ -433,83 +442,83 @@
                  name their exact command; only `ready` rows offer the Admit action. -->
             <sc-if value="{{ mem.pendingView }}" hint-placeholder-val="{{ true }}">
               <div style="margin-top:8px;">
-                <sc-if value="{{ mem.pendingView.loading }}" hint-placeholder-val="{{ true }}"><div style="font-size:11.5px; color: {{ t.sub }}; padding:6px 2px;">Loading the pending queue…</div></sc-if>
-                <sc-if value="{{ mem.pendingView.error }}" hint-placeholder-val="{{ true }}"><div style="font-size:11.5px; color:#f87171; padding:6px 2px;">{{ mem.pendingView.error }}</div></sc-if>
-                <sc-if value="{{ mem.pendingView.unwired }}" hint-placeholder-val="{{ true }}"><div style="font-size:11.5px; color: {{ t.sub }}; padding:6px 2px;">No memory stores are wired for this repo.</div></sc-if>
+                <sc-if value="{{ mem.pendingView.loading }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color: {{ t.sub }}; padding:6px 2px;">Loading the pending queue…</div></sc-if>
+                <sc-if value="{{ mem.pendingView.error }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color:#f87171; padding:6px 2px;">{{ mem.pendingView.error }}</div></sc-if>
+                <sc-if value="{{ mem.pendingView.unwired }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color: {{ t.sub }}; padding:6px 2px;">No memory stores are wired for this repo.</div></sc-if>
                 <sc-if value="{{ mem.pendingView.notice }}" hint-placeholder-val="{{ true }}">
-                  <div role="status" data-kc-mem-admit-notice style="margin:6px 0; padding:8px 10px; border-radius:8px; background:rgba(52,211,153,0.12); border:1px solid rgba(52,211,153,0.4); font-size:11px; color: {{ t.text }};">{{ mem.pendingView.notice }}</div>
+                  <div role="status" data-kc-mem-admit-notice style="margin:6px 0; padding:8px 10px; border-radius:8px; background:rgba(52,211,153,0.12); border:1px solid rgba(52,211,153,0.4); font-size:12px; color: {{ t.text }};">{{ mem.pendingView.notice }}</div>
                 </sc-if>
                 <sc-if value="{{ mem.pendingView.mutationError }}" hint-placeholder-val="{{ true }}">
-                  <div style="margin:6px 0; padding:8px 10px; border-radius:8px; background:rgba(248,113,113,0.12); border:1px solid rgba(248,113,113,0.4); font-size:11px; color:#f87171;">
+                  <div style="margin:6px 0; padding:8px 10px; border-radius:8px; background:rgba(248,113,113,0.12); border:1px solid rgba(248,113,113,0.4); font-size:12px; color:#f87171;">
                     {{ mem.pendingView.mutationError.message }}
                     <sc-if value="{{ mem.pendingView.mutationError.command }}" hint-placeholder-val="{{ true }}">
-                      <div style="margin-top:5px; font-family:'IBM Plex Mono',monospace; font-size:10.5px; color: {{ t.text }}; word-break:break-all;">{{ mem.pendingView.mutationError.command }}</div>
+                      <div style="margin-top:5px; font-family:'IBM Plex Mono',monospace; font-size:12px; color: {{ t.text }}; word-break:break-all;">{{ mem.pendingView.mutationError.command }}</div>
                     </sc-if>
                   </div>
                 </sc-if>
                 <sc-if value="{{ mem.pendingView.wired }}" hint-placeholder-val="{{ true }}">
                   <div style="display:flex; gap:5px; margin:8px 0 4px;">
-                    <span style="padding:4px 8px; border-radius:6px; background: {{ t.chip }}; border:1px solid {{ t.border }}; font-size:10px; color: {{ t.sub }};">captures {{ mem.pendingView.counts.captures }}</span>
-                    <span style="padding:4px 8px; border-radius:6px; background:rgba(52,211,153,0.12); border:1px solid rgba(52,211,153,0.4); font-size:10px; color:#34d399;">ready {{ mem.pendingView.counts.ready }}</span>
-                    <span style="padding:4px 8px; border-radius:6px; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.4); font-size:10px; color:#f59e0b;">terminal {{ mem.pendingView.counts.terminal }}</span>
-                    <span style="padding:4px 8px; border-radius:6px; background:rgba(248,113,113,0.12); border:1px solid rgba(248,113,113,0.4); font-size:10px; color:#f87171;">blocked {{ mem.pendingView.counts.blocked }}</span>
+                    <span style="padding:4px 8px; border-radius:6px; background: {{ t.chip }}; border:1px solid {{ t.border }}; font-size:12px; color: {{ t.sub }};">captures {{ mem.pendingView.counts.captures }}</span>
+                    <span style="padding:4px 8px; border-radius:6px; background:rgba(52,211,153,0.12); border:1px solid rgba(52,211,153,0.4); font-size:12px; color:#34d399;">ready {{ mem.pendingView.counts.ready }}</span>
+                    <span style="padding:4px 8px; border-radius:6px; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.4); font-size:12px; color:#f59e0b;">terminal {{ mem.pendingView.counts.terminal }}</span>
+                    <span style="padding:4px 8px; border-radius:6px; background:rgba(248,113,113,0.12); border:1px solid rgba(248,113,113,0.4); font-size:12px; color:#f87171;">blocked {{ mem.pendingView.counts.blocked }}</span>
                   </div>
                   <!-- session maintenance: re-run today's verification over the whole backlog -->
-                  <button data-kc-mem-recheck onClick="{{ mem.pendingView.onRecheck }}" disabled="{{ mem.pendingView.recheckBusy }}" style="margin:4px 0 2px; padding:5px 12px; border-radius:7px; border:1px solid rgba(67,216,201,0.5); background:rgba(67,216,201,0.14); color:#43d8c9; cursor:pointer; font:600 11px 'IBM Plex Sans';">{{ mem.pendingView.recheckLabel }}</button>
-                  <div style="font-size:9.5px; color: {{ t.sub }}; margin-bottom:4px;">Admits every capture whose evidence verifies against the code today. Nothing is deleted.</div>
+                  <button data-kc-mem-recheck onClick="{{ mem.pendingView.onRecheck }}" disabled="{{ mem.pendingView.recheckBusy }}" style="margin:4px 0 2px; padding:5px 12px; border-radius:7px; border:1px solid rgba(67,216,201,0.5); background:rgba(67,216,201,0.14); color:#43d8c9; cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">{{ mem.pendingView.recheckLabel }}</button>
+                  <div style="font-size:12px; color: {{ t.sub }}; margin-bottom:4px;">Admits every capture whose evidence verifies against the code today. Nothing is deleted.</div>
                   <!-- captured learnings not admitted yet: re-check verifies them; dismiss retires one
                        into the dead-letter history (never a delete) -->
-                  <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color: {{ t.sub }}; margin:10px 0 5px;">Captured learnings waiting for review</div>
+                  <div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color: {{ t.sub }}; margin:10px 0 5px;">Captured learnings waiting for review</div>
                   <sc-for list="{{ mem.pendingView.captureRows }}" as="r" hint-placeholder-count="3">
                     <div style="padding:8px 9px; border-radius:8px; border:1px solid {{ t.border }}; background: {{ t.chip }}; margin-bottom:5px;">
-                      <div style="font-size:11px; font-weight:600; color: {{ t.text }}; word-break:break-word;">{{ r.subject }}</div>
-                      <div style="font-size:10.5px; line-height:1.45; color: {{ t.sub }}; margin-top:3px; word-break:break-word;">{{ r.claim }}</div>
+                      <div style="font-size:12px; font-weight:600; color: {{ t.text }}; word-break:break-word;">{{ r.subject }}</div>
+                      <div style="font-size:12px; line-height:1.45; color: {{ t.sub }}; margin-top:3px; word-break:break-word;">{{ r.claim }}</div>
                       <div style="display:flex; align-items:center; gap:6px; margin-top:6px; flex-wrap:wrap;">
-                        <button data-kc-mem-dismiss="{{ r.id }}" onClick="{{ r.onDismiss }}" disabled="{{ r.busy }}" style="padding:4px 11px; border-radius:6px; border:1px solid rgba(248,113,113,0.5); background:rgba(248,113,113,0.12); color:#f87171; cursor:pointer; font:600 10.5px 'IBM Plex Sans';">{{ r.dismissLabel }}</button>
-                        <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color: {{ t.sub }}; background: {{ t.panel }}; border-radius:6px; padding:4px 7px; word-break:break-all; min-width:0;">{{ r.command }}</span>
+                        <button data-kc-mem-dismiss="{{ r.id }}" onClick="{{ r.onDismiss }}" disabled="{{ r.busy }}" style="padding:4px 11px; border-radius:6px; border:1px solid rgba(248,113,113,0.5); background:rgba(248,113,113,0.12); color:#f87171; cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">{{ r.dismissLabel }}</button>
+                        <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; color: {{ t.sub }}; background: {{ t.panel }}; border-radius:6px; padding:4px 7px; word-break:break-all; min-width:0;">{{ r.command }}</span>
                       </div>
                     </div>
                   </sc-for>
-                  <sc-if value="{{ mem.pendingView.capturesEmpty }}" hint-placeholder-val="{{ true }}"><div style="font-size:10.5px; color: {{ t.sub }}; padding:4px 2px;">No raw captures waiting.</div></sc-if>
-                  <div style="font-size:10px; color: {{ t.sub }}; margin:2px 0 4px;">{{ mem.pendingView.captures.from }}–{{ mem.pendingView.captures.to }} of {{ mem.pendingView.captures.total }}
-                    <sc-if value="{{ mem.pendingView.captures.hasPrev }}" hint-placeholder-val="{{ true }}"><button onClick="{{ mem.pendingView.captures.onPrev }}" style="margin-left:6px; padding:2px 8px; border-radius:6px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer; font:600 10px 'IBM Plex Sans';">← Newer</button></sc-if>
-                    <sc-if value="{{ mem.pendingView.captures.hasNext }}" hint-placeholder-val="{{ true }}"><button onClick="{{ mem.pendingView.captures.onNext }}" style="margin-left:4px; padding:2px 8px; border-radius:6px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer; font:600 10px 'IBM Plex Sans';">Older →</button></sc-if>
+                  <sc-if value="{{ mem.pendingView.capturesEmpty }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color: {{ t.sub }}; padding:4px 2px;">No raw captures waiting.</div></sc-if>
+                  <div style="font-size:12px; color: {{ t.sub }}; margin:2px 0 4px;">{{ mem.pendingView.captures.from }}–{{ mem.pendingView.captures.to }} of {{ mem.pendingView.captures.total }}
+                    <sc-if value="{{ mem.pendingView.captures.hasPrev }}" hint-placeholder-val="{{ true }}"><button onClick="{{ mem.pendingView.captures.onPrev }}" style="margin-left:6px; padding:2px 8px; border-radius:6px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">← Newer</button></sc-if>
+                    <sc-if value="{{ mem.pendingView.captures.hasNext }}" hint-placeholder-val="{{ true }}"><button onClick="{{ mem.pendingView.captures.onNext }}" style="margin-left:4px; padding:2px 8px; border-radius:6px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">Older →</button></sc-if>
                   </div>
                   <!-- staged claims, classified by the same checks the CLI admission path runs -->
-                  <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color: {{ t.sub }}; margin:10px 0 5px;">Staged claims awaiting admission</div>
+                  <div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color: {{ t.sub }}; margin:10px 0 5px;">Staged claims awaiting admission</div>
                   <sc-for list="{{ mem.pendingView.stagedRows }}" as="r" hint-placeholder-count="3">
                     <div style="padding:8px 9px; border-radius:8px; border:1px solid {{ t.border }}; background: {{ t.chip }}; margin-bottom:5px;">
                       <div style="display:flex; align-items:center; gap:6px;">
-                        <span style="padding:2px 7px; border-radius:5px; font-size:9.5px; font-weight:700; color:{{ r.standingColor }}; background:rgba(127,127,127,0.14);">{{ r.standing }}</span>
-                        <span style="font-size:11px; font-weight:600; color: {{ t.text }}; word-break:break-word; min-width:0;">{{ r.subject }}</span>
+                        <span style="padding:2px 7px; border-radius:5px; font-size:12px; font-weight:700; color:{{ r.standingColor }}; background:rgba(127,127,127,0.14);">{{ r.standing }}</span>
+                        <span style="font-size:12px; font-weight:600; color: {{ t.text }}; word-break:break-word; min-width:0;">{{ r.subject }}</span>
                       </div>
-                      <div style="font-size:10.5px; line-height:1.45; color: {{ t.sub }}; margin-top:3px; word-break:break-word;">{{ r.claim }}</div>
+                      <div style="font-size:12px; line-height:1.45; color: {{ t.sub }}; margin-top:3px; word-break:break-word;">{{ r.claim }}</div>
                       <div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:5px;">
-                        <span style="padding:2px 6px; border-radius:5px; background: {{ t.panel }}; font-size:9.5px; color: {{ t.sub }};">{{ r.kind }} · {{ r.scopeLabel }}</span>
+                        <span style="padding:2px 6px; border-radius:5px; background: {{ t.panel }}; font-size:12px; color: {{ t.sub }};">{{ r.kind }} · {{ r.scopeLabel }}</span>
                         <sc-for list="{{ r.evidence }}" as="ev" hint-placeholder-count="2">
-                          <span style="padding:2px 6px; border-radius:5px; background: {{ t.panel }}; font-size:9.5px; color: {{ ev.color }};">{{ ev.label }}</span>
+                          <span style="padding:2px 6px; border-radius:5px; background: {{ t.panel }}; font-size:12px; color: {{ ev.color }};">{{ ev.label }}</span>
                         </sc-for>
                       </div>
-                      <sc-if value="{{ r.blockers }}" hint-placeholder-val="{{ true }}"><div style="font-size:10px; color:#f87171; margin-top:4px; word-break:break-word;">{{ r.blockers }}</div></sc-if>
-                      <sc-if value="{{ r.notes }}" hint-placeholder-val="{{ true }}"><div style="font-size:10px; color: {{ t.sub }}; margin-top:3px; word-break:break-word;">{{ r.notes }}</div></sc-if>
+                      <sc-if value="{{ r.blockers }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color:#f87171; margin-top:4px; word-break:break-word;">{{ r.blockers }}</div></sc-if>
+                      <sc-if value="{{ r.notes }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color: {{ t.sub }}; margin-top:3px; word-break:break-word;">{{ r.notes }}</div></sc-if>
                       <div style="display:flex; align-items:center; gap:6px; margin-top:6px; flex-wrap:wrap;">
                         <sc-if value="{{ r.ready }}" hint-placeholder-val="{{ true }}">
-                          <button data-kc-mem-admit="{{ r.id }}" onClick="{{ r.onAdmit }}" disabled="{{ r.busy }}" style="padding:4px 11px; border-radius:6px; border:1px solid rgba(52,211,153,0.5); background:rgba(52,211,153,0.16); color:#34d399; cursor:pointer; font:600 10.5px 'IBM Plex Sans';">{{ r.admitLabel }}</button>
+                          <button data-kc-mem-admit="{{ r.id }}" onClick="{{ r.onAdmit }}" disabled="{{ r.busy }}" style="padding:4px 11px; border-radius:6px; border:1px solid rgba(52,211,153,0.5); background:rgba(52,211,153,0.16); color:#34d399; cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">{{ r.admitLabel }}</button>
                         </sc-if>
-                        <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color: {{ t.sub }}; background: {{ t.panel }}; border-radius:6px; padding:4px 7px; word-break:break-all; min-width:0;">{{ r.command }}</span>
+                        <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; color: {{ t.sub }}; background: {{ t.panel }}; border-radius:6px; padding:4px 7px; word-break:break-all; min-width:0;">{{ r.command }}</span>
                       </div>
                     </div>
                   </sc-for>
-                  <sc-if value="{{ mem.pendingView.stagedEmpty }}" hint-placeholder-val="{{ true }}"><div style="font-size:10.5px; color: {{ t.sub }}; padding:4px 2px;">No staged claims waiting.</div></sc-if>
-                  <div style="font-size:10px; color: {{ t.sub }}; margin:2px 0 4px;">{{ mem.pendingView.staged.from }}–{{ mem.pendingView.staged.to }} of {{ mem.pendingView.staged.total }}
-                    <sc-if value="{{ mem.pendingView.staged.hasPrev }}" hint-placeholder-val="{{ true }}"><button onClick="{{ mem.pendingView.staged.onPrev }}" style="margin-left:6px; padding:2px 8px; border-radius:6px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer; font:600 10px 'IBM Plex Sans';">← Newer</button></sc-if>
-                    <sc-if value="{{ mem.pendingView.staged.hasNext }}" hint-placeholder-val="{{ true }}"><button onClick="{{ mem.pendingView.staged.onNext }}" style="margin-left:4px; padding:2px 8px; border-radius:6px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer; font:600 10px 'IBM Plex Sans';">Older →</button></sc-if>
+                  <sc-if value="{{ mem.pendingView.stagedEmpty }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color: {{ t.sub }}; padding:4px 2px;">No staged claims waiting.</div></sc-if>
+                  <div style="font-size:12px; color: {{ t.sub }}; margin:2px 0 4px;">{{ mem.pendingView.staged.from }}–{{ mem.pendingView.staged.to }} of {{ mem.pendingView.staged.total }}
+                    <sc-if value="{{ mem.pendingView.staged.hasPrev }}" hint-placeholder-val="{{ true }}"><button onClick="{{ mem.pendingView.staged.onPrev }}" style="margin-left:6px; padding:2px 8px; border-radius:6px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">← Newer</button></sc-if>
+                    <sc-if value="{{ mem.pendingView.staged.hasNext }}" hint-placeholder-val="{{ true }}"><button onClick="{{ mem.pendingView.staged.onNext }}" style="margin-left:4px; padding:2px 8px; border-radius:6px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">Older →</button></sc-if>
                   </div>
                   <!-- the gate profile is the operator's choice (WP6.3: the browser never guesses) -->
                   <sc-if value="{{ mem.pendingView.profilesMany }}" hint-placeholder-val="{{ true }}">
-                    <label style="display:flex; align-items:center; gap:6px; margin-top:8px; font-size:10.5px; color: {{ t.sub }};">
+                    <label style="display:flex; align-items:center; gap:6px; margin-top:8px; font-size:12px; color: {{ t.sub }};">
                       Gate profile
-                      <select onChange="{{ mem.pendingView.onProfile }}" style="flex:1; min-width:0; height:24px; border-radius:6px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; font:500 10.5px 'IBM Plex Sans';">
+                      <select onChange="{{ mem.pendingView.onProfile }}" style="flex:1; min-width:0; height:24px; border-radius:6px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; font:500 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">
                         <sc-for list="{{ mem.pendingView.profiles }}" as="p" hint-placeholder-count="2">
                           <option selected="{{ p === mem.pendingView.profile }}">{{ p }}</option>
                         </sc-for>
@@ -525,67 +534,67 @@
               <div style="margin-top:8px;">
                 <div data-kc-mem-resume-list tabindex="-1" style="outline:none;">
                   <sc-for list="{{ mem.resumeView.choices }}" as="c" hint-placeholder-count="3">
-                    <button data-kc-mem-choice="{{ c.intakeId }}" onClick="{{ c.onOpen }}" style="display:block; width:100%; text-align:left; padding:8px 9px; border-radius:8px; border:1px solid {{ t.border }}; background: {{ t.chip }}; margin-bottom:5px; cursor:pointer; font-family:'IBM Plex Sans';">
+                    <button data-kc-mem-choice="{{ c.intakeId }}" onClick="{{ c.onOpen }}" style="display:block; width:100%; text-align:left; padding:8px 9px; border-radius:8px; border:1px solid {{ t.border }}; background: {{ t.chip }}; margin-bottom:5px; cursor:pointer; font-family:'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">
                       <div style="display:flex; align-items:center; gap:6px;">
-                        <span style="padding:2px 7px; border-radius:5px; font-size:9.5px; font-weight:700; color:#5b8cff; background:rgba(91,140,255,0.16);">{{ c.status }}</span>
-                        <sc-if value="{{ c.staleLabel }}" hint-placeholder-val="{{ true }}"><span style="padding:2px 7px; border-radius:5px; font-size:9.5px; font-weight:700; color:#f59e0b; background:rgba(245,158,11,0.16);">{{ c.staleLabel }}</span></sc-if>
-                        <span style="font-size:11px; font-weight:600; color: {{ t.text }}; min-width:0; word-break:break-word;">{{ c.title }}</span>
+                        <span style="padding:2px 7px; border-radius:5px; font-size:12px; font-weight:700; color:#5b8cff; background:rgba(91,140,255,0.16);">{{ c.status }}</span>
+                        <sc-if value="{{ c.staleLabel }}" hint-placeholder-val="{{ true }}"><span style="padding:2px 7px; border-radius:5px; font-size:12px; font-weight:700; color:#f59e0b; background:rgba(245,158,11,0.16);">{{ c.staleLabel }}</span></sc-if>
+                        <span style="font-size:12px; font-weight:600; color: {{ t.text }}; min-width:0; word-break:break-word;">{{ c.title }}</span>
                       </div>
-                      <div style="font-size:9.5px; color: {{ t.sub }}; margin-top:2px;">{{ c.activityLabel }}</div>
-                      <sc-if value="{{ c.nextSafeAction }}" hint-placeholder-val="{{ true }}"><div style="font-size:10.5px; color: {{ t.sub }}; margin-top:3px; word-break:break-word;">Next: {{ c.nextSafeAction }}</div></sc-if>
-                      <sc-if value="{{ c.cautions }}" hint-placeholder-val="{{ true }}"><div style="font-size:10px; color:#f59e0b; margin-top:3px; word-break:break-word;">{{ c.cautions }}</div></sc-if>
+                      <div style="font-size:12px; color: {{ t.sub }}; margin-top:2px;">{{ c.activityLabel }}</div>
+                      <sc-if value="{{ c.nextSafeAction }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color: {{ t.sub }}; margin-top:3px; word-break:break-word;">Next: {{ c.nextSafeAction }}</div></sc-if>
+                      <sc-if value="{{ c.cautions }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color:#f59e0b; margin-top:3px; word-break:break-word;">{{ c.cautions }}</div></sc-if>
                     </button>
                   </sc-for>
-                  <sc-if value="{{ mem.resumeView.empty }}" hint-placeholder-val="{{ true }}"><div style="font-size:10.5px; color: {{ t.sub }}; padding:4px 2px;">No work in progress.</div></sc-if>
-                  <sc-if value="{{ mem.resumeView.closedLabel }}" hint-placeholder-val="{{ true }}"><div style="font-size:10px; color: {{ t.sub }}; padding:2px 2px 4px;">{{ mem.resumeView.closedLabel }}</div></sc-if>
+                  <sc-if value="{{ mem.resumeView.empty }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color: {{ t.sub }}; padding:4px 2px;">No work in progress.</div></sc-if>
+                  <sc-if value="{{ mem.resumeView.closedLabel }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color: {{ t.sub }}; padding:2px 2px 4px;">{{ mem.resumeView.closedLabel }}</div></sc-if>
                 </div>
                 <!-- the resume closes the detail on success, so the outcome lands here, at the
                      list level — the same visible-notice pattern the pending view uses -->
                 <sc-if value="{{ mem.resumeView.notice }}" hint-placeholder-val="{{ true }}">
-                  <div role="status" data-kc-mem-resume-notice style="margin:6px 0; padding:8px 10px; border-radius:8px; background:rgba(52,211,153,0.12); border:1px solid rgba(52,211,153,0.4); font-size:11px; color: {{ t.text }};">{{ mem.resumeView.notice }}</div>
+                  <div role="status" data-kc-mem-resume-notice style="margin:6px 0; padding:8px 10px; border-radius:8px; background:rgba(52,211,153,0.12); border:1px solid rgba(52,211,153,0.4); font-size:12px; color: {{ t.text }};">{{ mem.resumeView.notice }}</div>
                 </sc-if>
                 <sc-if value="{{ mem.resumeView.intake }}" hint-placeholder-val="{{ true }}">
                   <div style="margin-top:6px; border-top:1px solid {{ t.border }}; padding-top:8px;">
-                    <button data-kc-mem-intake-back onClick="{{ mem.resumeView.intake.onBack }}" style="height:26px; padding:0 10px; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font:600 10.5px 'IBM Plex Sans'; margin-bottom:8px;">← Back to the list</button>
-                    <sc-if value="{{ mem.resumeView.intake.loading }}" hint-placeholder-val="{{ true }}"><div style="font-size:11.5px; color: {{ t.sub }};">Loading the saved work…</div></sc-if>
-                    <sc-if value="{{ mem.resumeView.intake.error }}" hint-placeholder-val="{{ true }}"><div style="font-size:11.5px; color:#f87171;">{{ mem.resumeView.intake.error }}</div></sc-if>
+                    <button data-kc-mem-intake-back onClick="{{ mem.resumeView.intake.onBack }}" style="height:26px; padding:0 10px; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; margin-bottom:8px;">← Back to the list</button>
+                    <sc-if value="{{ mem.resumeView.intake.loading }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color: {{ t.sub }};">Loading the saved work…</div></sc-if>
+                    <sc-if value="{{ mem.resumeView.intake.error }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color:#f87171;">{{ mem.resumeView.intake.error }}</div></sc-if>
                     <sc-if value="{{ mem.resumeView.intake.original }}" hint-placeholder-val="{{ true }}">
                       <div style="padding:8px 9px; border-radius:8px; border:1px solid {{ t.border }}; background: {{ t.chip }}; margin-bottom:5px;">
-                        <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color: {{ t.sub }};">The saved request</div>
-                        <div style="font-size:10.5px; line-height:1.45; color: {{ t.text }}; margin-top:3px; word-break:break-word;">{{ mem.resumeView.intake.original }}</div>
-                        <sc-if value="{{ mem.resumeView.intake.interpretation }}" hint-placeholder-val="{{ true }}"><div style="font-size:10px; color: {{ t.sub }}; margin-top:3px; word-break:break-word;">Interpreted as: {{ mem.resumeView.intake.interpretation }}</div></sc-if>
+                        <div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color: {{ t.sub }};">The saved request</div>
+                        <div style="font-size:12px; line-height:1.45; color: {{ t.text }}; margin-top:3px; word-break:break-word;">{{ mem.resumeView.intake.original }}</div>
+                        <sc-if value="{{ mem.resumeView.intake.interpretation }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color: {{ t.sub }}; margin-top:3px; word-break:break-word;">Interpreted as: {{ mem.resumeView.intake.interpretation }}</div></sc-if>
                       </div>
                       <div style="display:flex; flex-wrap:wrap; gap:5px; margin:6px 0;">
-                        <span style="padding:3px 8px; border-radius:6px; background: {{ t.chip }}; border:1px solid {{ t.border }}; font-size:10px; color: {{ t.sub }};">status: {{ mem.resumeView.intake.status }}</span>
-                        <span style="padding:3px 8px; border-radius:6px; background: {{ t.chip }}; border:1px solid {{ t.border }}; font-size:10px; color: {{ t.sub }};">phase: {{ mem.resumeView.intake.phase }}</span>
-                        <span style="padding:3px 8px; border-radius:6px; background: {{ t.chip }}; border:1px solid {{ t.border }}; font-size:10px; color: {{ t.sub }};">{{ mem.resumeView.intake.checkpointCount }} checkpoints</span>
+                        <span style="padding:3px 8px; border-radius:6px; background: {{ t.chip }}; border:1px solid {{ t.border }}; font-size:12px; color: {{ t.sub }};">status: {{ mem.resumeView.intake.status }}</span>
+                        <span style="padding:3px 8px; border-radius:6px; background: {{ t.chip }}; border:1px solid {{ t.border }}; font-size:12px; color: {{ t.sub }};">phase: {{ mem.resumeView.intake.phase }}</span>
+                        <span style="padding:3px 8px; border-radius:6px; background: {{ t.chip }}; border:1px solid {{ t.border }}; font-size:12px; color: {{ t.sub }};">{{ mem.resumeView.intake.checkpointCount }} checkpoints</span>
                       </div>
-                      <div style="font-size:10.5px; color: {{ t.text }}; margin-top:6px;"><b>Next safe action</b> — {{ mem.resumeView.intake.nextSafeAction }}</div>
-                      <sc-if value="{{ mem.resumeView.intake.blockers }}" hint-placeholder-val="{{ true }}"><div style="font-size:10px; color:#f87171; margin-top:4px; word-break:break-word;">{{ mem.resumeView.intake.blockers }}</div></sc-if>
-                      <sc-if value="{{ mem.resumeView.intake.drift }}" hint-placeholder-val="{{ true }}"><div style="font-size:10px; color:#f59e0b; margin-top:4px;">The repository moved since the saved checkpoint — re-check the plan against the current tree.</div></sc-if>
+                      <div style="font-size:12px; color: {{ t.text }}; margin-top:6px;"><b>Next safe action</b> — {{ mem.resumeView.intake.nextSafeAction }}</div>
+                      <sc-if value="{{ mem.resumeView.intake.blockers }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color:#f87171; margin-top:4px; word-break:break-word;">{{ mem.resumeView.intake.blockers }}</div></sc-if>
+                      <sc-if value="{{ mem.resumeView.intake.drift }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color:#f59e0b; margin-top:4px;">The repository moved since the saved checkpoint — re-check the plan against the current tree.</div></sc-if>
                       <div style="margin-top:8px;">
-                        <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color: {{ t.sub }}; margin-bottom:4px;">Checkpoint history</div>
+                        <div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color: {{ t.sub }}; margin-bottom:4px;">Checkpoint history</div>
                         <sc-for list="{{ mem.resumeView.intake.checkpoints }}" as="cp" hint-placeholder-count="3">
-                          <div style="font-size:10px; color: {{ t.sub }}; padding:3px 0; border-bottom:1px solid {{ t.border }}; word-break:break-word;">{{ cp.line }}</div>
+                          <div style="font-size:12px; color: {{ t.sub }}; padding:3px 0; border-bottom:1px solid {{ t.border }}; word-break:break-word;">{{ cp.line }}</div>
                         </sc-for>
                       </div>
-                      <sc-if value="{{ mem.resumeView.intake.notice }}" hint-placeholder-val="{{ true }}"><div role="status" style="margin:6px 0; padding:8px 10px; border-radius:8px; background:rgba(52,211,153,0.12); border:1px solid rgba(52,211,153,0.4); font-size:11px; color: {{ t.text }};">{{ mem.resumeView.intake.notice }}</div></sc-if>
-                      <sc-if value="{{ mem.resumeView.intake.mutationError }}" hint-placeholder-val="{{ true }}"><div style="margin:6px 0; padding:8px 10px; border-radius:8px; background:rgba(248,113,113,0.12); border:1px solid rgba(248,113,113,0.4); font-size:11px; color:#f87171;">{{ mem.resumeView.intake.mutationError.message }}</div></sc-if>
+                      <sc-if value="{{ mem.resumeView.intake.notice }}" hint-placeholder-val="{{ true }}"><div role="status" style="margin:6px 0; padding:8px 10px; border-radius:8px; background:rgba(52,211,153,0.12); border:1px solid rgba(52,211,153,0.4); font-size:12px; color: {{ t.text }};">{{ mem.resumeView.intake.notice }}</div></sc-if>
+                      <sc-if value="{{ mem.resumeView.intake.mutationError }}" hint-placeholder-val="{{ true }}"><div style="margin:6px 0; padding:8px 10px; border-radius:8px; background:rgba(248,113,113,0.12); border:1px solid rgba(248,113,113,0.4); font-size:12px; color:#f87171;">{{ mem.resumeView.intake.mutationError.message }}</div></sc-if>
                       <sc-if value="{{ mem.resumeView.intake.resumable }}" hint-placeholder-val="{{ true }}">
                         <div style="margin-top:8px;">
-                          <label style="display:block; font-size:10.5px; color: {{ t.sub }}; margin-bottom:4px;">Next action for the record (leave empty to reuse the saved one)</label>
-                          <input data-kc-mem-next onInput="{{ mem.resumeView.intake.onInputNext }}" placeholder="What resuming means, in one line" style="width:100%; box-sizing:border-box; height:28px; padding:0 9px; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; font:500 11px 'IBM Plex Sans'; outline:none;">
-                          <button data-kc-mem-resume-btn onClick="{{ mem.resumeView.intake.onResume }}" disabled="{{ mem.resumeView.intake.busy }}" style="margin-top:6px; padding:5px 13px; border-radius:7px; border:1px solid rgba(91,140,255,0.5); background:rgba(91,140,255,0.16); color:#5b8cff; cursor:pointer; font:600 11px 'IBM Plex Sans';">{{ mem.resumeView.intake.resumeLabel }}</button>
-                          <div style="font-size:9.5px; color: {{ t.sub }}; margin-top:4px;">Records the resume against checkpoint {{ mem.resumeView.intake.lastCheckpoint }}. Nothing is executed.</div>
+                          <label style="display:block; font-size:12px; color: {{ t.sub }}; margin-bottom:4px;">Next action for the record (leave empty to reuse the saved one)</label>
+                          <input data-kc-mem-next onInput="{{ mem.resumeView.intake.onInputNext }}" placeholder="What resuming means, in one line" style="width:100%; box-sizing:border-box; height:28px; padding:0 9px; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; font:500 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; outline:none;">
+                          <button data-kc-mem-resume-btn onClick="{{ mem.resumeView.intake.onResume }}" disabled="{{ mem.resumeView.intake.busy }}" style="margin-top:6px; padding:5px 13px; border-radius:7px; border:1px solid rgba(91,140,255,0.5); background:rgba(91,140,255,0.16); color:#5b8cff; cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">{{ mem.resumeView.intake.resumeLabel }}</button>
+                          <div style="font-size:12px; color: {{ t.sub }}; margin-top:4px;">Records the resume against checkpoint {{ mem.resumeView.intake.lastCheckpoint }}. Nothing is executed.</div>
                           <!-- session maintenance: close the work so it stops showing as in progress -->
                           <div style="display:flex; gap:6px; margin-top:10px; padding-top:8px; border-top:1px solid {{ t.border }};">
-                            <button data-kc-mem-intake-done onClick="{{ mem.resumeView.intake.onDone }}" disabled="{{ mem.resumeView.intake.closing }}" style="padding:5px 13px; border-radius:7px; border:1px solid rgba(52,211,153,0.5); background:rgba(52,211,153,0.14); color:#34d399; cursor:pointer; font:600 11px 'IBM Plex Sans';">{{ mem.resumeView.intake.doneLabel }}</button>
-                            <button data-kc-mem-intake-cancel onClick="{{ mem.resumeView.intake.onCancel }}" disabled="{{ mem.resumeView.intake.closing }}" style="padding:5px 13px; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font:600 11px 'IBM Plex Sans';">{{ mem.resumeView.intake.cancelLabel }}</button>
+                            <button data-kc-mem-intake-done onClick="{{ mem.resumeView.intake.onDone }}" disabled="{{ mem.resumeView.intake.closing }}" style="padding:5px 13px; border-radius:7px; border:1px solid rgba(52,211,153,0.5); background:rgba(52,211,153,0.14); color:#34d399; cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">{{ mem.resumeView.intake.doneLabel }}</button>
+                            <button data-kc-mem-intake-cancel onClick="{{ mem.resumeView.intake.onCancel }}" disabled="{{ mem.resumeView.intake.closing }}" style="padding:5px 13px; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">{{ mem.resumeView.intake.cancelLabel }}</button>
                           </div>
-                          <div style="font-size:9.5px; color: {{ t.sub }}; margin-top:4px;">Closing appends a checkpoint; the work and its history stay readable.</div>
+                          <div style="font-size:12px; color: {{ t.sub }}; margin-top:4px;">Closing appends a checkpoint; the work and its history stay readable.</div>
                         </div>
                       </sc-if>
-                      <sc-if value="{{ !mem.resumeView.intake.resumable }}" hint-placeholder-val="{{ true }}"><div style="margin-top:8px; padding:8px 10px; border-radius:8px; background: {{ t.chip }}; border:1px solid {{ t.border }}; font-size:10.5px; color: {{ t.sub }};">This work is closed or already completed — nothing to resume.</div></sc-if>
+                      <sc-if value="{{ !mem.resumeView.intake.resumable }}" hint-placeholder-val="{{ true }}"><div style="margin-top:8px; padding:8px 10px; border-radius:8px; background: {{ t.chip }}; border:1px solid {{ t.border }}; font-size:12px; color: {{ t.sub }};">This work is closed or already completed — nothing to resume.</div></sc-if>
                     </sc-if>
                   </div>
                 </sc-if>
@@ -599,7 +608,7 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex:none; margin-top:1px;"><path d="M12 9v4m0 4h.01M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" stroke="#f87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
             <div style="font-size:12.5px; line-height:1.5;"><b style="color:#f87171;">{{ mem.conflicts.length }} conflicting claim group{{ mem.conflictsPlural }}.</b>
               <sc-for list="{{ mem.conflicts }}" as="cf" hint-placeholder-count="2">
-                <div style="font-size:11px; color: {{ t.sub }}; margin-top:3px; word-break:break-word;">{{ cf.subject }} — {{ cf.count }} records disagree</div>
+                <div style="font-size:12px; color: {{ t.sub }}; margin-top:3px; word-break:break-word;">{{ cf.subject }} — {{ cf.count }} records disagree</div>
               </sc-for>
             </div>
           </div>
@@ -608,45 +617,45 @@
         <!-- capture policy chip -->
         <sc-if value="{{ mem.policy }}" hint-placeholder-val="{{ true }}">
           <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;">
-            <span style="display:inline-flex; align-items:center; gap:5px; padding:4px 9px; border-radius:6px; background: {{ t.chip }}; border:1px solid {{ t.border }}; font-size:11px; color: {{ t.sub }};">Capture policy: {{ mem.policy }}</span>
+            <span style="display:inline-flex; align-items:center; gap:5px; padding:4px 9px; border-radius:6px; background: {{ t.chip }}; border:1px solid {{ t.border }}; font-size:12px; color: {{ t.sub }};">Capture policy: {{ mem.policy }}</span>
           </div>
         </sc-if>
 
         <!-- detail view (lazy per-record fetch) -->
         <sc-if value="{{ mem.detail }}" hint-placeholder-val="{{ true }}">
           <div>
-            <button data-kc-mem-detail-back onClick="{{ mem.detail.onBack }}" style="height:26px; padding:0 10px; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font:600 10.5px 'IBM Plex Sans'; margin-bottom:12px;">{{ mem.detail.backLabel }}</button>
+            <button data-kc-mem-detail-back onClick="{{ mem.detail.onBack }}" style="height:26px; padding:0 10px; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; margin-bottom:12px;">{{ mem.detail.backLabel }}</button>
             <sc-if value="{{ mem.detail.loading }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color: {{ t.sub }};">Loading record…</div></sc-if>
             <sc-if value="{{ mem.detail.error }}" hint-placeholder-val="{{ true }}">
               <div style="font-size:12px; color:#f87171;">{{ mem.detail.error }}</div>
             </sc-if>
             <sc-if value="{{ mem.detail.ready }}" hint-placeholder-val="{{ true }}">
               <div>
-                <div style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; color: {{ t.sub }}; word-break:break-all; margin-bottom:8px;">{{ mem.detail.id }}</div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; color: {{ t.sub }}; word-break:break-all; margin-bottom:8px;">{{ mem.detail.id }}</div>
                 <div style="padding:11px 12px; border-radius:10px; border-left:3px solid {{ mem.detail.groupColor }}; background: {{ t.chip }}; font-size:12.5px; line-height:1.55; color: {{ t.text }};">{{ mem.detail.claim }}</div>
                 <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;">
                   <sc-for list="{{ mem.detail.chips }}" as="chip" hint-placeholder-count="3">
-                    <span style="display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:6px; font-size:10.5px; font-weight:600; background: {{ chip.bg }}; color: {{ chip.fg }};">{{ chip.label }}</span>
+                    <span style="display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:6px; font-size:12px; font-weight:600; background: {{ chip.bg }}; color: {{ chip.fg }};">{{ chip.label }}</span>
                   </sc-for>
                 </div>
                 <sc-if value="{{ mem.detail.times }}" hint-placeholder-val="{{ true }}">
-                  <div style="margin-top:10px; font-size:11px; line-height:1.6; color: {{ t.sub }};">{{ mem.detail.times }}</div>
+                  <div style="margin-top:10px; font-size:12px; line-height:1.6; color: {{ t.sub }};">{{ mem.detail.times }}</div>
                 </sc-if>
                 <sc-if value="{{ mem.detail.lineage }}" hint-placeholder-val="{{ true }}">
                   <div style="margin-top:12px;">
-                    <div style="font-size:10.5px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ t.sub }}; margin-bottom:5px;">Lineage</div>
-                    <div style="font-size:11px; line-height:1.6; color: {{ t.sub }}; font-family:'IBM Plex Mono',monospace; word-break:break-all;">{{ mem.detail.lineage }}</div>
+                    <div style="font-size:12px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ t.sub }}; margin-bottom:5px;">Lineage</div>
+                    <div style="font-size:12px; line-height:1.6; color: {{ t.sub }}; font-family:'IBM Plex Mono',monospace; word-break:break-all;">{{ mem.detail.lineage }}</div>
                   </div>
                 </sc-if>
                 <sc-if value="{{ mem.detail.anchors.length }}" hint-placeholder-val="{{ true }}">
                   <div style="margin-top:12px;">
-                    <div style="font-size:10.5px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ t.sub }}; margin-bottom:6px;">Anchors — checked against the current graph</div>
+                    <div style="font-size:12px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ t.sub }}; margin-bottom:6px;">Anchors — checked against the current graph</div>
                     <div style="display:flex; flex-direction:column; gap:4px;">
                       <sc-for list="{{ mem.detail.anchors }}" as="an" hint-placeholder-count="2">
                         <div style="display:flex; align-items:center; gap:8px; padding:7px 9px; border-radius:8px; border:1px solid {{ t.border }}; background: {{ t.chip }};">
                           <span style="width:9px; height:9px; border-radius:50%; flex:none; background: {{ an.color }};"></span>
-                          <span style="flex:1; min-width:0; font-family:'IBM Plex Mono',monospace; font-size:10.5px; color: {{ t.text }}; word-break:break-all;">{{ an.ref }}</span>
-                          <span style="flex:none; font-size:10px; font-weight:600; color: {{ an.color }};">{{ an.state }}</span>
+                          <span style="flex:1; min-width:0; font-family:'IBM Plex Mono',monospace; font-size:12px; color: {{ t.text }}; word-break:break-all;">{{ an.ref }}</span>
+                          <span style="flex:none; font-size:12px; font-weight:600; color: {{ an.color }};">{{ an.state }}</span>
                         </div>
                       </sc-for>
                     </div>
@@ -654,71 +663,71 @@
                 </sc-if>
                 <sc-if value="{{ mem.detail.evidence.length }}" hint-placeholder-val="{{ true }}">
                   <div style="margin-top:12px;">
-                    <div style="font-size:10.5px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ t.sub }}; margin-bottom:6px;">Evidence</div>
+                    <div style="font-size:12px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ t.sub }}; margin-bottom:6px;">Evidence</div>
                     <div style="display:flex; flex-direction:column; gap:4px;">
                       <sc-for list="{{ mem.detail.evidence }}" as="ev" hint-placeholder-count="2">
-                        <div style="padding:7px 9px; border-radius:8px; border:1px solid {{ t.border }}; background: {{ t.chip }}; font-size:11px; color: {{ t.sub }}; line-height:1.5;">{{ ev.label }}</div>
+                        <div style="padding:7px 9px; border-radius:8px; border:1px solid {{ t.border }}; background: {{ t.chip }}; font-size:12px; color: {{ t.sub }}; line-height:1.5;">{{ ev.label }}</div>
                       </sc-for>
                     </div>
                   </div>
                 </sc-if>
                 <sc-if value="{{ mem.detail.graph }}" hint-placeholder-val="{{ true }}">
                   <section data-kc-mem-graph aria-label="Connections and history" style="margin-top:12px;">
-                    <sc-if value="{{ mem.detail.graph.loading }}" hint-placeholder-val="{{ true }}"><div style="font-size:11px; color: {{ t.sub }};">Loading connections…</div></sc-if>
-                    <sc-if value="{{ mem.detail.graph.error }}" hint-placeholder-val="{{ true }}"><div role="status" style="font-size:11px; color:#f87171;">Connections unavailable: {{ mem.detail.graph.error }}</div></sc-if>
+                    <sc-if value="{{ mem.detail.graph.loading }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color: {{ t.sub }};">Loading connections…</div></sc-if>
+                    <sc-if value="{{ mem.detail.graph.error }}" hint-placeholder-val="{{ true }}"><div role="status" style="font-size:12px; color:#f87171;">Connections unavailable: {{ mem.detail.graph.error }}</div></sc-if>
                     <sc-if value="{{ mem.detail.graph.ready }}" hint-placeholder-val="{{ true }}">
                       <div>
-                        <sc-if value="{{ mem.detail.graph.historicalNote }}" hint-placeholder-val="{{ true }}"><div data-kc-mem-graph-state style="margin-bottom:8px; padding:7px 9px; border-radius:8px; border:1px solid rgba(245,158,11,0.45); background:rgba(245,158,11,0.10); font-size:11px; color: {{ t.text }};">{{ mem.detail.graph.historicalNote }}</div></sc-if>
+                        <sc-if value="{{ mem.detail.graph.historicalNote }}" hint-placeholder-val="{{ true }}"><div data-kc-mem-graph-state style="margin-bottom:8px; padding:7px 9px; border-radius:8px; border:1px solid rgba(245,158,11,0.45); background:rgba(245,158,11,0.10); font-size:12px; color: {{ t.text }};">{{ mem.detail.graph.historicalNote }}</div></sc-if>
                         <sc-if value="{{ mem.detail.graph.replacedBy.length }}" hint-placeholder-val="{{ true }}">
-                          <div style="font-size:10.5px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ t.sub }}; margin-bottom:6px;">Replaced by</div>
+                          <div style="font-size:12px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ t.sub }}; margin-bottom:6px;">Replaced by</div>
                           <ul style="list-style:none; margin:0 0 10px; padding:0; display:flex; flex-direction:column; gap:4px;">
                             <sc-for list="{{ mem.detail.graph.replacedBy }}" as="rb" hint-placeholder-count="1">
-                              <li><button data-kc-mem-replaced-by="{{ rb.ref }}" onClick="{{ rb.onOpen }}" style="display:block; width:100%; text-align:left; padding:7px 9px; border-radius:8px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer; font-family:'IBM Plex Mono',monospace; font-size:10.5px; word-break:break-all;">{{ rb.ref }}</button></li>
+                              <li><button data-kc-mem-replaced-by="{{ rb.ref }}" onClick="{{ rb.onOpen }}" style="display:block; width:100%; text-align:left; padding:7px 9px; border-radius:8px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer; font-family:'IBM Plex Mono',monospace; font-size:12px; word-break:break-all;">{{ rb.ref }}</button></li>
                             </sc-for>
                           </ul>
                         </sc-if>
-                        <h3 data-kc-mem-connections-head style="font-size:10.5px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ t.sub }}; margin:0 0 6px;">{{ mem.detail.graph.connectionsLabel }}</h3>
-                        <sc-if value="{{ mem.detail.graph.connectionsEmpty }}" hint-placeholder-val="{{ true }}"><div style="font-size:11px; color: {{ t.sub }}; margin-bottom:8px;">No authorized connections recorded for this claim.</div></sc-if>
+                        <h3 data-kc-mem-connections-head style="font-size:12px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ t.sub }}; margin:0 0 6px;">{{ mem.detail.graph.connectionsLabel }}</h3>
+                        <sc-if value="{{ mem.detail.graph.connectionsEmpty }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color: {{ t.sub }}; margin-bottom:8px;">No authorized connections recorded for this claim.</div></sc-if>
                         <ul data-kc-mem-connections style="list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:4px;">
                           <sc-for list="{{ mem.detail.graph.connections }}" as="cn" hint-placeholder-count="3">
                             <li>
                               <sc-if value="{{ cn.onOpen }}" hint-placeholder-val="{{ true }}">
-                                <button data-kc-mem-connection="{{ cn.ref }}" onClick="{{ cn.onOpen }}" aria-label="{{ cn.ariaLabel }}" style="display:block; width:100%; text-align:left; padding:7px 9px; border-radius:8px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer; font-family:'IBM Plex Sans';">
-                                  <span style="display:block; font-size:10px; font-weight:600; color: {{ t.sub }};">{{ cn.relation }} · {{ cn.kindLabel }} · open</span>
-                                  <span style="display:block; font-family:'IBM Plex Mono',monospace; font-size:10.5px; word-break:break-all; margin-top:2px;">{{ cn.ref }}</span>
+                                <button data-kc-mem-connection="{{ cn.ref }}" onClick="{{ cn.onOpen }}" aria-label="{{ cn.ariaLabel }}" style="display:block; width:100%; text-align:left; padding:7px 9px; border-radius:8px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer; font-family:'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">
+                                  <span style="display:block; font-size:12px; font-weight:600; color: {{ t.sub }};">{{ cn.relation }} · {{ cn.kindLabel }} · open</span>
+                                  <span style="display:block; font-family:'IBM Plex Mono',monospace; font-size:12px; word-break:break-all; margin-top:2px;">{{ cn.ref }}</span>
                                 </button>
                               </sc-if>
                               <sc-if value="{{ cn.static }}" hint-placeholder-val="{{ true }}">
                                 <div data-kc-mem-connection="{{ cn.ref }}" style="padding:7px 9px; border-radius:8px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }};">
-                                  <span style="display:block; font-size:10px; font-weight:600; color: {{ t.sub }};">{{ cn.relation }} · {{ cn.kindLabel }}</span>
-                                  <span style="display:block; font-family:'IBM Plex Mono',monospace; font-size:10.5px; word-break:break-all; margin-top:2px;">{{ cn.ref }}</span>
+                                  <span style="display:block; font-size:12px; font-weight:600; color: {{ t.sub }};">{{ cn.relation }} · {{ cn.kindLabel }}</span>
+                                  <span style="display:block; font-family:'IBM Plex Mono',monospace; font-size:12px; word-break:break-all; margin-top:2px;">{{ cn.ref }}</span>
                                 </div>
                               </sc-if>
-                              <span style="display:block; font-size:10px; color: {{ t.sub }}; padding:2px 9px 0; word-break:break-all;">{{ cn.support }}</span>
+                              <span style="display:block; font-size:12px; color: {{ t.sub }}; padding:2px 9px 0; word-break:break-all;">{{ cn.support }}</span>
                             </li>
                           </sc-for>
                         </ul>
                         <sc-if value="{{ mem.detail.graph.history.length }}" hint-placeholder-val="{{ true }}">
                           <div>
-                            <h3 data-kc-mem-history-head style="font-size:10.5px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ t.sub }}; margin:12px 0 6px;">History — no longer current</h3>
+                            <h3 data-kc-mem-history-head style="font-size:12px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ t.sub }}; margin:12px 0 6px;">History — no longer current</h3>
                             <ul data-kc-mem-history style="list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:4px;">
                               <sc-for list="{{ mem.detail.graph.history }}" as="hi" hint-placeholder-count="2">
-                                <li data-kc-mem-history-entry="{{ hi.assertionId }}" style="padding:7px 9px; border-radius:8px; border:1px dashed {{ t.border }}; font-size:10.5px; color: {{ t.sub }}; line-height:1.5; word-break:break-all;">{{ hi.label }}</li>
+                                <li data-kc-mem-history-entry="{{ hi.assertionId }}" style="padding:7px 9px; border-radius:8px; border:1px dashed {{ t.border }}; font-size:12px; color: {{ t.sub }}; line-height:1.5; word-break:break-all;">{{ hi.label }}</li>
                               </sc-for>
                             </ul>
                           </div>
                         </sc-if>
-                        <sc-if value="{{ mem.detail.graph.note }}" hint-placeholder-val="{{ true }}"><div style="margin-top:8px; font-size:10.5px; color: {{ t.sub }};">{{ mem.detail.graph.note }}</div></sc-if>
+                        <sc-if value="{{ mem.detail.graph.note }}" hint-placeholder-val="{{ true }}"><div style="margin-top:8px; font-size:12px; color: {{ t.sub }};">{{ mem.detail.graph.note }}</div></sc-if>
                       </div>
                     </sc-if>
                   </section>
                 </sc-if>
                 <sc-if value="{{ mem.detail.transitions.length }}" hint-placeholder-val="{{ true }}">
                   <div style="margin-top:12px;">
-                    <div style="font-size:10.5px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ t.sub }}; margin-bottom:6px;">Decision history</div>
+                    <div style="font-size:12px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ t.sub }}; margin-bottom:6px;">Decision history</div>
                     <div style="display:flex; flex-direction:column; gap:4px;">
                       <sc-for list="{{ mem.detail.transitions }}" as="tr" hint-placeholder-count="2">
-                        <div style="padding:7px 9px; border-radius:8px; border:1px solid {{ t.border }}; background: {{ t.chip }}; font-size:11px; color: {{ t.sub }}; line-height:1.5;">{{ tr }}</div>
+                        <div style="padding:7px 9px; border-radius:8px; border:1px solid {{ t.border }}; background: {{ t.chip }}; font-size:12px; color: {{ t.sub }}; line-height:1.5;">{{ tr }}</div>
                       </sc-for>
                     </div>
                   </div>
@@ -734,7 +743,7 @@
             <!-- group tabs -->
             <div style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:11px;">
               <sc-for list="{{ mem.tabs }}" as="tab" hint-placeholder-count="5">
-                <button onClick="{{ tab.onGo }}" style="display:inline-flex; align-items:center; gap:5px; padding:4px 9px; border-radius:7px; border:1px solid {{ tab.borderColor }}; background: {{ tab.bg }}; color: {{ t.text }}; font:600 11px 'IBM Plex Sans'; cursor:pointer;">
+                <button onClick="{{ tab.onGo }}" style="display:inline-flex; align-items:center; gap:5px; padding:4px 9px; border-radius:7px; border:1px solid {{ tab.borderColor }}; background: {{ tab.bg }}; color: {{ t.text }}; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; cursor:pointer;">
                   <span style="width:8px; height:8px; border-radius:50%; background: {{ tab.color }};"></span>{{ tab.label }}
                   <span style="color: {{ t.sub }}; font-weight:500;">{{ tab.count }}</span>
                 </button>
@@ -743,20 +752,20 @@
             <!-- rows -->
             <div style="display:flex; flex-direction:column; gap:5px;">
               <sc-for list="{{ mem.rows }}" as="r" hint-placeholder-count="4">
-                <button data-kc-mem-row="{{ r.id }}" onClick="{{ r.onOpen }}" style="display:flex; align-items:flex-start; gap:9px; width:100%; text-align:left; padding:9px 10px; border-radius:9px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer; font-family:'IBM Plex Sans';" style-hover="background: rgba(127,127,127,0.12);">
+                <button data-kc-mem-row="{{ r.id }}" onClick="{{ r.onOpen }}" style="display:flex; align-items:flex-start; gap:9px; width:100%; text-align:left; padding:9px 10px; border-radius:9px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer; font-family:'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;" style-hover="background: rgba(127,127,127,0.12);">
                   <span style="width:9px; height:9px; border-radius:50%; flex:none; margin-top:4px; background: {{ r.color }}; box-shadow:0 0 0 3px {{ r.glow }};"></span>
                   <span style="flex:1; min-width:0;">
                     <span style="display:flex; align-items:center; gap:6px; min-width:0;">
-                      <span style="font-size:10px; font-weight:600; letter-spacing:0.04em; text-transform:uppercase; color: {{ r.color }}; flex:none;">{{ r.groupLabel }}</span>
-                      <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color: {{ t.sub }}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ r.subject }}</span>
+                      <span style="font-size:12px; font-weight:600; letter-spacing:0.04em; text-transform:uppercase; color: {{ r.color }}; flex:none;">{{ r.groupLabel }}</span>
+                      <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; color: {{ t.sub }}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ r.subject }}</span>
                     </span>
                     <span style="display:block; font-size:12px; line-height:1.5; color: {{ t.text }}; margin-top:3px;">{{ r.claim }}</span>
                     <span style="display:flex; flex-wrap:wrap; gap:4px; margin-top:6px;">
                       <sc-for list="{{ r.chips }}" as="chip" hint-placeholder-count="2">
-                        <span style="display:inline-flex; align-items:center; gap:4px; padding:2px 7px; border-radius:5px; font-size:9.5px; font-weight:600; background: {{ chip.bg }}; color: {{ chip.fg }};">{{ chip.label }}</span>
+                        <span style="display:inline-flex; align-items:center; gap:4px; padding:2px 7px; border-radius:5px; font-size:12px; font-weight:600; background: {{ chip.bg }}; color: {{ chip.fg }};">{{ chip.label }}</span>
                       </sc-for>
                     </span>
-                    <span style="display:block; font-size:10px; color: {{ t.sub }}; margin-top:5px;">{{ r.time }}</span>
+                    <span style="display:block; font-size:12px; color: {{ t.sub }}; margin-top:5px;">{{ r.time }}</span>
                   </span>
                 </button>
               </sc-for>
@@ -788,20 +797,20 @@
   <sc-if value="{{ tour.on }}" hint-placeholder-val="{{ true }}">
     <div style="position:absolute; left:50%; bottom:22px; transform:translateX(-50%); z-index:25; width:440px; max-width:calc(100% - 320px); padding:15px 16px 14px; border-radius:14px; background: {{ t.panel }}; color: {{ t.text }}; border:1px solid {{ t.border }}; backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); box-shadow:0 18px 50px rgba(0,0,0,0.34); animation: kc-fade-in 0.22s ease;">
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
-        <span style="font-size:10.5px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:#5b8cff;">Guided tour · {{ tour.step }} / {{ tour.total }}</span>
+        <span style="font-size:12px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:#5b8cff;">Guided tour · {{ tour.step }} / {{ tour.total }}</span>
         <button onClick="{{ tour.onExit }}" style="width:24px; height:24px; display:flex; align-items:center; justify-content:center; border-radius:6px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font-size:14px; line-height:1;">×</button>
       </div>
       <div style="font-size:15.5px; font-weight:600; letter-spacing:-0.01em; margin-bottom:5px;">{{ tour.title }}</div>
       <div style="font-size:13px; line-height:1.5; color: {{ t.sub }};">{{ tour.text }}</div>
       <div style="display:flex; gap:8px; margin-top:14px;">
-        <button onClick="{{ tour.onPrev }}" style="flex:1; height:34px; border-radius:9px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; font:600 12.5px 'IBM Plex Sans'; cursor:pointer; opacity: {{ tour.prevOp }};">Back</button>
-        <button onClick="{{ tour.onNext }}" style="flex:1.5; height:34px; border-radius:9px; border:none; background:#5b8cff; color:#fff; font:600 12.5px 'IBM Plex Sans'; cursor:pointer;">{{ tour.nextLabel }}</button>
+        <button onClick="{{ tour.onPrev }}" style="flex:1; height:34px; border-radius:9px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; font:600 12.5px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; cursor:pointer; opacity: {{ tour.prevOp }};">Back</button>
+        <button onClick="{{ tour.onNext }}" style="flex:1.5; height:34px; border-radius:9px; border:none; background:#5b8cff; color:#fff; font:600 12.5px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; cursor:pointer;">{{ tour.nextLabel }}</button>
       </div>
     </div>
   </sc-if>
 
   <!-- tooltip -->
-  <div ref="{{ tipRef }}" style="position:absolute; z-index:30; pointer-events:none; display:none; max-width:260px; padding:9px 11px; border-radius:10px; background: {{ t.tip }}; color: {{ t.tipText }}; border:1px solid {{ t.border }}; box-shadow:0 8px 26px rgba(0,0,0,0.32); font-family:'IBM Plex Sans'; animation: kc-fade-in 0.12s ease;"></div>
+  <div ref="{{ tipRef }}" style="position:absolute; z-index:30; pointer-events:none; display:none; max-width:260px; padding:9px 11px; border-radius:10px; background: {{ t.tip }}; color: {{ t.tipText }}; border:1px solid {{ t.border }}; box-shadow:0 8px 26px rgba(0,0,0,0.32); font-family:'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; animation: kc-fade-in 0.12s ease;"></div>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:&quot;100%&quot;},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;dark&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;linkDistance&quot;:{&quot;editor&quot;:&quot;float&quot;,&quot;default&quot;:1.6,&quot;min&quot;:0.6,&quot;max&quot;:1.6,&quot;step&quot;:0.1,&quot;tsType&quot;:&quot;number&quot;}}">
@@ -810,7 +819,7 @@ class Component extends DCLogic {
   // (root + direct neighbors only) — lean by default, deep on demand — instead of always drawing
   // the full 2-hop neighborhood, which on a real repo can be hundreds of nodes with no "you are
   // here" (see toggleFocusDepth / the Horizon panel's expand control).
-  state = { theme: 'dark', mode: 'overview', selectedId: null, selectedClusterId: null, selectedClusterKind: null, clusterContext: false, clusterReturnId: null, selectedTrail: [], sourcePreview: null, sourceOpen: false, inspectorOpen: false, blast: false, query: '', hidden: {}, railOpen: true, helpOpen: false, openInspectorSections: {}, ready: false, tour: false, tourStep: 0, zoomTick: 0, focusDepth: 1, memOpen: false, memLoading: false, memError: null, memData: null, memHome: null, memGroup: null, memDetail: null };
+  state = { theme: 'dark', mode: 'overview', selectedId: null, selectedClusterId: null, selectedClusterKind: null, clusterContext: false, clusterReturnId: null, selectedTrail: [], sourcePreview: null, sourceOpen: false, inspectorOpen: false, blast: false, query: '', hidden: {}, railOpen: true, railDrawerOpen: false, compact: false, helpOpen: false, openInspectorSections: {}, ready: false, tour: false, tourStep: 0, zoomTick: 0, focusDepth: 1, memOpen: false, memLoading: false, memError: null, memData: null, memHome: null, memGroup: null, memDetail: null };
 
   KIND = { file:'#7c8aa5', symbol:'#5b8cff', method:'#6f9bff', function:'#8aa8ff', class:'#5b8cff', interface:'#a78bfa', 'doc-section':'#34d399', table:'#f59e0b', column:'#fbbf24', statement:'#2dd4bf', condition:'#f87171',
            // producer-emitted kinds (viz.ts deriveNodeKind + enums.ts) that were missing → gray + 'undefined' tooltip
@@ -829,6 +838,8 @@ class Component extends DCLogic {
   NOISE_KINDS = new Set(['assignment','case-branch','condition','cursor','raise','exception-handler','statement']);
   // Ledger groups in display order (stale first — they demand attention), mirroring the backend
   // LEDGER_GROUPS ordering the /memory.json projection ships.
+  THEME_KEY='knowledge-crib:theme';
+  COMPACT_QUERY='(max-width: 760px)';
   MEM_GROUPS=[['stale','Stale','#f87171'],['moved','Moved','#f59e0b'],['current','Current','#34d399'],['unanchored','Unanchored','#8b97a8'],['retracted','Retracted','#a78bfa']];
   TOUR = [
     { id:'registerRoutes', title:'The front door', text:'Every HTTP request enters through registerRoutes, which wires each endpoint to the service method behind it.' },
@@ -845,12 +856,15 @@ class Component extends DCLogic {
   constructor(props){ super(props); this.canvasRef=React.createRef(); this.miniRef=React.createRef(); this.tipRef=React.createRef(); this.rootRef=React.createRef(); this.searchRef=React.createRef(); this.inspectorToggleRef=React.createRef(); this.view={cx:0,cy:0,k:1}; this._fitOnResize=false; this.alpha=1; this.hoverId=null; this.highlight=null;
     // graph state — initialised empty so the RAF draw loop no-ops safely before loadGraph() resolves.
     this.nodes=[]; this.edges=[]; this.clusters=[]; this.byId={}; this.deg={}; this.adj={}; this.revDep={}; this.archAdj={}; this.graphIndexes={membersByCluster:{},incidentByNode:{},archAdj:{}}; this.anchors={}; this.layoutScale=1; this.stats=''; this.largeGraph=false; this.previewNodeIds=[]; this.previewNodeIdsByModule={}; this.overview=[]; this._overviewAll=[]; this.overviewOverflow=0; this.overviewById={}; this.overviewEdges=[]; this.overviewZoom=1; this._sourceSeq=0; this._sourceAbort=null; this._searchProjection=null; this._memSeq=0; this._memAbort=null;
+    this._modality='pointer'; this._inerted=new Set(); this._inspectorKey=null; this._inspectorReturn=null; this._railReturn=null; this._themeChosen=false;
+    this.state={...this.state, theme:this.initialTheme(), compact:this.matchesQuery(this.COMPACT_QUERY)};
   }
 
   componentDidMount(){
-    const it=(this.props.theme==='light'||this.props.theme==='dark')?this.props.theme:this.state.theme;
+    const it=this.initialTheme();
     if(it!==this.state.theme) this.setState({theme:it});
-    this.theme=this.themeP(it);
+    this.theme=this.readCanvasPalette(it); this._paletteFor=it;
+    this.bindShellMedia();
     this.canvas=this.canvasRef.current; this.ctx=this.canvas.getContext('2d');
     this.resize();
     this.ro=new ResizeObserver(()=>this.resize()); this.ro.observe(this.canvas.parentElement);
@@ -861,7 +875,68 @@ class Component extends DCLogic {
     this.loadGraph();
     this.setState({ready:true});
   }
-  componentWillUnmount(){ cancelAnimationFrame(this.raf); if(this.ro)this.ro.disconnect(); if(this._sourceAbort)this._sourceAbort.abort(); this.unbind(); }
+  componentDidUpdate(){
+    if(this._paletteFor!==this.state.theme){ this.theme=this.readCanvasPalette(this.state.theme); this._paletteFor=this.state.theme; }
+    this.syncModalLayers();
+    this.syncInspectorFocus();
+  }
+  componentWillUnmount(){ cancelAnimationFrame(this.raf); if(this.ro)this.ro.disconnect(); if(this._sourceAbort)this._sourceAbort.abort(); this.unbind(); this.unbindShellMedia(); }
+
+  // ---------- shell: theme, layout, modal layers, focus ----------
+  matchesQuery(query){ try{ return !!(window.matchMedia&&window.matchMedia(query).matches); }catch(_e){ return false; } }
+  // Theme precedence: an explicit component prop (design-tool preview), then the operator's saved
+  // choice, then the system preference. Storage can be missing, blocked, or hold junk, so every
+  // read and write is guarded: the toggle still works for the session when nothing persists.
+  storedTheme(){ try{ const v=window.localStorage.getItem(this.THEME_KEY); return v==='light'||v==='dark'?v:null; }catch(_e){ return null; } }
+  systemTheme(){ return this.matchesQuery('(prefers-color-scheme: light)')?'light':'dark'; }
+  initialTheme(){ const p=this.props&&this.props.theme; return (p==='light'||p==='dark')?p:(this.storedTheme()||this.systemTheme()); }
+  /** The canvas palette comes from the active tokens, read once per theme change, not per frame. */
+  readCanvasPalette(name){ const fallback=this.themeP(name); const root=this.rootRef.current;
+    if(!root||root.getAttribute('data-kc-theme')!==name||typeof getComputedStyle!=='function') return fallback;
+    const cs=getComputedStyle(root); const pick=(token,value)=>(cs.getPropertyValue(token)||'').trim()||value;
+    return { name, bg:pick('--kc-surface-page',fallback.bg), dot:pick('--kc-canvas-dot',fallback.dot), label:pick('--kc-canvas-label',fallback.label), labelPill:pick('--kc-canvas-pill',fallback.labelPill), nodeStroke:pick('--kc-canvas-node-stroke',fallback.nodeStroke) }; }
+  bindShellMedia(){
+    const listen=(query,fn)=>{ try{ const mq=window.matchMedia(query); if(mq.addEventListener)mq.addEventListener('change',fn); else if(mq.addListener)mq.addListener(fn); return ()=>{ if(mq.removeEventListener)mq.removeEventListener('change',fn); else if(mq.removeListener)mq.removeListener(fn); }; }catch(_e){ return ()=>{}; } };
+    // A narrower viewport closes the drawer rather than stranding it; the desktop rail preference
+    // (railOpen) is untouched, so widening again restores what the operator chose.
+    this._offCompact=listen(this.COMPACT_QUERY,()=>{ const compact=this.matchesQuery(this.COMPACT_QUERY); if(compact!==this.state.compact) this.setState({compact, railDrawerOpen:false}); });
+    this._offScheme=listen('(prefers-color-scheme: light)',()=>{ if(this._themeChosen||this.storedTheme()||(this.props&&this.props.theme)) return; this.setState({theme:this.systemTheme()}); });
+    this._onModalityPointer=()=>{ this._modality='pointer'; };
+    this._onModalityKey=(e)=>{ if(e.key!=='Shift'&&e.key!=='Meta'&&e.key!=='Control'&&e.key!=='Alt') this._modality='keyboard'; };
+    window.addEventListener('pointerdown',this._onModalityPointer,true); window.addEventListener('keydown',this._onModalityKey,true); }
+  unbindShellMedia(){ if(this._offCompact)this._offCompact(); if(this._offScheme)this._offScheme();
+    window.removeEventListener('pointerdown',this._onModalityPointer,true); window.removeEventListener('keydown',this._onModalityKey,true); }
+  /** Which layer currently owns the keyboard. Everything else in the shell is made inert. */
+  activeModal(){ const root=this.rootRef.current; if(!root) return null; const s=this.state;
+    if(s.memOpen) return { el:root.querySelector('[data-kc-memory-panel]'), keep:root.querySelector('[data-kc-memory-trigger]') };
+    if(s.compact&&s.railDrawerOpen) return { el:root.querySelector('[data-kc-navigation-rail]'), keep:null };
+    if(s.compact&&s.inspectorOpen) return { el:root.querySelector('[data-kc-inspector],[data-kc-inspector-placeholder]'), keep:null };
+    return null; }
+  // `inert` is applied imperatively: the template never renders it, so React never clobbers it, and
+  // a layer mounted by a later render is covered on that render's didUpdate. The trigger that
+  // toggles a modal stays operable (the Memory button is how pointer users expect to close it).
+  syncModalLayers(){ const root=this.rootRef.current; if(!root) return; const modal=this.activeModal(); const want=new Set();
+    if(modal&&modal.el){ for(const child of Array.from(root.children)){ if(child.contains(modal.el)) continue;
+        if(modal.keep&&child.contains(modal.keep)){ for(const inner of Array.from(child.children)) if(!inner.contains(modal.keep)) want.add(inner); continue; }
+        want.add(child); } }
+    for(const el of this._inerted) if(!want.has(el)&&el.hasAttribute('inert')) el.removeAttribute('inert');
+    for(const el of want) if(!el.hasAttribute('inert')) el.setAttribute('inert','');
+    this._inerted=want; }
+  focusable(el){ return !!(el&&el.isConnected&&!el.closest('[inert]')&&el.getClientRects().length); }
+  /** Return focus after a layer closes: the invoking control when it is still usable, else a fallback. */
+  restoreFocus(el,fallbackSelector){ setTimeout(()=>{ const target=this.focusable(el)?el:document.querySelector(fallbackSelector); if(target&&typeof target.focus==='function') target.focus(); },0); }
+  // Keyboard-initiated inspector openings move focus to its heading; pointer selection never moves
+  // focus. On close, focus returns to what opened it (a list row, the toggle) when that still exists.
+  syncInspectorFocus(){ const s=this.state; const key=s.inspectorOpen?(s.selectedId||s.selectedClusterId||'empty'):null; const prev=this._inspectorKey;
+    if(key===prev) return; this._inspectorKey=key;
+    if(key){ if(!prev){ const active=document.activeElement; this._inspectorReturn=active&&active!==document.body?active:null; }
+      if(this._modality==='keyboard'&&(s.compact||!prev)) this.keepFocus('[data-kc-inspector-heading]',25);
+      return; }
+    if(this._closeInspectorByControl||this._modality==='keyboard'){ const active=document.activeElement; if(!active||active===document.body||!active.isConnected) this.restoreFocus(this._inspectorReturn,'[data-kc-inspector-toggle]'); }
+    this._closeInspectorByControl=false; this._inspectorReturn=null; }
+  openRailDrawer(){ const active=document.activeElement; this._railReturn=active&&active!==document.body?active:null; this.setState({railDrawerOpen:true}); this.keepFocus('[data-kc-rail-heading]',25); }
+  closeRailDrawer(){ const back=this._railReturn; this._railReturn=null; this.setState({railDrawerOpen:false},()=>this.restoreFocus(back,'[data-kc-rail-toggle]')); }
+  searchShortcut(){ const nav=typeof navigator!=='undefined'?navigator:{}; const platform=(nav.userAgentData&&nav.userAgentData.platform)||nav.platform||nav.userAgent||''; return /mac|iphone|ipad|ipod/i.test(platform)?'⌘K':'Ctrl K'; }
 
   // ---------- data ----------
   async loadGraph(){
@@ -1698,8 +1773,10 @@ class Component extends DCLogic {
       // close what the operator is actually looking at. Previously this fell straight through to
       // closePanel() and the memory panel could only be dismissed with the mouse.
       if(k==='Escape'&&this.state.memOpen){ this.closeMemory(); return; }
-      if(k==='Escape'&&this.state.helpOpen){ this.setState({helpOpen:false}); return; }
+      if(k==='Escape'&&this.state.helpOpen){ this.closeHelp(); return; }
+      if(k==='Escape'&&this.state.compact&&this.state.railDrawerOpen){ this.closeRailDrawer(); return; }
       if(k==='Escape'){ this._cand=null; this.closePanel(); return; }
+      if(this.state.compact&&this.state.railDrawerOpen) return;
       if(k.toLowerCase()==='m'){this.toggleMemory();return;}
       if(k.toLowerCase()==='f'){this.resetView();return;}
       const sel=this.state.selectedId; if(!sel)return; const nb=this._nb||[]; if(!nb.length)return;
@@ -2043,17 +2120,19 @@ class Component extends DCLogic {
     if(v.lifecycle!=='active') out.push(this.memChip(this.memAxis(v.lifecycle),v.lifecycle==='active'?'good':'bad'));
     if(v.quarantined) out.push(this.memChip('quarantined','bad'));
     return out; }
-  toggleTheme(){ this.setState(s=>({theme:s.theme==='dark'?'light':'dark'})); }
+  toggleTheme(){ const next=this.state.theme==='dark'?'light':'dark'; this._themeChosen=true; try{ window.localStorage.setItem(this.THEME_KEY,next); }catch(_e){} this.setState({theme:next}); }
   toggleBlast(){ this.setState(s=>({blast:!s.blast})); this.reheat(0.2); }
   showOverview(){ if(!this.overview.length)return; this.setState({mode:'overview', blast:false, selectedId:null, selectedClusterId:null, selectedClusterKind:null, clusterContext:false, clusterReturnId:null, selectedTrail:[], sourcePreview:null, inspectorOpen:false}); }
   showFocus(){ if(this.state.selectedId){ this.arrangeNodeFocus(this.state.selectedId); this.setState({mode:'focus',blast:false}); this.reheat(0.08); return; } this.setState({mode:'focus',blast:false}); setTimeout(()=>this.fit(),0); this.reheat(0.25); }
   showBlast(){ if(this.state.mode==='overview')this.setState({mode:'focus',blast:true});else this.setState({blast:true}); this.reheat(.2); }
-  toggleHelp(){ this.setState(s=>({helpOpen:!s.helpOpen})); }
+  toggleHelp(){ if(this.state.helpOpen){ this.closeHelp(); return; } this.setState({helpOpen:true}); this.keepFocus('[data-kc-help-close]',25); }
+  closeHelp(){ this.setState({helpOpen:false},()=>this.restoreFocus(null,'[data-kc-help-trigger]')); }
   toggleInspector(){ if(this.state.inspectorOpen){this.closeInspector();return;} this.setState({inspectorOpen:true}); }
-  closeInspector(){ this.setState({inspectorOpen:false},()=>{if(this.inspectorToggleRef.current)this.inspectorToggleRef.current.focus();}); }
+  closeInspector(){ this._closeInspectorByControl=true; this.setState({inspectorOpen:false}); }
   toggleInspectorSection(title,defaultOpen){ this.setState(s=>({openInspectorSections:{...s.openInspectorSections,[title]:!(s.openInspectorSections[title]!==undefined?s.openInspectorSections[title]:defaultOpen)}})); }
   toggleInspectorSource(){ this.setState(s=>({sourceOpen:!s.sourceOpen})); }
-  toggleRail(){ this.setState((s)=>({railOpen:!s.railOpen})); }
+  toggleRail(){ if(this.state.compact){ if(this.state.railDrawerOpen)this.closeRailDrawer(); else this.openRailDrawer(); return; } this.setState((s)=>({railOpen:!s.railOpen})); }
+  openRail(){ if(this.state.compact){ if(!this.state.railDrawerOpen)this.openRailDrawer(); return; } this.setState({railOpen:true}); }
   resetFilters(){ this.setState({hidden:{}}); this.reheat(0.3); }
   formatRailLabel(value){
     const normalized=String(value||'')
@@ -2205,17 +2284,17 @@ class Component extends DCLogic {
 
   themeP(name){ if(name==='light') return { name:'light', bg:'#f4f6f9', dot:'rgba(15,23,42,0.07)', label:'#1e293b', labelPill:'rgba(255,255,255,0.82)', nodeStroke:'#ffffff' };
     return { name:'dark', bg:'#0c0f16', dot:'rgba(255,255,255,0.05)', label:'#dbe4f0', labelPill:'rgba(12,15,22,0.72)', nodeStroke:'#0c0f16' }; }
-  chrome(name){ if(name==='light') return { bg:'#f4f6f9', panel:'rgba(255,255,255,0.9)', text:'#1e293b', sub:'#64748b', border:'rgba(15,23,42,0.1)', chip:'rgba(15,23,42,0.04)', tip:'rgba(255,255,255,0.97)', tipText:'#1e293b', code:'#0c0f16', codeText:'#dbe4f0' };
-    return { bg:'#0c0f16', panel:'rgba(18,22,31,0.86)', text:'#e6edf6', sub:'#8b97a8', border:'rgba(255,255,255,0.09)', chip:'rgba(255,255,255,0.05)', tip:'rgba(20,24,34,0.96)', tipText:'#e6edf6', code:'rgba(0,0,0,0.35)', codeText:'#cbd5e1' }; }
+  // Template chrome resolves from tokens.css; the theme is selected by data-kc-theme on the shell.
+  chrome(){ return { bg:'var(--kc-surface-page)', panel:'var(--kc-surface-panel)', text:'var(--kc-text-primary)', sub:'var(--kc-text-secondary)', border:'var(--kc-border-separator)', chip:'var(--kc-fill)', tip:'var(--kc-surface-floating)', tipText:'var(--kc-text-primary)', code:'var(--kc-code-surface)', codeText:'var(--kc-code-text)' }; }
 
   renderVals(){
-    const theme=this.state.theme; this.theme=this.themeP(theme); const t=this.chrome(theme);
+    const theme=this.state.theme; if(!this.theme||this.theme.name!==theme) this.theme=this.themeP(theme); const t=this.chrome(theme);
     this.highlight=this.computeHL();
     // Derive the legend from the kinds actually present in the loaded graph (sorted for
     // stable order) instead of a hardcoded list that omitted symbol/media-seg/explanation/
     // enum/type/getter/setter/property — those nodes rendered but had no filter toggle.
     const kinds=[...new Set(this.nodes.map(n=>n.kind))].sort();
-    const kindList=kinds.map(k=>({ key:k, label:this.KLABEL[k]||k, count:String(this.nodes.filter(n=>n.kind===k).length), color:this.KIND[k]||'#888', op:this.state.hidden[k]?0.32:(this.NOISE_KINDS.has(k)?0.5:1), onToggle:()=>this.toggleKind(k) }));
+    const kindList=kinds.map(k=>({ key:k, label:this.KLABEL[k]||k, count:String(this.nodes.filter(n=>n.kind===k).length), color:this.KIND[k]||'#888', op:this.state.hidden[k]?0.32:(this.NOISE_KINDS.has(k)?0.5:1), pressed:this.state.hidden[k]?'false':'true', decoration:this.state.hidden[k]?'line-through':'none', help:this.state.hidden[k]?'Show this node type':'Hide this node type', onToggle:()=>this.toggleKind(k) }));
     // The rail consumes the same server overview as the canvas. Older servers do not provide
     // modules, so it safely falls back to the graph's functionality clusters.
     const railSource=this.vizModules||this.clusters;
@@ -2224,7 +2303,7 @@ class Component extends DCLogic {
       const selected=this.selectedModule===m.id||this.state.selectedClusterId===m.id;
       return { id:m.id, label:this.formatRailLabel(m.label||m.id), count:String(count), color:m.color||'#6e94ff', bg:selected?this.hex(m.color||'#6e94ff',.12):'transparent', border:selected?this.hex(m.color||'#6e94ff',.42):'transparent',
         help:this.vizModules?'Open this module in the architecture overview':'Open this functionality cluster',
-        onGo:()=>this.vizModules?this.selectModule(m.id):this.selectCluster(m.id) };
+        onGo:()=>{ if(this.state.compact&&this.state.railDrawerOpen)this.closeRailDrawer(); if(this.vizModules)this.selectModule(m.id); else this.selectCluster(m.id); } };
     });
     const sel=this.buildDetail();
     if(sel)sel.sections=(sel.sections||[]).map((section,index)=>{
@@ -2233,6 +2312,7 @@ class Component extends DCLogic {
       return {...section,open,caret:open?'▾':'▸',onToggle:()=>this.toggleInspectorSection(section.title,defaultOpen)};
     });
     const inspectorOpen=this.state.inspectorOpen;
+    const compact=!!this.state.compact; const drawerOpen=compact&&!!this.state.railDrawerOpen; const railExpanded=compact?drawerOpen:!!this.state.railOpen;
      const blastOn=this.state.blast;
      const overviewOn=this.state.mode==='overview'&&this.overview.length>0;
      const focusOn=!overviewOn;
@@ -2417,18 +2497,22 @@ class Component extends DCLogic {
       tourBg: tOn?'rgba(91,140,255,0.16)':t.chip, tourBorder: tOn?'rgba(91,140,255,0.5)':t.border, tourFg: tOn?'#5b8cff':t.text,
        rootRef:this.rootRef, canvasRef:this.canvasRef, miniRef:this.miniRef, tipRef:this.tipRef, searchRef:this.searchRef, inspectorToggleRef:this.inspectorToggleRef,
         t, stats:this.stats||'…', compactStats, kindList, moduleList, sel, focusEmpty, searchStatus, searchStatusColor,
-      railClass:this.state.railOpen?'':'kc-rail-collapsed', railWidth:this.state.railOpen?'256px':'64px',
+      theme, searchShortcut:this.searchShortcut(), themeToggleLabel:theme==='dark'?'Switch to light theme':'Switch to dark theme',
+      railClass:compact?(drawerOpen?'kc-mobile-open':'kc-rail-collapsed'):(this.state.railOpen?'':'kc-rail-collapsed'), railWidth:this.state.railOpen?'256px':'64px',
+      railRole:compact&&drawerOpen?'dialog':undefined, railModal:compact&&drawerOpen?'true':undefined, railExpanded:railExpanded?'true':'false',
+      inspectorRole:compact?'dialog':'region', inspectorModal:compact?'true':undefined,
+      helpExpanded:this.state.helpOpen?'true':'false', memExpanded:memOpen?'true':'false', openRail:()=>this.openRail(),
       inspectorClass:inspectorOpen?'':'kc-inspector-closed', inspectorEmpty:inspectorOpen&&!sel, inspectorDetail:inspectorOpen&&!!sel,
       inspectorExpanded:inspectorOpen?'true':'false', inspectorToggleLabel:inspectorOpen?'Hide inspector':'Open inspector',
        railNodeCount:this.nodes.length.toLocaleString(), railEdgeCount:this.edges.length.toLocaleString(), railModuleCount:String(railSource.length),
         stageSecondary, stageTertiary, stageOverflowOn:this.overviewOverflow>0, stageOverflowLabel:'+'+this.overviewOverflow+' more modules', memoryBadge, helpOpen:this.state.helpOpen, sourceOpen:this.state.sourceOpen, sourceCaret:this.state.sourceOpen?'▾':'▸',
        statusLabel:(this.state.mode==='overview'?'Architecture overview':'Focused graph')+' · '+railSource.length+' modules · '+this.nodes.length+' nodes',
        statusHint:'Drag to pan · Scroll to zoom · Fit to reset · M memory · Esc back',
-      railToggleIcon:this.state.railOpen?'‹':'›', railToggleLabel:this.state.railOpen?'Collapse navigation':'Expand navigation',
-      zoomLabel,
-      overviewBg: overviewOn?'#5b8cff':'transparent', overviewFg: overviewOn?'#fff':t.text,
-      focusBg: focusOn&&!blastOn?'#5b8cff':'transparent', focusFg: focusOn&&!blastOn?'#fff':t.text,
-      blastSegmentBg:blastOn?'rgba(248,113,113,.2)':'transparent', blastSegmentFg:blastOn?'#f87171':t.text,
+      railToggleIcon:compact?(drawerOpen?'×':'☰'):(this.state.railOpen?'‹':'›'), railToggleLabel:compact?(drawerOpen?'Close navigation':'Open navigation'):(this.state.railOpen?'Collapse navigation':'Expand navigation'),
+      zoomLabel, overviewPressed:overviewOn?'true':'false', focusPressed:focusOn&&!blastOn?'true':'false', blastPressed:blastOn?'true':'false',
+      overviewBg: overviewOn?'var(--kc-selected-surface)':'transparent', overviewFg: overviewOn?'var(--kc-selected-text)':t.text,
+      focusBg: focusOn&&!blastOn?'var(--kc-selected-surface)':'transparent', focusFg: focusOn&&!blastOn?'var(--kc-selected-text)':t.text,
+      blastSegmentBg:blastOn?'var(--kc-fill)':'transparent', blastSegmentFg:blastOn?'var(--kc-text-risk)':t.text,
        themeIcon: theme==='dark'?'☾':'☀',
       blastBg: blastOn?'rgba(248,113,113,0.16)':t.chip, blastBorder: blastOn?'rgba(248,113,113,0.5)':t.border, blastFg: blastOn?'#f87171':t.text,
        showOverview:()=>this.showOverview(), showFocus:()=>this.showFocus(), showBlast:()=>this.showBlast(), toggleHelp:()=>this.toggleHelp(), toggleInspectorSource:()=>this.toggleInspectorSource(),
@@ -2437,7 +2521,7 @@ class Component extends DCLogic {
       zoomOut:()=>this.zoomOut(), zoomIn:()=>this.zoomIn(),
       toggleTheme:()=>this.toggleTheme(), toggleBlast:()=>this.toggleBlast(), resetView:()=>this.resetView(), onSearch:(e)=>this.onSearch(e), closePanel:()=>this.closePanel(),
       mem, toggleMemory:()=>this.toggleMemory(), closeMemory:()=>this.closeMemory(),
-      memBg: memOpen?'rgba(52,211,153,0.16)':t.chip, memBorder: memOpen?'rgba(52,211,153,0.5)':t.border, memFg: memOpen?'#34d399':t.text, memAccent:'#34d399',
+      memBg: memOpen?'rgba(52,211,153,0.16)':t.chip, memBorder: memOpen?'rgba(52,211,153,0.5)':t.border, memFg: memOpen?'var(--kc-text-knowledge)':t.text, memAccent:'var(--kc-text-knowledge)',
      };
    }
 }
