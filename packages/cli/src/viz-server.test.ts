@@ -190,6 +190,7 @@ import {
   parseMemoryLedgerQuery,
   parseMemoryPendingQuery,
   parseResumeBody,
+  projectVizHealth,
   readMemoryGraphDetail,
   readMemoryHome,
   readMemoryIntakeDetail,
@@ -439,6 +440,47 @@ describe('record connections endpoint (WP-G7)', () => {
 });
 
 describe('memory home endpoint', () => {
+  it('reports the published revision independently from the loaded reader snapshot', () => {
+    const currentHead = 'a'.repeat(40);
+    const oldHead = 'b'.repeat(40);
+    const cold = {
+      indexedHead: currentHead,
+      currentHead,
+      publishedGeneration: null,
+      readerGeneration: null,
+      graphSourcePosition: null,
+      codeRevision: currentHead,
+      graphGeneration: null,
+      searchGeneration: null,
+      refreshState: 'idle',
+      stale: false,
+      staleReasons: [],
+      lastSuccessfulRefreshAt: '2026-09-22T10:00:00.000Z',
+      lastRefreshError: null,
+    } satisfies ReaderFreshness;
+    const result = projectVizHealth(
+      {
+        behindHead: false,
+        lastKnownGood: {
+          head: currentHead,
+          publishedAt: '2026-09-22T10:00:00.000Z',
+        },
+      },
+      cold,
+      { head: oldHead, lastSuccessfulAt: '2026-09-21T09:00:00.000Z' },
+    );
+    expect(result.codeIndex).toMatchObject({
+      checkedRevision: currentHead,
+      lastSuccessfulAt: '2026-09-22T10:00:00.000Z',
+      behindHead: false,
+    });
+    expect(result.readerFreshness).toMatchObject({
+      indexedHead: oldHead,
+      stale: true,
+      lastSuccessfulRefreshAt: '2026-09-21T09:00:00.000Z',
+    });
+  });
+
   it('projects lifecycle sections and independent health signals', () => {
     const home = mkdtempSync(join(tmpdir(), 'crib-viz-home-'));
     try {

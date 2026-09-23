@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { readFile, realpath } from 'node:fs/promises';
 import { isAbsolute, relative, resolve } from 'node:path';
 import type { SoulStore } from '@knowledge-crib/core';
-import type { ReaderFreshness } from '@knowledge-crib/mcp';
+import { type ReaderFreshness, STALE_REASONS } from '@knowledge-crib/mcp';
 import {
   type AuditResult,
   DEFAULT_LEDGER_PAGE,
@@ -199,10 +199,52 @@ export interface VizMemoryHomeOperations {
     reason?: string;
   };
   capture?: { lastSuccessfulAt?: string; pending?: number; dead?: number };
-  codeIndex?: { lastSuccessfulAt?: string; behindHead?: boolean; workerRunning?: boolean };
+  codeIndex?: {
+    checkedRevision?: string;
+    lastSuccessfulAt?: string;
+    behindHead?: boolean;
+    workerRunning?: boolean;
+  };
   sync?: { configured: boolean; lastSuccessfulAt?: string; pending?: number; dead?: number };
   /** WP4.7 — this viz process's reader freshness (cold shape: the viz server has no refresh loop). */
   readerFreshness?: ReaderFreshness;
+}
+
+/** Keep the published graph and the snapshot held by this viz process separate. */
+export function projectVizHealth(
+  published: {
+    behindHead: boolean;
+    lastKnownGood?: { head: string; publishedAt: string };
+  },
+  disk: ReaderFreshness,
+  loaded: { head: string | null; lastSuccessfulAt: string | null },
+): Pick<VizMemoryHomeOperations, 'codeIndex' | 'readerFreshness'> {
+  const publishedHead = published.lastKnownGood?.head ?? disk.indexedHead;
+  const publishedAt = published.lastKnownGood?.publishedAt ?? disk.lastSuccessfulRefreshAt;
+  const behindHead = published.lastKnownGood
+    ? published.behindHead
+    : publishedHead !== null && disk.currentHead !== null && publishedHead !== disk.currentHead;
+  const readerBehind =
+    loaded.head !== null && disk.currentHead !== null && loaded.head !== disk.currentHead;
+  const sourceUnknown = loaded.head !== null && disk.currentHead === null;
+  return {
+    codeIndex: {
+      ...(publishedHead ? { checkedRevision: publishedHead } : {}),
+      ...(publishedAt ? { lastSuccessfulAt: publishedAt } : {}),
+      behindHead,
+    },
+    readerFreshness: {
+      ...disk,
+      indexedHead: loaded.head,
+      lastSuccessfulRefreshAt: loaded.lastSuccessfulAt,
+      stale: readerBehind || sourceUnknown,
+      staleReasons: readerBehind
+        ? [STALE_REASONS.HEAD_MOVED]
+        : sourceUnknown
+          ? [STALE_REASONS.SOURCE_UNKNOWN]
+          : [],
+    },
+  };
 }
 
 /**
