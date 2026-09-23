@@ -76,6 +76,7 @@ import {
   recordSortTime,
   supersedeDecision,
 } from './evaluator.js';
+import { contradictedForReview, quarantinedRecordIds } from './feedback.js';
 import {
   type DependencyGenerations,
   type GenerationCache,
@@ -125,7 +126,9 @@ import {
   MAX_LEDGER_PAGE,
   capClaim,
   correlateAnchors,
+  inLedgerView,
   ledgerGroupOf,
+  reviewReasonsOf,
   standingOf,
 } from './ledger.js';
 import {
@@ -3724,11 +3727,32 @@ export class MemoryApi {
       ...this.foldedVerdicts(record, source, aliasIndex, decisions),
     }));
     const conflicts = conflictGroups(folded).map((c) => conflictSummaryOf(c));
+    // Recorded concerns awaiting review: contradicted feedback no quarantine has settled. Gathered
+    // ONCE per projection (never per row) from the same feedback + decision pools get()/audit() read.
+    const concernSubjects = new Set(
+      contradictedForReview(
+        this.allFeedback().map((f) => f.feedback),
+        quarantinedRecordIds(decisions.map((d) => d.decision)),
+      ).map((f) => f.subject),
+    );
     // Sort-time per id, built once — a comparator calling back into the records would be O(n²).
     const sortTimeById = new Map(gatheredRecords.map((r) => [r.id, recordSortTime(r)]));
+    const newestFirst = (a: LedgerRow, b: LedgerRow) =>
+      (sortTimeById.get(b.id) ?? '').localeCompare(sortTimeById.get(a.id) ?? '') ||
+      a.id.localeCompare(b.id);
     const rows = folded
       .map((f) =>
-        this.ledgerRow(f.record, f.source, f, aliasIndex, gatheredRecords, byId, nodes, conflicts),
+        this.ledgerRow(
+          f.record,
+          f.source,
+          f,
+          aliasIndex,
+          gatheredRecords,
+          byId,
+          nodes,
+          conflicts,
+          concernSubjects,
+        ),
       )
       .sort(
         (a, b) =>
@@ -3745,7 +3769,28 @@ export class MemoryApi {
       conflicts: conflicts.length,
     };
     for (const row of rows) counts[row.group] += 1;
-    const filtered = opts.group ? rows.filter((r) => r.group === opts.group) : rows;
+    if (opts.group && opts.view) {
+      throw new Error('ledger: `group` filters History and cannot be combined with `view`');
+    }
+    // Views count and filter with ONE predicate, before pagination, so a home tile's number is
+    // always the length of the list it opens.
+    const views = {
+      active: rows.filter((r) => inLedgerView('active', r)).length,
+      needsReview: rows.filter((r) => inLedgerView('needs-review', r)).length,
+    };
+    const blocking = (r: LedgerRow) => (r.reviewReasons.some((x) => x.blocking) ? 0 : 1);
+    const view = opts.view;
+    const filtered = view
+      ? rows
+          .filter((r) => inLedgerView(view, r))
+          .sort(
+            view === 'needs-review'
+              ? (a, b) => blocking(a) - blocking(b) || newestFirst(a, b)
+              : newestFirst,
+          )
+      : opts.group
+        ? rows.filter((r) => r.group === opts.group)
+        : rows;
     const offset = Math.max(0, Math.trunc(opts.offset ?? 0));
     const limit = Math.min(
       MAX_LEDGER_PAGE,
@@ -3758,6 +3803,7 @@ export class MemoryApi {
       offset,
       limit,
       counts,
+      views,
       conflicts,
       ...(capturePolicy ? { capturePolicy } : {}),
       // The gather paths are fail-loud (a corrupt shard throws, exactly as get()/audit() do) —
@@ -3818,8 +3864,15 @@ export class MemoryApi {
     byId: ReadonlyMap<string, Node>,
     nodes: readonly Node[],
     conflicts: readonly ConflictSummary[],
+    concernSubjects: ReadonlySet<string>,
   ): LedgerRow {
     const { verdicts, pool } = folded;
+    const concern =
+      concernSubjects.has(record.id) ||
+      aliasIndex.aliasesFor(record.id).some((a) => concernSubjects.has(a.legacyId));
+    const standing = standingOf(verdicts.trust);
+    const eligible = isRecallEligible(verdicts);
+    const rowConflicts = conflicts.filter((c) => c.recordIds.includes(record.id));
     const { anchors, status } = correlateAnchors(
       record as MemoryRecord | MemoryRecordV2,
       byId,
@@ -3835,12 +3888,12 @@ export class MemoryApi {
       visibility: visibilityOf(record),
       source,
       placement: this.placementsOf(record.id),
-      standing: standingOf(verdicts.trust),
+      standing,
       evidenceVerdict: verdicts.evidence,
       applicability: verdicts.applicability,
       lifecycle: verdicts.lifecycle,
       quarantined: verdicts.quarantined,
-      eligible: isRecallEligible(verdicts),
+      eligible,
       evidence: evidenceSummaries(record),
       validity: validityOf(record).validTime,
       ...(isV1
@@ -3854,10 +3907,20 @@ export class MemoryApi {
       supersededBy: this.supersededBy(record, aliasIndex, pool, gatheredRecords).map(
         ({ id, via, found }) => ({ id, via, found }),
       ),
-      conflicts: conflicts.filter((c) => c.recordIds.includes(record.id)),
+      conflicts: rowConflicts,
       anchors,
       anchorStatus: status,
       group: ledgerGroupOf(verdicts, status),
+      reviewReasons: reviewReasonsOf({
+        standing,
+        evidenceVerdict: verdicts.evidence,
+        applicability: verdicts.applicability,
+        lifecycle: verdicts.lifecycle,
+        quarantined: verdicts.quarantined,
+        eligible,
+        conflicts: rowConflicts,
+        concern,
+      }),
     };
   }
 

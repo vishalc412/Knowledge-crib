@@ -28,7 +28,8 @@ describe('viz web asset: memory ledger panel (G5.4)', () => {
     expect(html).toContain('/memory.json');
     expect(html).toContain('/memory/record.json');
     expect(html).toContain('/memory/home.json');
-    expect(html).toContain('Work in progress');
+    expect(html).toContain('Resumable work');
+    expect(html).toContain('data-kc-mem-view-heading');
     expect(html).toContain('Needs review');
     expect(html).toContain('Retrieval mode');
     expect(html).toContain('focus-visible');

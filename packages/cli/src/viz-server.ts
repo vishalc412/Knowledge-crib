@@ -14,8 +14,10 @@ import {
   type IntakeCheckpoint,
   type IntakeRequirement,
   LEDGER_GROUPS,
+  LEDGER_VIEWS,
   type LedgerGroup,
   type LedgerResult,
+  type LedgerView,
   MAX_LEDGER_PAGE,
   MAX_PENDING_PAGE,
   type MemoryApi,
@@ -150,7 +152,10 @@ export async function resolveVizAsset(assetsRoot: string, pathname: string): Pro
 export interface VizLedgerQuery {
   offset: number;
   limit: number;
+  /** History's lifecycle tab; rejected together with `view`. */
   group?: LedgerGroup;
+  /** a working view (Active / Needs review); omitted = History, the unfiltered ledger. */
+  view?: LedgerView;
 }
 
 /**
@@ -173,10 +178,23 @@ export function parseMemoryLedgerQuery(params: URLSearchParams): VizLedgerQuery 
     }
     group = rawGroup as LedgerGroup;
   }
+  let view: LedgerView | undefined;
+  const rawView = params.get('view');
+  if (rawView !== null) {
+    if (!(LEDGER_VIEWS as readonly string[]).includes(rawView)) {
+      throw new VizHttpError(400, `unknown view: ${rawView}`);
+    }
+    view = rawView as LedgerView;
+  }
+  // `group` is History's lifecycle tab; a working view has no tabs, so the pair is a caller error.
+  if (group !== undefined && view !== undefined) {
+    throw new VizHttpError(400, 'group and view cannot be combined');
+  }
   return {
     offset: parseCount('offset', params.get('offset')),
     limit: Math.min(MAX_LEDGER_PAGE, parseCount('limit', params.get('limit'))),
     ...(group !== undefined ? { group } : {}),
+    ...(view !== undefined ? { view } : {}),
   };
 }
 
@@ -228,7 +246,10 @@ export function readMemoryHome(
     limits: { openWork: 10, pending: 10, attention: 10, recent: 10 },
     now: new Date().toISOString(),
   });
+  // Tile counts come from the ledger's own view predicates, so every number equals the total of the
+  // list its tile opens. Handoff still owns Pending and Work; its agent contract is unchanged.
   const ledger = api.ledger({ offset: 0, limit: 1 });
+  const needsReviewCount = ledger.views.needsReview;
   // Resumable only: `count` is the full history including completed and cancelled intakes, and a
   // "work to resume" tile that counts finished work is simply lying to the operator. Stale work
   // (idle for two weeks or more) is counted apart for the same reason.
@@ -246,15 +267,15 @@ export function readMemoryHome(
         ? `${pending} captured learning(s) are waiting — open Pending and press Re-check to admit the ones that verify against the code; dismiss the rest.`
         : staleCount > 0
           ? `${staleCount} piece(s) of work went idle for two weeks or more — open Work to resume and mark each one done or cancel it.`
-          : handoff.counts.needsAttention > 0
-            ? 'Open Needs review and inspect the evidence or supersede the stale claim.'
+          : needsReviewCount > 0
+            ? `${needsReviewCount} claim(s) need review — open Needs review to see why each one is listed.`
             : 'Nothing needs you. Agents capture memories with memory_observe as they work, and each session re-checks what is pending.';
   return {
     configured: true as const,
     sections: {
-      active: { count: handoff.counts.active, preview: handoff.recent },
+      active: { count: ledger.views.active, preview: handoff.recent },
       pending: { count: handoff.counts.pendingCaptures, preview: handoff.pendingCaptures },
-      needsReview: { count: handoff.counts.needsAttention, preview: handoff.needsAttention },
+      needsReview: { count: needsReviewCount, preview: handoff.needsAttention },
       history: { count: ledger.total, groups: ledger.counts },
       resume: {
         count: resumeCount,

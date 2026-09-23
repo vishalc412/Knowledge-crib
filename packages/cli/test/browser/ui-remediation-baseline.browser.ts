@@ -51,13 +51,12 @@ test('light theme stage controls have readable text contrast', async ({ page }) 
 });
 
 test('Active and Needs review cards open matching destinations', async ({ page }) => {
-  test.fail(true, 'Phase 2: home cards currently route to History and Stale');
   await page.goto(backend.url);
   await page.locator('[data-kc-memory-trigger]').click();
-  await page.getByTitle('Open the current memory ledger').click();
+  await page.getByTitle('Open the claims agents can recall now').click();
   await expect(page.getByRole('heading', { name: 'Active', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Back to Memory home' }).click();
-  await page.getByTitle('Inspect stale or degraded evidence').click();
+  await page.getByTitle('Open the claims that need review, with the reason for each').click();
   await expect(page.getByRole('heading', { name: 'Needs review', exact: true })).toBeVisible();
 });
 

@@ -81,7 +81,12 @@ export class MemoryBackend {
   private server: ReturnType<typeof spawn> | null = null;
   private readonly env: NodeJS.ProcessEnv;
 
-  constructor() {
+  /**
+   * `reviewClaims` seeds that many extra active claims with degraded evidence (recall-eligible, yet
+   * listed in Needs review), plus one claim carrying a reported concern — enough to page past the
+   * first screen of both working views. Zero keeps the default fixture unchanged.
+   */
+  constructor(private readonly options: { reviewClaims?: number } = {}) {
     this.repo = mkdtempSync(join(tmpdir(), 'crib-browser-repo-'));
     this.home = mkdtempSync(join(tmpdir(), 'crib-browser-home-'));
     this.env = {
@@ -206,6 +211,7 @@ export class MemoryBackend {
     // 7b. WP-G7 — a small connected graph over two admitted claims: the current claim replaces
     //     a retired one, touches code, and is linked from the saved work above.
     await this.seedGraph();
+    if (this.options.reviewClaims) await this.seedReviewClaims(this.options.reviewClaims);
 
     // 8. The real viz server, headless (`--no-open`), on an ephemeral port.
     await this.startServer();
@@ -307,6 +313,57 @@ export class MemoryBackend {
       blocked: mem.memoryCandidateId(blockedSeed),
     };
   }
+
+  private async seedReviewClaims(count: number): Promise<void> {
+    const mem = (await import('@knowledge-crib/memory')) as {
+      MemoryStore: { local: (repoId: string, opts: unknown) => MemoryStorePort };
+      memoryRecordId: (input: unknown) => string;
+      feedbackId: (input: unknown) => string;
+    };
+    const store = mem.MemoryStore.local(this.repoId, { env: this.env, now: () => T0 });
+    const record = (index: number, evidence: 'valid' | 'degraded') => {
+      // A distinct subject per claim: same-subject claims with different text form conflicts.
+      const input = {
+        kind: 'fact',
+        subject: `topic:review-${String(index).padStart(3, '0')}`,
+        claim: `review claim ${String(index).padStart(3, '0')}`,
+        scope: { boundary: 'repo', repoId: this.repoId },
+        appliesTo: [this.sym.id],
+        evidence: [
+          {
+            kind: 'source-quote',
+            verdict: evidence,
+            checkedAt: T0,
+            soulId: this.sym.id,
+            quote: 'Normalizes input before hashing.',
+            targetHash: this.sym.hash,
+          },
+        ],
+        authorship: { actor: 'claude-code', kind: 'agent', tool: 'claude-code' },
+      };
+      return {
+        id: mem.memoryRecordId(input),
+        schemaVersion: '1',
+        ...input,
+        verdicts: { trust: 'local', evidence, applicability: 'current', lifecycle: 'active' },
+        createdAt: T0,
+      };
+    };
+    const degraded = Array.from({ length: count }, (_, i) => record(i, 'degraded'));
+    const concerned = record(count, 'valid');
+    store.upsertEntries('active', [...degraded, concerned]);
+    const concern = { signal: 'contradicted', subject: concerned.id, actor: 'human:reviewer' };
+    store.upsertEntry('feedback', {
+      id: mem.feedbackId(concern),
+      schemaVersion: '1',
+      ...concern,
+      ts: T0,
+    });
+    this.concernClaim = concerned.claim;
+  }
+
+  /** The claim text of the reported-concern fixture (set when `reviewClaims` is seeded). */
+  concernClaim = '';
 
   private async seedGraph(): Promise<void> {
     const mem = (await import('@knowledge-crib/memory')) as {

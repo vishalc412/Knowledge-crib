@@ -287,6 +287,26 @@ describe('parseMemoryLedgerQuery', () => {
     expect(() => parseMemoryLedgerQuery(new URLSearchParams('offset=-1'))).toThrow(VizHttpError);
     expect(() => parseMemoryLedgerQuery(new URLSearchParams('limit=1.5'))).toThrow(VizHttpError);
   });
+
+  it('accepts a working view and rejects unknown views or a view combined with a group', () => {
+    expect(parseMemoryLedgerQuery(new URLSearchParams('view=needs-review&limit=50'))).toEqual({
+      offset: 0,
+      limit: 50,
+      view: 'needs-review',
+    });
+    expect(parseMemoryLedgerQuery(new URLSearchParams('view=active')).view).toBe('active');
+    const status = (query: string) => {
+      try {
+        parseMemoryLedgerQuery(new URLSearchParams(query));
+        return 200;
+      } catch (err) {
+        return err instanceof VizHttpError ? err.status : 500;
+      }
+    };
+    expect(status('view=history')).toBe(400);
+    expect(status('view=active&group=stale')).toBe(400);
+    expect(status('view=needs-review&group=current')).toBe(400);
+  });
 });
 
 describe('memory ledger endpoints', () => {
@@ -321,6 +341,22 @@ describe('memory ledger endpoints', () => {
     expect(result.rows).toHaveLength(1);
     expect(result.rows[0]?.subject).toBe(MEM_LIVE);
     expect(result.rows[0]?.group).toBe('current');
+  });
+
+  it('serves working views additively: views counts and typed review reasons on every row', () => {
+    const api = memApi(home);
+    const history = readMemoryLedger(api, parseMemoryLedgerQuery(new URLSearchParams('')));
+    const active = readMemoryLedger(
+      api,
+      parseMemoryLedgerQuery(new URLSearchParams('view=active')),
+    );
+    if (!history.configured || !active.configured) throw new Error('memory not configured');
+    expect(history.views).toEqual({ active: 1, needsReview: 0 });
+    expect(active.total).toBe(history.views.active);
+    expect(active.rows[0]?.reviewReasons).toEqual([]);
+    // Existing History callers keep the unfiltered ledger and its group counts.
+    expect(history.total).toBe(1);
+    expect(history.counts.current).toBe(1);
   });
 
   it('composes detail from get + audit and 404s unknown ids', () => {
@@ -481,6 +517,12 @@ describe('memory home endpoint', () => {
         },
       });
       expect(result.nextAction.toLowerCase()).toContain('capture');
+      // Every tile count is the total of the ledger view the tile opens.
+      const api = memApi(home);
+      if (!result.configured) throw new Error('memory not configured');
+      expect(result.sections.active.count).toBe(api.ledger({ view: 'active' }).total);
+      expect(result.sections.needsReview.count).toBe(api.ledger({ view: 'needs-review' }).total);
+      expect(result.sections.history.count).toBe(api.ledger().total);
     } finally {
       rmSync(home, { recursive: true, force: true });
     }
