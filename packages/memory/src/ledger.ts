@@ -270,6 +270,9 @@ export interface LedgerRow {
   anchors: readonly LedgerAnchor[];
   anchorStatus: LedgerAnchorStatus;
   group: LedgerGroup;
+  /** why an ACTIVE record needs a person's attention (empty when it does not, and for retired
+   *  records, whose lifecycle already settled them). Blocking reasons come first. */
+  reviewReasons: readonly LedgerReviewReason[];
 }
 
 /** The whole ledger response (paginated). Deterministic: no wall clock anywhere in the shape. */
@@ -280,6 +283,8 @@ export interface LedgerResult {
   offset: number;
   limit: number;
   counts: Record<LedgerGroup, number> & { conflicts: number };
+  /** whole-ledger counts of the two working views; they can overlap (see {@link LedgerView}). */
+  views: { active: number; needsReview: number };
   conflicts: readonly LedgerConflictView[];
   /** the capture policy actually in force (absent when no policy.json exists). */
   capturePolicy?: { trustedRef: string; profiles: readonly string[] };
@@ -300,8 +305,83 @@ export interface LedgerOpts {
   offset?: number;
   /** page size, capped at {@link MAX_LEDGER_PAGE} (default {@link DEFAULT_LEDGER_PAGE}). */
   limit?: number;
-  /** return only this group's rows (counts always cover the WHOLE ledger). */
+  /** return only this group's rows (counts always cover the WHOLE ledger). History only. */
   group?: LedgerGroup;
+  /** return only one working view's rows; cannot be combined with `group`. */
+  view?: LedgerView;
+}
+
+// ─── working views (Active / Needs review) ───────────────────────────────────
+
+/**
+ * The two working views over the ledger. `active` is exactly the recall gate
+ * ({@link LedgerRow.eligible}). `needs-review` is every lifecycle-active record with at least one
+ * {@link LedgerReviewReason}. They OVERLAP by design: a record with degraded evidence stays
+ * recall-eligible (usable with caution) and still asks for review. History is the unfiltered
+ * ledger, reached by omitting `view`.
+ */
+export type LedgerView = 'active' | 'needs-review';
+
+export const LEDGER_VIEWS: readonly LedgerView[] = ['active', 'needs-review'];
+
+export type LedgerReviewReasonCode =
+  | 'not-admitted'
+  | 'evidence-invalid'
+  | 'applicability-needs-review'
+  | 'applicability-orphaned'
+  | 'quarantined'
+  | 'not-recall-eligible'
+  | 'evidence-degraded'
+  | 'conflict'
+  | 'concern';
+
+export interface LedgerReviewReason {
+  code: LedgerReviewReasonCode;
+  /** true when this reason alone keeps the record out of normal recall. */
+  blocking: boolean;
+}
+
+/** The row facts the review classifier reads — the ledger row's own effective verdicts. */
+export interface ReviewInputs {
+  standing: LedgerStanding;
+  evidenceVerdict: EffectiveVerdicts['evidence'];
+  applicability: EffectiveVerdicts['applicability'];
+  lifecycle: EffectiveVerdicts['lifecycle'];
+  quarantined: boolean;
+  eligible: boolean;
+  conflicts: readonly unknown[];
+  /** a recorded concern (contradicted feedback) that no quarantine has settled yet. */
+  concern: boolean;
+}
+
+/**
+ * Why a lifecycle-active record needs review, blocking reasons first. PURE. Retired records
+ * (superseded / retracted) return no reasons: their lifecycle already decided them. The
+ * `not-recall-eligible` fallback exists only so an ineligible row can never classify as needing
+ * nothing — every exclusion the recall gate applies has a named reason above it.
+ */
+export function reviewReasonsOf(row: ReviewInputs): LedgerReviewReason[] {
+  if (row.lifecycle !== 'active') return [];
+  const out: LedgerReviewReason[] = [];
+  const add = (code: LedgerReviewReasonCode, blocking: boolean) => out.push({ code, blocking });
+  if (row.standing === 'staged') add('not-admitted', true);
+  if (row.evidenceVerdict === 'invalid') add('evidence-invalid', true);
+  if (row.applicability === 'needs-review') add('applicability-needs-review', true);
+  if (row.applicability === 'orphaned') add('applicability-orphaned', true);
+  if (row.quarantined) add('quarantined', true);
+  if (!row.eligible && out.length === 0) add('not-recall-eligible', true);
+  if (row.evidenceVerdict === 'degraded') add('evidence-degraded', false);
+  if (row.conflicts.length > 0) add('conflict', false);
+  if (row.concern) add('concern', false);
+  return out;
+}
+
+/** True when a row belongs to the working view. PURE — the same predicate counts and filters. */
+export function inLedgerView(
+  view: LedgerView,
+  row: Pick<LedgerRow, 'eligible' | 'reviewReasons'>,
+): boolean {
+  return view === 'active' ? row.eligible : row.reviewReasons.length > 0;
 }
 
 /** Cap a claim for list display, deterministically (same input → same output, no ellipsis guess). */

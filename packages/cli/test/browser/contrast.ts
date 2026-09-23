@@ -70,7 +70,9 @@ export async function sampleTextContrast(
       const element = text.parentElement;
       if (!value || !element || seen.has(element)) continue;
       seen.add(element);
-      if (element.closest('[inert],[aria-hidden="true"]')) continue;
+      // WCAG 1.4.3 exempts inactive controls; everything else is sampled.
+      if (element.closest('[inert],[aria-hidden="true"],[aria-disabled="true"],:disabled'))
+        continue;
       const style = getComputedStyle(element);
       const box = element.getBoundingClientRect();
       if (style.visibility === 'hidden' || box.width < 2 || box.height < 2) continue;

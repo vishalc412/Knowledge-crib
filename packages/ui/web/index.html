@@ -397,7 +397,7 @@
       <!-- header -->
       <div style="padding:15px 16px 12px; border-bottom:1px solid {{ t.border }};">
         <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-          <h2 data-kc-memory-heading style="margin:0; font-size:12px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color: {{ memAccent }};">Memory home</h2>
+          <h2 data-kc-memory-heading tabindex="-1" style="margin:0; font-size:12px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color: {{ memAccent }};">Memory home</h2>
           <button aria-label="Close memory home" data-kc-memory-close onClick="{{ closeMemory }}" style="width:32px; height:32px; display:flex; align-items:center; justify-content:center; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer; font-size:15px; line-height:1;">×</button>
         </div>
         <div style="font-size:12.5px; line-height:1.45; color: {{ t.sub }}; margin-top:6px;">What agents recorded about this repo — and what went stale when the code moved.</div>
@@ -410,16 +410,20 @@
       </div>
 
       <div style="flex:1; overflow-y:auto; padding:13px 14px 16px;">
+        <sc-if value="{{ mem.homeError }}" hint-placeholder-val="{{ true }}">
+          <div role="alert" style="margin-bottom:10px; font-size:12px; color:var(--kc-text-risk);">Memory could not load: {{ mem.homeError }}</div>
+        </sc-if>
         <sc-if value="{{ mem.homeView }}" hint-placeholder-val="{{ true }}">
           <div style="margin-bottom:14px;">
             <div style="display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:5px;">
               <sc-for list="{{ mem.homeView.sections }}" as="section" hint-placeholder-count="5">
-                <button data-kc-memory-home-action title="{{ section.help }}" onClick="{{ section.onGo }}" style="min-width:0; padding:8px 6px; border-radius:9px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color:{{ t.text }}; text-align:center; cursor:pointer; font-family:'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">
+                <button data-kc-memory-home-action="{{ section.key }}" title="{{ section.help }}" onClick="{{ section.onGo }}" style="min-width:0; padding:8px 6px; border-radius:9px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color:{{ t.text }}; text-align:center; cursor:pointer; font-family:'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">
                   <div style="font-size:18px; font-weight:700; line-height:1; color: {{ section.color }};">{{ section.count }}</div>
                   <div style="font-size:12px; font-weight:700; letter-spacing:0.02em; color: {{ t.text }}; margin-top:5px; line-height:1.2;">{{ section.label }}</div>
                 </button>
               </sc-for>
             </div>
+            <p data-kc-mem-overlap-note style="margin:8px 2px 0; font-size:12px; line-height:1.45; color: {{ t.sub }};">{{ mem.homeView.overlapNote }}</p>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px;">
               <sc-for list="{{ mem.homeView.health }}" as="signal" hint-placeholder-count="4">
                 <div style="padding:8px 9px; border-radius:8px; border-left:3px solid {{ signal.color }}; background: {{ t.chip }}; min-width:0;">
@@ -532,6 +536,7 @@
                  form. Resume appends the normal checkpoint event; it never executes the work. -->
             <sc-if value="{{ mem.resumeView }}" hint-placeholder-val="{{ true }}">
               <div style="margin-top:8px;">
+                <div data-kc-mem-work-summary style="font-size:12px; color: {{ t.sub }}; margin:0 2px 6px;">{{ mem.resumeView.summary }}</div>
                 <div data-kc-mem-resume-list tabindex="-1" style="outline:none;">
                   <sc-for list="{{ mem.resumeView.choices }}" as="c" hint-placeholder-count="3">
                     <button data-kc-mem-choice="{{ c.intakeId }}" onClick="{{ c.onOpen }}" style="display:block; width:100%; text-align:left; padding:8px 9px; border-radius:8px; border:1px solid {{ t.border }}; background: {{ t.chip }}; margin-bottom:5px; cursor:pointer; font-family:'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">
@@ -737,18 +742,26 @@
           </div>
         </sc-if>
 
-        <!-- ledger list -->
+        <!-- ledger views: Active / Needs review / History, one 50-row page at a time -->
         <sc-if value="{{ mem.list }}" hint-placeholder-val="{{ true }}">
-          <div>
-            <!-- group tabs -->
-            <div style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:11px;">
-              <sc-for list="{{ mem.tabs }}" as="tab" hint-placeholder-count="5">
-                <button onClick="{{ tab.onGo }}" style="display:inline-flex; align-items:center; gap:5px; padding:4px 9px; border-radius:7px; border:1px solid {{ tab.borderColor }}; background: {{ tab.bg }}; color: {{ t.text }}; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; cursor:pointer;">
-                  <span style="width:8px; height:8px; border-radius:50%; background: {{ tab.color }};"></span>{{ tab.label }}
-                  <span style="color: {{ t.sub }}; font-weight:500;">{{ tab.count }}</span>
-                </button>
-              </sc-for>
-            </div>
+          <section data-kc-mem-view aria-labelledby="kc-mem-view-heading">
+            <button data-kc-mem-view-back onClick="{{ mem.listView.onBack }}" style="height:32px; padding:0 10px; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; margin-bottom:10px;">← Back to Memory home</button>
+            <h3 id="kc-mem-view-heading" data-kc-mem-view-heading tabindex="-1" style="margin:0; font-size:16px; font-weight:600; color: {{ t.text }};">{{ mem.listView.title }}</h3>
+            <p style="margin:4px 0 10px; font-size:12px; line-height:1.45; color: {{ t.sub }};">{{ mem.listView.note }}</p>
+            <!-- lifecycle tabs belong to History alone -->
+            <sc-if value="{{ mem.listView.hasTabs }}" hint-placeholder-val="{{ true }}">
+              <div role="group" aria-label="Lifecycle group" style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:11px;">
+                <sc-for list="{{ mem.tabs }}" as="tab" hint-placeholder-count="5">
+                  <button onClick="{{ tab.onGo }}" aria-pressed="{{ tab.pressed }}" style="display:inline-flex; align-items:center; gap:5px; min-height:32px; padding:4px 9px; border-radius:7px; border:1px solid {{ tab.borderColor }}; background: {{ tab.bg }}; color: {{ t.text }}; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; cursor:pointer;">
+                    <span aria-hidden="true" style="width:8px; height:8px; border-radius:50%; background: {{ tab.color }};"></span>{{ tab.label }}
+                    <span style="color: {{ t.sub }}; font-weight:500;">{{ tab.count }}</span>
+                  </button>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ mem.listView.pager }}" hint-placeholder-val="{{ true }}">
+              <div data-kc-mem-page-range style="font-size:12px; color: {{ t.sub }}; margin-bottom:6px;">{{ mem.listView.pager.from }}–{{ mem.listView.pager.to }} of {{ mem.listView.pager.total }}</div>
+            </sc-if>
             <!-- rows -->
             <div style="display:flex; flex-direction:column; gap:5px;">
               <sc-for list="{{ mem.rows }}" as="r" hint-placeholder-count="4">
@@ -756,10 +769,17 @@
                   <span style="width:9px; height:9px; border-radius:50%; flex:none; margin-top:4px; background: {{ r.color }}; box-shadow:0 0 0 3px {{ r.glow }};"></span>
                   <span style="flex:1; min-width:0;">
                     <span style="display:flex; align-items:center; gap:6px; min-width:0;">
-                      <span style="font-size:12px; font-weight:600; letter-spacing:0.04em; text-transform:uppercase; color: {{ r.color }}; flex:none;">{{ r.groupLabel }}</span>
-                      <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; color: {{ t.sub }}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ r.subject }}</span>
+                      <span style="font-size:12px; font-weight:600; letter-spacing:0.04em; text-transform:uppercase; color: {{ r.labelColor }}; flex:none;">{{ r.groupLabel }}</span>
+                      <span style="font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:12px; color: {{ t.sub }}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ r.subject }}</span>
                     </span>
                     <span style="display:block; font-size:12px; line-height:1.5; color: {{ t.text }}; margin-top:3px;">{{ r.claim }}</span>
+                    <sc-if value="{{ r.hasReasons }}" hint-placeholder-val="{{ true }}">
+                      <span data-kc-mem-reasons style="display:flex; flex-direction:column; gap:2px; margin-top:6px;">
+                        <sc-for list="{{ r.reasons }}" as="reason" hint-placeholder-count="1">
+                          <span style="display:block; font-size:12px; line-height:1.4;"><b style="color: {{ reason.tone }};">{{ reason.label }}</b> <span style="color: {{ t.sub }};">— {{ reason.meaning }}</span></span>
+                        </sc-for>
+                      </span>
+                    </sc-if>
                     <span style="display:flex; flex-wrap:wrap; gap:4px; margin-top:6px;">
                       <sc-for list="{{ r.chips }}" as="chip" hint-placeholder-count="2">
                         <span style="display:inline-flex; align-items:center; gap:4px; padding:2px 7px; border-radius:5px; font-size:12px; font-weight:600; background: {{ chip.bg }}; color: {{ chip.fg }};">{{ chip.label }}</span>
@@ -773,13 +793,19 @@
                 <div style="font-size:12px; color: {{ t.sub }}; padding:8px 2px; line-height:1.5;">{{ mem.emptyMessage }}</div>
               </sc-if>
               <sc-if value="{{ mem.error }}" hint-placeholder-val="{{ true }}">
-                <div style="font-size:12px; color:#f87171;">{{ mem.error }}</div>
+                <div role="alert" style="font-size:12px; color:var(--kc-text-risk);">{{ mem.error }}</div>
               </sc-if>
               <sc-if value="{{ mem.loading }}" hint-placeholder-val="{{ true }}">
-                <div style="font-size:12px; color: {{ t.sub }};">Loading ledger…</div>
+                <div style="font-size:12px; color: {{ t.sub }};">Loading…</div>
               </sc-if>
             </div>
-          </div>
+            <sc-if value="{{ mem.listView.pager.many }}" hint-placeholder-val="{{ true }}">
+              <nav aria-label="{{ mem.listView.title }} pages" style="display:flex; gap:6px; justify-content:space-between; margin-top:10px;">
+                <button data-kc-mem-page-prev onClick="{{ mem.listView.pager.onPrev }}" aria-disabled="{{ mem.listView.pager.prevDisabled }}" style="opacity:{{ mem.listView.pager.prevOpacity }}; min-height:32px; padding:0 12px; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">← Previous 50</button>
+                <button data-kc-mem-page-next onClick="{{ mem.listView.pager.onNext }}" aria-disabled="{{ mem.listView.pager.nextDisabled }}" style="opacity:{{ mem.listView.pager.nextOpacity }}; min-height:32px; padding:0 12px; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">Next 50 →</button>
+              </nav>
+            </sc-if>
+          </section>
         </sc-if>
       </div>
     </div>
@@ -819,7 +845,7 @@ class Component extends DCLogic {
   // (root + direct neighbors only) — lean by default, deep on demand — instead of always drawing
   // the full 2-hop neighborhood, which on a real repo can be hundreds of nodes with no "you are
   // here" (see toggleFocusDepth / the Horizon panel's expand control).
-  state = { theme: 'dark', mode: 'overview', selectedId: null, selectedClusterId: null, selectedClusterKind: null, clusterContext: false, clusterReturnId: null, selectedTrail: [], sourcePreview: null, sourceOpen: false, inspectorOpen: false, blast: false, query: '', hidden: {}, railOpen: true, railDrawerOpen: false, compact: false, helpOpen: false, openInspectorSections: {}, ready: false, tour: false, tourStep: 0, zoomTick: 0, focusDepth: 1, memOpen: false, memLoading: false, memError: null, memData: null, memHome: null, memGroup: null, memDetail: null };
+  state = { theme: 'dark', mode: 'overview', selectedId: null, selectedClusterId: null, selectedClusterKind: null, clusterContext: false, clusterReturnId: null, selectedTrail: [], sourcePreview: null, sourceOpen: false, inspectorOpen: false, blast: false, query: '', hidden: {}, railOpen: true, railDrawerOpen: false, compact: false, helpOpen: false, openInspectorSections: {}, ready: false, tour: false, tourStep: 0, zoomTick: 0, focusDepth: 1, memOpen: false, memLoading: false, memError: null, memData: null, memHome: null, memGroup: null, memView: 'home', memOffset: 0, memDetail: null };
 
   KIND = { file:'#7c8aa5', symbol:'#5b8cff', method:'#6f9bff', function:'#8aa8ff', class:'#5b8cff', interface:'#a78bfa', 'doc-section':'#34d399', table:'#f59e0b', column:'#fbbf24', statement:'#2dd4bf', condition:'#f87171',
            // producer-emitted kinds (viz.ts deriveNodeKind + enums.ts) that were missing → gray + 'undefined' tooltip
@@ -840,6 +866,20 @@ class Component extends DCLogic {
   // LEDGER_GROUPS ordering the /memory.json projection ships.
   THEME_KEY='knowledge-crib:theme';
   COMPACT_QUERY='(max-width: 760px)';
+  MEM_PAGE=50;
+  // Needs-review reasons in plain language: what each means for recall, not just its code.
+  MEM_REASONS={ 'not-admitted':['Not admitted yet','Recall ignores it until it is admitted.'],
+    'evidence-invalid':['Evidence invalid','Not recall-eligible: its evidence no longer supports the claim.'],
+    'applicability-needs-review':['Applicability unconfirmed','Not recall-eligible until someone confirms it still applies.'],
+    'applicability-orphaned':['Orphaned','Not recall-eligible: what it applied to no longer exists.'],
+    'quarantined':['Quarantined','Excluded from recall and kept for audit.'],
+    'not-recall-eligible':['Not recall-eligible','Excluded from normal recall.'],
+    'evidence-degraded':['Evidence degraded','Still recall-eligible — use with caution.'],
+    'conflict':['Conflicting claims','Another active claim disagrees; supersede one to resolve it.'],
+    'concern':['Concern reported','Someone reported this claim; it stays unchanged until reviewed.'] };
+  MEM_VIEWS={ active:{title:'Active',note:'Claims agents can recall right now. Some also appear in Needs review: degraded evidence stays usable, with caution.',empty:'No claims are recall-eligible yet.'},
+    'needs-review':{title:'Needs review',note:'Active claims that need a person, with the reason for each. Blocking reasons keep a claim out of recall; the others are advisory, so that claim is also counted in Active.',empty:'Nothing needs review: every active claim is recall-eligible with valid evidence and no reported concern.'},
+    history:{title:'History',note:'Every record, including superseded and retracted ones, grouped by lifecycle.',empty:'No memories yet. Agents record what they learn with memory_observe while they work, and every new session re-checks anything still pending.'} };
   MEM_GROUPS=[['stale','Stale','#f87171'],['moved','Moved','#f59e0b'],['current','Current','#34d399'],['unanchored','Unanchored','#8b97a8'],['retracted','Retracted','#a78bfa']];
   TOUR = [
     { id:'registerRoutes', title:'The front door', text:'Every HTTP request enters through registerRoutes, which wires each endpoint to the service method behind it.' },
@@ -1843,10 +1883,10 @@ class Component extends DCLogic {
   // Same fetch discipline as loadSource: AbortController + sequence guard, so a slow ledger
   // response can never overwrite a newer view, and closing the panel cancels the in-flight read.
   toggleMemory(){ if(this.state.memOpen){ this.closeMemory(); return; }
-    this.setState({memOpen:true, memData:null, memHome:null, memDetail:null, memGroup:null, memHomeAction:null, memError:null, memPending:null, memPendingLoading:false, memPendingError:null, memPendingOffset:0, memIntake:null, memMutationError:null, memAdmitting:null, memAnnounce:null, memProfile:null, memResumeNext:null, memResuming:false, memAdmittedNotice:null, memResumeNotice:null, selectedId:null, selectedClusterId:null, selectedClusterKind:null, clusterContext:false, clusterReturnId:null, selectedTrail:[], sourcePreview:null});
-    this.loadMemory(null); this.focusMemoryPanel(); }
+    this.setState({memOpen:true, memData:null, memHome:null, memDetail:null, memGroup:null, memView:'home', memOffset:0, memHomeAction:null, memError:null, memPending:null, memPendingLoading:false, memPendingError:null, memPendingOffset:0, memIntake:null, memMutationError:null, memAdmitting:null, memAnnounce:null, memProfile:null, memResumeNext:null, memResuming:false, memAdmittedNotice:null, memResumeNotice:null, selectedId:null, selectedClusterId:null, selectedClusterKind:null, clusterContext:false, clusterReturnId:null, selectedTrail:[], sourcePreview:null});
+    this.loadMemory({view:'home'}); this.focusMemoryPanel(); }
   closeMemory(){ if(this._memAbort)this._memAbort.abort(); if(this._memPendAbort)this._memPendAbort.abort(); if(this._memIntakeAbort)this._memIntakeAbort.abort();
-    this.setState({memOpen:false, memData:null, memHome:null, memDetail:null, memGroup:null, memHomeAction:null, memError:null, memPending:null, memPendingLoading:false, memPendingError:null, memPendingOffset:0, memIntake:null, memMutationError:null, memAdmitting:null, memAnnounce:null, memProfile:null, memResumeNext:null, memResuming:false, memAdmittedNotice:null, memResumeNotice:null});
+    this.setState({memOpen:false, memData:null, memHome:null, memDetail:null, memGroup:null, memView:'home', memOffset:0, memHomeAction:null, memError:null, memPending:null, memPendingLoading:false, memPendingError:null, memPendingOffset:0, memIntake:null, memMutationError:null, memAdmitting:null, memAnnounce:null, memProfile:null, memResumeNext:null, memResuming:false, memAdmittedNotice:null, memResumeNotice:null});
     // Return focus to what opened the panel. Without this the focus ring is left on a button whose
     // panel is gone, and a keyboard user has to tab from the top of the page to get back.
     this.keepFocus('[data-kc-memory-trigger]'); }
@@ -1875,21 +1915,47 @@ class Component extends DCLogic {
   /** Move focus INTO the panel once it renders, so a keyboard user lands on the new content. */
   focusMemoryPanel(){ this.keepFocus('[data-kc-memory-close]'); }
   openMemoryHomeAction(kind){
-    if(kind==='active'||kind==='history'){ this.setState({memHomeAction:null, memIntake:null}); this.loadMemory(null); return; }
-    if(kind==='needsReview'){ this.setState({memHomeAction:null, memIntake:null}); this.loadMemory('stale'); return; }
+    // Each count tile opens the ledger view whose predicate produced its number.
+    const view={active:'active',needsReview:'needs-review',history:'history'}[kind];
+    if(view){ this._memTile=kind; this.setState({memHomeAction:null, memIntake:null}); this.loadMemory({view}); this.keepFocus('[data-kc-mem-view-heading]'); return; }
     if(kind==='pending'){ this.setState({memHomeAction:'pending', memIntake:null, memMutationError:null, memAdmittedNotice:null}); this.loadMemoryPending(0); this.keepFocus('[data-kc-mem-action-head]'); return; }
     if(kind==='resume'){ this.setState({memHomeAction:'resume', memIntake:null, memMutationError:null, memResumeNotice:null}); this.keepFocus('[data-kc-mem-action-head]'); return; }
     this.setState({memHomeAction:kind});
   }
-  async loadMemory(group){ const seq=++this._memSeq; if(this._memAbort)this._memAbort.abort(); const controller=new AbortController(); this._memAbort=controller;
-    this.setState({memLoading:true, memError:null, memGroup:group||null, memDetail:null});
+  /**
+   * Load a Memory view: `home` (tiles), `active`, `needs-review`, or `history` (with an optional
+   * lifecycle group), one 50-row page at a time. `next` omitted reloads exactly what is on screen —
+   * the refresh every mutation performs — so a reviewer keeps their view and page.
+   */
+  async loadMemory(next){
+    const target=next?{view:next.view||'home', group:next.view==='history'?(next.group||null):null, offset:Math.max(0,next.offset||0)}
+      :{view:this.state.memView||'home', group:this.state.memGroup||null, offset:this.state.memOffset||0};
+    const seq=++this._memSeq; if(this._memAbort)this._memAbort.abort(); const controller=new AbortController(); this._memAbort=controller;
+    // Switching view or group drops the old rows at once so a new heading never sits over the
+    // previous list; paging and refreshes keep them until the replacement arrives.
+    const switching=!!next&&(target.view!==(this.state.memView||'home')||target.group!==(this.state.memGroup||null));
+    const md=this.state.memData;
+    this.setState({memLoading:true, memError:null, memView:target.view, memGroup:target.group, memOffset:target.offset, memDetail:null,
+      ...(switching&&md&&md.configured?{memData:{...md, rows:[], total:0, offset:0}}:{})});
+    const q=new URLSearchParams();
+    if(target.view==='home') q.set('limit','1');
+    else { q.set('limit',String(this.MEM_PAGE)); q.set('offset',String(target.offset));
+      if(target.view!=='history') q.set('view',target.view); else if(target.group) q.set('group',target.group); }
     try{ const [res,homeRes]=await Promise.all([
-        fetch('/memory.json'+(group?('?group='+encodeURIComponent(group)):''),{signal:controller.signal,cache:'no-store'}),
+        fetch('/memory.json?'+q.toString(),{signal:controller.signal,cache:'no-store'}),
         fetch('/memory/home.json',{signal:controller.signal,cache:'no-store'})]);
       if(!res.ok)throw new Error(await res.text()); if(!homeRes.ok)throw new Error(await homeRes.text());
       const [data,home]=await Promise.all([res.json(),homeRes.json()]); if(seq!==this._memSeq)return;
+      // A refresh can shrink the list under the reviewer (an admission, a closed item): step back to
+      // the last page that still has rows rather than showing an empty page past the end.
+      if(target.view!=='home'&&target.offset>0&&data.configured&&data.total<=target.offset){
+        this.loadMemory({...target, offset:Math.max(0,Math.floor((data.total-1)/this.MEM_PAGE)*this.MEM_PAGE)}); return; }
       this.setState({memLoading:false, memData:data, memHome:home});
+      if(next&&target.view!=='home'&&data.configured){ const meta=this.MEM_VIEWS[target.view];
+        this.announceMemory(meta.title+': '+data.total+' record'+(data.total===1?'':'s')+(data.total>this.MEM_PAGE?(', showing '+(target.offset+1)+' to '+Math.min(target.offset+this.MEM_PAGE,data.total)):'')); }
     }catch(err){ if(controller.signal.aborted||seq!==this._memSeq)return; this.setState({memLoading:false, memError:String(err&&err.message||err)}); } }
+  backToMemoryHome(){ const tile=this._memTile; this.loadMemory({view:'home'});
+    this.keepFocus(tile?'[data-kc-memory-home-action="'+tile+'"]':'[data-kc-memory-heading]'); }
   async loadMemoryDetail(id,row,fromTrail){ const seq=++this._memSeq; if(this._memAbort)this._memAbort.abort(); const controller=new AbortController(); this._memAbort=controller;
     // WP-G7 — the trail is the list/detail navigation stack: opening a linked claim pushes the
     // current one, Back pops it, and an empty trail returns to the ledger row that opened it.
@@ -1942,7 +2008,7 @@ class Component extends DCLogic {
   /** Open linked work through the authorized intake detail (the server re-checks authorization). */
   openLinkedWork(intakeId){ this._memTrail=[]; const origin=this.state.memDetail&&this.state.memDetail.id;
     this._memWorkOrigin=origin||null;
-    this.setState({memDetail:null, memHomeAction:'resume', memMutationError:null, memResumeNotice:null});
+    this.setState({memDetail:null, memView:'home', memHomeAction:'resume', memMutationError:null, memResumeNotice:null});
     this.loadIntakeDetail(intakeId); }
   backToLedger(){ const trail=this._memTrail||[]; const prev=trail.pop();
     if(prev){ this.loadMemoryDetail(prev.id,prev.row,true); return; }
@@ -2109,7 +2175,9 @@ class Component extends DCLogic {
     if(raw===String.fromCharCode(99,97,110,100,105,100,97,116,101)) return 'staged';
     if(raw===String.fromCharCode(116,114,117,115,116)) return 'standing';
     return raw; }
-  memChip(label,tone){ const T={good:['rgba(52,211,153,0.16)','#34d399'],warn:['rgba(245,158,11,0.16)','#f59e0b'],bad:['rgba(248,113,113,0.16)','#f87171'],dim:['rgba(139,151,168,0.18)','#8b97a8'],info:['rgba(91,140,255,0.16)','#5b8cff']}; const pair=T[tone]||T.dim; return {label,bg:pair[0],fg:pair[1]}; }
+  // Chip text uses the theme's text tokens on a neutral fill; tinted-accent text measured 1.6–2.5:1.
+  memChip(label,tone){ const T={good:'var(--kc-text-positive)',warn:'var(--kc-text-review)',bad:'var(--kc-text-risk)',dim:'var(--kc-text-secondary)',info:'var(--kc-text-interactive)'}; return {label,bg:'var(--kc-fill)',fg:T[tone]||T.dim}; }
+  memGroupText(group){ return {stale:'var(--kc-text-risk)',moved:'var(--kc-text-review)',current:'var(--kc-text-positive)'}[group]||'var(--kc-text-secondary)'; }
   // A ledger ROW carries its verdict as `evidenceVerdict` and the per-item evidence views as the
   // `evidence` array; a record DETAIL passes `verdicts.evidence` as the string. Reading `evidence`
   // blindly rendered "evidence: [object Object]" on every ledger row.
@@ -2331,7 +2399,7 @@ class Component extends DCLogic {
     const stageSecondary=selectedModule?this.formatRailLabel(selectedModule.label||selectedModule.id):(selectedBlock?this.formatRailLabel(selectedBlock.label||selectedBlock.id):(focusOn?'Focus':null));
     const stageTertiary=selectedNode?(selectedNode.qualified||selectedNode.label||selectedNode.id):null;
     const badgeData=this.state.memData;
-    const memoryBadge=badgeData&&badgeData.counts?String((badgeData.counts.stale||0)+(badgeData.counts.moved||0)):'•';
+    const memoryBadge=badgeData&&badgeData.views?String(badgeData.views.needsReview):(badgeData&&badgeData.counts?String((badgeData.counts.stale||0)+(badgeData.counts.moved||0)):'•');
      const tOn=this.state.tour; const ts=this.TOUR[this.state.tourStep]||{title:'No tour available',text:'This project has no indexed symbols to tour yet.'}; const isLast=this.state.tourStep>=this.TOUR.length-1; const isFirst=this.state.tourStep<=0;
     // ── memory ledger view model (G5.4) ── the /memory.json projection is already display-shaped;
     // this only adds chrome (colors, chips, handlers) and the lazy per-record detail sub-view.
@@ -2350,26 +2418,29 @@ class Component extends DCLogic {
       // invisible, and measured as such in the audit. Conditionals are resolved HERE, so the
       // template only ever interpolates a finished value.
       const tabChrome=(on,color)=>({bg:on?'rgba(127,127,127,0.14)':t.chip, borderColor:on?color:t.border});
-      const tabs=[{key:null,label:'All',color:'#8b97a8',count:configured?totalRows:0,on:!this.state.memGroup,onGo:()=>this.loadMemory(null),...tabChrome(!this.state.memGroup,'#8b97a8')}]
-        .concat(this.MEM_GROUPS.map((g)=>({key:g[0],label:g[1],color:g[2],count:(configured&&counts[g[0]])||0,on:this.state.memGroup===g[0],onGo:()=>this.loadMemory(g[0]),...tabChrome(this.state.memGroup===g[0],g[2])})));
+      const memView=this.state.memView||'home'; const onHome=memView==='home';
+      const tabs=memView!=='history'?[]:[{key:null,label:'All',color:'#8b97a8',count:configured?totalRows:0,on:!this.state.memGroup,pressed:!this.state.memGroup?'true':'false',onGo:()=>this.loadMemory({view:'history'}),...tabChrome(!this.state.memGroup,'#8b97a8')}]
+        .concat(this.MEM_GROUPS.map((g)=>({key:g[0],label:g[1],color:g[2],count:(configured&&counts[g[0]])||0,on:this.state.memGroup===g[0],pressed:this.state.memGroup===g[0]?'true':'false',onGo:()=>this.loadMemory({view:'history',group:g[0]}),...tabChrome(this.state.memGroup===g[0],g[2])})));
       const rows=((md&&md.rows)||[]).map((r)=>{ const color=groupColor(r.group);
         const chips=this.memVerdictChips(r);
         if(r.anchorStatus==='stale') chips.push(this.memChip('anchors stale','bad'));
         else if(r.anchorStatus==='moved') chips.push(this.memChip('anchors moved','warn'));
         if((r.supersededBy||[]).length) chips.push(this.memChip('superseded','dim'));
-        return { id:r.id, color, glow:this.hex(color,0.18), groupLabel:groupLabel(r.group), subject:r.subject, claim:r.claim, chips,
+        const reasons=(r.reviewReasons||[]).map((x)=>{ const copy=this.MEM_REASONS[x.code]||[x.code,'']; return {label:copy[0], meaning:copy[1], blocking:x.blocking, tone:x.blocking?'var(--kc-text-risk)':'var(--kc-text-review)'}; });
+        return { id:r.id, color, labelColor:this.memGroupText(r.group), glow:this.hex(color,0.18), groupLabel:groupLabel(r.group), subject:r.subject, claim:r.claim, chips, reasons, hasReasons:reasons.length>0,
           time:r.recordedAt?('recorded '+r.recordedAt):(r.createdAt?('created '+r.createdAt):''), onOpen:()=>this.loadMemoryDetail(r.id,r) }; });
       const conflicts=((md&&md.conflicts)||[]).map((c)=>({subject:c.subject||c.propositionKey||c.key,count:(c.recordIds||[]).length}));
       const policy=md&&md.capturePolicy?('ref '+md.capturePolicy.trustedRef+' · profiles '+md.capturePolicy.profiles.join(', ')):null;
       const hs=(mh&&mh.sections)||{}; const hh=(mh&&mh.health)||{};
       const openHomeAction=(kind)=>()=>this.openMemoryHomeAction(kind);
-      const homeView=mh&&mh.configured?{
+      const homeView=onHome&&mh&&mh.configured?{
         sections:[
-          {label:'Active',count:(hs.active&&hs.active.count)||0,color:'#34d399',help:'Open the current memory ledger',onGo:openHomeAction('active')},
-          {label:'Pending',count:(hs.pending&&hs.pending.count)||0,color:'#f59e0b',help:'Review pending outcomes',onGo:openHomeAction('pending')},
-          {label:'Needs review',count:(hs.needsReview&&hs.needsReview.count)||0,color:'#f87171',help:'Inspect stale or degraded evidence',onGo:openHomeAction('needsReview')},
-          {label:'History',count:(hs.history&&hs.history.count)||0,color:'#8b97a8',help:'Open the full append-only ledger',onGo:openHomeAction('history')},
-          {label:'Work in progress',count:(hs.resume&&hs.resume.count)||0,color:'#5b8cff',help:'Continue, finish or cancel saved work',onGo:openHomeAction('resume')}],
+          {key:'active',label:'Active',count:(hs.active&&hs.active.count)||0,color:'#34d399',help:'Open the claims agents can recall now',onGo:openHomeAction('active')},
+          {key:'pending',label:'Pending',count:(hs.pending&&hs.pending.count)||0,color:'#f59e0b',help:'Review pending outcomes',onGo:openHomeAction('pending')},
+          {key:'needsReview',label:'Needs review',count:(hs.needsReview&&hs.needsReview.count)||0,color:'#f87171',help:'Open the claims that need review, with the reason for each',onGo:openHomeAction('needsReview')},
+          {key:'history',label:'History',count:(hs.history&&hs.history.count)||0,color:'#8b97a8',help:'Open the full append-only ledger',onGo:openHomeAction('history')},
+          {key:'resume',label:'Resumable work',count:(hs.resume&&hs.resume.count)||0,color:'#5b8cff',help:'Continue, finish or cancel saved work',onGo:openHomeAction('resume')}],
+        overlapNote:'Active and Needs review can overlap: a claim with degraded evidence stays usable, with caution, and still asks for review.',
         health:[
           {label:'Retrieval mode',value:(hh.retrieval&&hh.retrieval.mode)||'unknown',color:hh.retrieval&&hh.retrieval.mode==='on-device-semantic'?'#34d399':'#f59e0b'},
           {label:'Last capture',value:(hh.capture&&hh.capture.lastSuccessfulAt)||'none yet',color:hh.capture&&hh.capture.lastSuccessfulAt?'#34d399':'#8b97a8'},
@@ -2423,7 +2494,7 @@ class Component extends DCLogic {
           recheckLabel:this.state.memRechecking?'Re-checking…':'Re-check against the code',
           onProfile:(e)=>this.setState({memProfile:e.target.value}) };
       }else if(actionKind==='resume'){
-        homeAction={title:'Work in progress', detail:'Saved work, active first. Open one to continue it, mark it done, or cancel it. Stale = no checkpoint for two weeks or more; nothing closes on its own.'};
+        homeAction={title:'Resumable work', detail:'Saved work, active first. Open one to continue it, mark it done, or cancel it. Stale = no checkpoint for two weeks or more; nothing closes on its own.'};
         const allBriefs=(hs.resume&&hs.resume.choices)||[];
         const isClosed=(c)=>c.status==='completed'||c.status==='cancelled';
         const briefs=allBriefs.filter((c)=>!isClosed(c)).sort((a,b)=>(a.stale?1:0)-(b.stale?1:0));
@@ -2458,7 +2529,9 @@ class Component extends DCLogic {
             onBack:()=>this.closeIntakeDetail(), onResume:()=>this.resumeIntake(st.id),
             onInputNext:(e)=>this.setState({memResumeNext:e.target.value}) };
         }
+        const staleWork=(hs.resume&&hs.resume.staleCount)||0;
         resumeView={ choices, intake, empty:choices.length===0, notice:this.state.memResumeNotice,
+          summary:'resumable '+((hs.resume&&hs.resume.count)||0)+' · stale '+staleWork+' · closed '+closedCount,
           closedLabel:closedCount?(closedCount+' finished or cancelled item'+(closedCount===1?'':'s')+' kept in history.'):null };
       }
       let detail=null;
@@ -2484,11 +2557,23 @@ class Component extends DCLogic {
             graph:this.memGraphView(memDetailState.graph) };
         }
       }
-      mem={ notConfigured:!!(md&&!md.configured), homeView, homeAction, pendingView, resumeView, announce:this.state.memAnnounce||null,
-        conflicts, conflictsPlural:conflicts.length===1?'':'s', policy,
-        detail, list:configured&&!detail,
-        loading:!!(this.state.memLoading&&!detail), error:this.state.memError, empty:configured&&rows.length===0,
-        emptyMessage:this.state.memGroup?'No records match this lifecycle view. Return to All or inspect Needs review above.':'No memories yet. Agents record what they learn with memory_observe while they work, and every new session re-checks anything still pending.',
+      // One working view at a time: its heading, a Back to the tiles, and a 50-row page over the
+      // server's own total, so every counted record is reachable however long the list is.
+      const viewMeta=onHome?null:this.MEM_VIEWS[memView];
+      // The range comes from the RESPONSE, never the requested offset: while the next page loads, the
+      // label must keep describing the rows actually on screen.
+      const total=(md&&md.total)||0; const offset=(md&&typeof md.offset==='number')?md.offset:0; const shown=rows.length;
+      const pager=viewMeta&&configured?{ from:total?String(offset+1):'0', to:String(Math.min(offset+shown,total)), total:String(total),
+        many:total>this.MEM_PAGE, prevDisabled:offset<=0?'true':'false', nextDisabled:offset+shown>=total?'true':'false',
+        prevOpacity:offset<=0?0.55:1, nextOpacity:offset+shown>=total?0.55:1,
+        onPrev:()=>{ if(offset>0) this.loadMemory({view:memView,group:this.state.memGroup,offset:Math.max(0,offset-this.MEM_PAGE)}); },
+        onNext:()=>{ if(offset+shown<total) this.loadMemory({view:memView,group:this.state.memGroup,offset:offset+this.MEM_PAGE}); } }:null;
+      const listView=viewMeta?{ title:viewMeta.title, note:viewMeta.note, onBack:()=>this.backToMemoryHome(), pager, hasTabs:tabs.length>0 }:null;
+      mem={ notConfigured:!!(md&&!md.configured), homeView, homeAction:onHome?homeAction:null, pendingView:onHome?pendingView:null, resumeView:onHome?resumeView:null, announce:this.state.memAnnounce||null,
+        conflicts:onHome?conflicts:[], conflictsPlural:conflicts.length===1?'':'s', policy:onHome?policy:null,
+        detail, list:configured&&!detail&&!!listView, listView, homeError:onHome?this.state.memError:null,
+        loading:!!(this.state.memLoading&&!detail), error:this.state.memError, empty:configured&&!!listView&&!this.state.memLoading&&rows.length===0,
+        emptyMessage:this.state.memGroup?'No records in this lifecycle group. Choose All to see every record.':(viewMeta?viewMeta.empty:''),
         tabs, rows };
     }
      return {
