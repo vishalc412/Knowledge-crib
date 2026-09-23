@@ -19,12 +19,64 @@
 <style>
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; }
+  [data-kc-shell="signal-console"] {
+    --kc-bg: #0a0d13;
+    --kc-panel: rgba(16,20,28,0.94);
+    --kc-raised: #161b25;
+    --kc-text: #e8edf5;
+    --kc-text-2: #b3bdcc;
+    --kc-muted: #8592a4;
+    --kc-line: rgba(255,255,255,0.08);
+    --kc-fill: rgba(255,255,255,0.045);
+    --kc-accent-code: #6e94ff;
+    --kc-accent-knowledge: #43d8c9;
+    --kc-accent-review: #f5b942;
+    --kc-accent-risk: #fb7b75;
+  }
   ::-webkit-scrollbar { width: 9px; height: 9px; }
   ::-webkit-scrollbar-thumb { background: rgba(128,140,160,0.35); border-radius: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
   button:focus-visible, input:focus-visible { outline: 3px solid #43d8c9 !important; outline-offset: 2px; }
+  button, input { font-family:'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif !important; }
   @keyframes kc-panel-in { from { opacity: 0; transform: translateX(18px); } to { opacity: 1; transform: translateX(0); } }
   @keyframes kc-fade-in { from { opacity: 0; } to { opacity: 1; } }
+  [data-kc-shell="signal-console"] { display:grid !important; grid-template-rows:52px minmax(0,1fr) 26px !important; grid-template-columns:var(--kc-rail-width) minmax(0,1fr) var(--kc-inspector-width) !important; }
+  .kc-topbar { grid-column:1 / -1; grid-row:1; position:relative !important; top:auto !important; left:auto !important; right:auto !important; height:52px !important; padding:0 14px !important; gap:10px !important; background:var(--kc-panel) !important; border-bottom-color:var(--kc-line) !important; box-shadow:none !important; }
+  .kc-brand { flex:0 0 180px !important; min-width:180px !important; }
+  [data-kc-graph-stage] { grid-area:2 / 2; position:relative; min-width:0; min-height:0; overflow:hidden; background:var(--kc-bg); }
+  .kc-stage-canvas { position:absolute; inset:0; width:100%; height:100%; display:block; cursor:grab; }
+  .kc-command-segment { height:32px; display:flex; align-items:center; padding:2px; gap:2px; border-radius:8px; border:1px solid var(--kc-line); background:var(--kc-fill); flex:none; }
+  .kc-stage-chrome { position:absolute; z-index:4; pointer-events:none; }
+  .kc-stage-float { pointer-events:auto; display:flex; align-items:center; gap:7px; padding:5px 9px; border-radius:8px; border:1px solid var(--kc-line); background:rgba(16,20,28,.9); color:var(--kc-muted); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); box-shadow:0 8px 24px rgba(0,0,0,.16); }
+  .kc-stage-tool { width:28px; height:26px; border:0; border-radius:6px; background:transparent; color:var(--kc-text); cursor:pointer; font:700 15px 'IBM Plex Sans'; }
+  .kc-stage-tool:hover { background:var(--kc-fill); }
+  .kc-navigation-rail { grid-column:1; grid-row:2; position:relative !important; top:auto !important; bottom:auto !important; left:auto !important; z-index:22; width:auto !important; display:flex; flex-direction:column; overflow:hidden; border:0; border-right:1px solid var(--kc-line); border-radius:0; background:var(--kc-panel); box-shadow:none; backdrop-filter:none; -webkit-backdrop-filter:none; transition:width 180ms ease; }
+  .kc-rail-header { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:12px 12px 10px; border-bottom:1px solid var(--kc-line); }
+  .kc-rail-body { flex:1; min-width:0; overflow:auto; padding:11px 8px 12px; }
+  .kc-rail-kicker { font-size:10px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--kc-muted); }
+  .kc-rail-stats { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin:10px 4px 15px; }
+  .kc-rail-stat { padding:9px; border:1px solid var(--kc-line); border-radius:8px; background:var(--kc-fill); }
+  .kc-rail-stat strong { display:block; color:var(--kc-text); font:700 15px 'IBM Plex Sans'; }
+  .kc-rail-stat span { display:block; margin-top:3px; color:var(--kc-muted); font:500 10px 'IBM Plex Sans'; }
+  .kc-rail-section { display:flex; align-items:center; justify-content:space-between; margin:0 4px 7px; color:var(--kc-muted); font:700 10px 'IBM Plex Sans'; letter-spacing:.09em; text-transform:uppercase; }
+  .kc-rail-item { width:100%; display:flex; align-items:center; gap:8px; padding:7px 8px; border:1px solid transparent; border-radius:7px; background:transparent; color:var(--kc-text); text-align:left; cursor:pointer; font-family:'IBM Plex Sans'; }
+  .kc-rail-item:hover { background:var(--kc-fill); border-color:var(--kc-line); }
+  .kc-rail-item-label { min-width:0; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; font-weight:600; }
+  .kc-rail-item-count { color:var(--kc-muted); font:500 10.5px 'IBM Plex Mono'; }
+  .kc-rail-collapsed .kc-rail-body, .kc-rail-collapsed .kc-rail-title { display:none; }
+  .kc-rail-collapsed { width:auto; align-items:center; }
+  .kc-rail-collapsed .kc-rail-header { padding:8px; border-bottom:0; }
+  .kc-legend { display:none !important; }
+  .kc-inspector-empty, [data-kc-inspector] { grid-area:2 / 3; position:relative !important; top:auto !important; right:auto !important; bottom:auto !important; width:auto !important; max-width:none !important; border:0 !important; border-left:1px solid var(--kc-line) !important; border-radius:0 !important; background:var(--kc-panel) !important; box-shadow:none !important; }
+  .kc-inspector-empty { z-index:19; padding:18px; color:var(--kc-muted); }
+  .kc-inspector-empty strong { display:block; color:var(--kc-text); font:600 15px 'IBM Plex Sans'; }
+  .kc-inspector-empty p { margin:7px 0 0; font:400 12px/1.55 'IBM Plex Sans'; }
+  [data-kc-shell="signal-console"].kc-inspector-closed { --kc-inspector-width:0px !important; }
+  .kc-memory-panel { grid-area:2 / 1 / 3 / 4; position:relative !important; inset:auto !important; width:auto !important; max-width:none !important; z-index:40 !important; border-radius:0 !important; background:var(--kc-panel) !important; }
+  .kc-statusline { grid-column:1 / -1; grid-row:3; position:relative; right:auto; bottom:auto; left:auto; z-index:18; display:flex; align-items:center; justify-content:space-between; padding:0 14px; border-top:1px solid var(--kc-line); color:var(--kc-muted); font:500 10px 'IBM Plex Sans'; letter-spacing:.01em; pointer-events:none; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; scroll-behavior:auto !important; transition-duration:0.01ms !important; } }
+  @media (max-width: 1100px) { [data-kc-shell="signal-console"]:not(.kc-inspector-closed) { --kc-inspector-width: 310px !important; } .kc-hide-compact { display:none !important; } }
+  @media (max-width: 760px) { [data-kc-shell="signal-console"], [data-kc-shell="signal-console"]:not(.kc-inspector-closed) { --kc-inspector-width: 0px !important; --kc-rail-width: 52px !important; } .kc-navigation-rail { width:auto !important; } .kc-navigation-rail .kc-rail-body, .kc-navigation-rail .kc-rail-title { display:none; } .kc-inspector-empty, [data-kc-inspector] { grid-area:2 / 2 !important; border-left:0 !important; } .kc-statusline { display:none; } }
   @media (max-width: 900px) {
     .kc-topbar { gap: 8px !important; padding: 0 10px !important; }
     .kc-brand { flex: 0 0 34px !important; min-width: 34px !important; overflow: hidden !important; }
@@ -43,19 +95,49 @@
      edge and could not be reached at all. Wrapping keeps every control reachable rather than
      deleting some of them: the bar grows to a second row and the canvas starts below it. */
   @media (max-width: 620px) {
+    [data-kc-shell="signal-console"] { grid-template-rows:max-content minmax(0,1fr) 26px !important; }
     .kc-topbar { flex-wrap: wrap !important; height: auto !important; min-height: 58px; padding: 7px 10px !important; row-gap: 7px !important; }
     .kc-search { order: 10; flex: 1 1 100% !important; }
     .kc-search input { width: 100% !important; }
-    .kc-memory-panel { width: calc(100% - 28px) !important; max-width: 520px !important; }
+    .kc-memory-panel { width:auto !important; max-width:none !important; }
   }
 </style>
 </helmet>
-<div ref="{{ rootRef }}" style="position:fixed; inset:0; overflow:hidden; font-family:'IBM Plex Sans',system-ui,sans-serif; background: {{ t.bg }};">
+<div ref="{{ rootRef }}" data-kc-shell="signal-console" class="{{ inspectorClass }}" style="--kc-bg:{{ t.bg }}; --kc-panel:{{ t.panel }}; --kc-raised:{{ t.code }}; --kc-text:{{ t.text }}; --kc-text-2:{{ t.sub }}; --kc-muted:{{ t.sub }}; --kc-line:{{ t.border }}; --kc-fill:{{ t.chip }}; --kc-rail-width:{{ railWidth }}; --kc-inspector-width:356px; position:fixed; inset:0; overflow:hidden; font-family:'IBM Plex Sans',system-ui,sans-serif; background:var(--kc-bg);">
 
-  <canvas ref="{{ canvasRef }}" style="position:absolute; inset:0; width:100%; height:100%; display:block; cursor:grab;"></canvas>
+  <main data-kc-graph-stage aria-label="Knowledge graph stage">
+    <canvas ref="{{ canvasRef }}" class="kc-stage-canvas"></canvas>
+    <div class="kc-stage-chrome" style="top:10px; left:12px; right:12px; display:flex; align-items:flex-start; gap:8px;">
+      <div data-kc-stage-breadcrumbs class="kc-stage-float" aria-label="Graph location">
+        <button onClick="{{ showOverview }}" style="padding:0; border:0; background:none; color:#9dbaff; cursor:pointer; font:600 11.5px 'IBM Plex Sans';">Overview</button>
+        <sc-if value="{{ stageSecondary }}" hint-placeholder-val="{{ true }}">
+          <span style="font:500 11px 'IBM Plex Sans';">/</span>
+          <span style="max-width:190px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--kc-text-2); font:600 11.5px 'IBM Plex Sans';">{{ stageSecondary }}</span>
+        </sc-if>
+        <sc-if value="{{ stageTertiary }}" hint-placeholder-val="{{ true }}">
+          <span style="font:500 11px 'IBM Plex Sans';">/</span>
+          <span style="max-width:190px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--kc-text); font:600 11.5px 'IBM Plex Sans';">{{ stageTertiary }}</span>
+        </sc-if>
+      </div>
+      <sc-if value="{{ stageOverflowOn }}" hint-placeholder-val="{{ true }}">
+        <button data-kc-stage-overflow onClick="{{ toggleRail }}" class="kc-stage-float" style="cursor:pointer; font:500 11px 'IBM Plex Sans';">{{ stageOverflowLabel }}</button>
+      </sc-if>
+      <button ref="{{ inspectorToggleRef }}" data-kc-inspector-toggle onClick="{{ toggleInspector }}" aria-label="{{ inspectorToggleLabel }}" aria-expanded="{{ inspectorExpanded }}" class="kc-stage-float" style="margin-left:auto; cursor:pointer; color:var(--kc-text); font:600 11px 'IBM Plex Sans';">{{ inspectorToggleLabel }}</button>
+    </div>
+    <div class="kc-stage-chrome" style="right:12px; bottom:12px; display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
+      <div data-kc-minimap class="kc-stage-float" style="padding:6px;">
+        <canvas ref="{{ miniRef }}" onClick="{{ resetView }}" width="168" height="108" aria-label="Graph minimap; activate to fit" style="display:block; width:84px; height:54px; border-radius:5px; cursor:pointer;"></canvas>
+      </div>
+      <div data-kc-stage-zoom class="kc-stage-float" style="gap:3px; padding:3px;">
+        <button onClick="{{ zoomOut }}" title="Zoom out" class="kc-stage-tool">−</button>
+        <button onClick="{{ resetView }}" title="Fit to screen" style="min-width:52px; height:26px; padding:0 8px; border:0; border-radius:6px; background:transparent; color:var(--kc-muted); cursor:pointer; font:700 10.5px 'IBM Plex Sans';">{{ zoomLabel }}</button>
+        <button onClick="{{ zoomIn }}" title="Zoom in" class="kc-stage-tool">+</button>
+      </div>
+    </div>
+  </main>
 
   <!-- Top bar -->
-  <div class="kc-topbar" style="position:absolute; top:0; left:0; right:0; height:58px; display:flex; align-items:center; gap:14px; padding:0 20px; background: {{ t.panel }}; color: {{ t.text }}; border-bottom:1px solid {{ t.border }}; backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); box-shadow:0 10px 34px rgba(0,0,0,0.18); z-index:20;">
+  <header class="kc-topbar" style="position:absolute; top:0; left:0; right:0; height:58px; display:flex; align-items:center; gap:14px; padding:0 20px; background: {{ t.panel }}; color: {{ t.text }}; border-bottom:1px solid {{ t.border }}; backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); box-shadow:0 10px 34px rgba(0,0,0,0.18); z-index:20;">
     <div class="kc-brand" style="display:flex; align-items:center; gap:10px; flex:0 0 280px; min-width:210px;">
       <svg width="26" height="26" viewBox="0 0 24 24" fill="none" style="flex:none;">
         <circle cx="6" cy="7" r="2.6" fill="#5b8cff"></circle>
@@ -64,57 +146,106 @@
         <circle cx="6" cy="17" r="2.2" fill="#f59e0b"></circle>
         <path d="M6 7L18 6M18 6L16 18M16 18L6 17M6 17L6 7M6 7L16 18" stroke="{{ t.sub }}" stroke-width="1.1" opacity="0.55"></path>
       </svg>
-      <div style="min-width:0;">
-        <div class="kc-brand-title" style="font-size:14px; font-weight:600; letter-spacing:-0.01em; line-height:1.1;">Knowledge&#8209;crib</div>
-        <div class="kc-brand-stats" style="font-size:11px; color: {{ t.sub }}; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ compactStats }}</div>
-      </div>
+      <div class="kc-brand-title" style="font-size:13.5px; font-weight:600; letter-spacing:-0.01em; line-height:1; white-space:nowrap;">Knowledge&#8209;crib</div>
     </div>
 
-    <div style="flex:1;"></div>
+    <div data-kc-command-segment class="kc-command-segment">
+      <button data-kc-command="overview" onClick="{{ showOverview }}" title="Architecture overview" style="height:26px; padding:0 11px; border-radius:6px; border:none; background: {{ overviewBg }}; color: {{ overviewFg }}; font:600 11.5px 'IBM Plex Sans'; cursor:pointer;">Overview</button>
+      <button data-kc-command="focus" onClick="{{ showFocus }}" title="Neighborhood of the selected node" style="height:26px; padding:0 11px; border-radius:6px; border:none; background: {{ focusBg }}; color: {{ focusFg }}; font:600 11.5px 'IBM Plex Sans'; cursor:pointer;">Focus</button>
+      <button data-kc-command="blast" onClick="{{ showBlast }}" title="What breaks if the selected node changes" style="height:26px; padding:0 11px; border-radius:6px; border:none; background: {{ blastSegmentBg }}; color: {{ blastSegmentFg }}; font:600 11.5px 'IBM Plex Sans'; cursor:pointer;">Blast</button>
+    </div>
 
-    <div class="kc-search" style="position:relative; display:flex; align-items:center;">
+    <div class="kc-search" style="position:relative; display:flex; align-items:center; flex:1 1 auto; max-width:520px; min-width:150px;">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style="position:absolute; left:11px; pointer-events:none; opacity:0.55;"><circle cx="10.5" cy="10.5" r="6.5" stroke="{{ t.text }}" stroke-width="2"></circle><path d="M20 20L16 16" stroke="{{ t.text }}" stroke-width="2" stroke-linecap="round"></path></svg>
-      <input ref="{{ searchRef }}" onInput="{{ onSearch }}" placeholder="Search code, docs, tables…" style="width:230px; height:36px; padding:0 12px 0 34px; border-radius:9px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; font:500 13px 'IBM Plex Sans'; outline:none;">
+      <input ref="{{ searchRef }}" onInput="{{ onSearch }}" placeholder="Search code, docs, tables…" style="width:100%; height:32px; padding:0 50px 0 34px; border-radius:8px; border:1px solid {{ t.border }}; background:var(--kc-bg); color: {{ t.text }}; font:500 12.5px 'IBM Plex Sans'; outline:none;">
+      <span data-kc-search-shortcut style="position:absolute; right:8px; padding:2px 6px; border-radius:5px; border:1px solid rgba(255,255,255,.14); background:var(--kc-fill); color:var(--kc-muted); pointer-events:none; font:600 10px 'IBM Plex Mono',monospace;">⌘K</span>
       <sc-if value="{{ searchStatus }}" hint-placeholder-val="{{ true }}">
         <div style="position:absolute; top:42px; left:0; min-width:230px; padding:7px 10px; border-radius:8px; border:1px solid {{ t.border }}; background:{{ t.panel }}; color:{{ searchStatusColor }}; box-shadow:0 8px 24px rgba(0,0,0,0.24); font:600 11px 'IBM Plex Sans'; white-space:nowrap;">{{ searchStatus }}</div>
       </sc-if>
     </div>
 
-    <div style="height:36px; display:flex; align-items:center; padding:3px; gap:3px; border-radius:9px; border:1px solid {{ t.border }}; background: {{ t.chip }};">
-      <button onClick="{{ showOverview }}" title="Architecture overview" style="height:28px; padding:0 10px; border-radius:7px; border:none; background: {{ overviewBg }}; color: {{ overviewFg }}; font:600 12px 'IBM Plex Sans'; cursor:pointer;">Overview</button>
-      <button onClick="{{ showFocus }}" title="Focused node graph" style="height:28px; padding:0 10px; border-radius:7px; border:none; background: {{ focusBg }}; color: {{ focusFg }}; font:600 12px 'IBM Plex Sans'; cursor:pointer;">Focus</button>
-    </div>
-
-    <button class="kc-hide-compact" onClick="{{ startTour }}" title="Guided tour through the project" style="height:36px; padding:0 13px; display:flex; align-items:center; gap:7px; border-radius:9px; border:1px solid {{ tourBorder }}; background: {{ tourBg }}; color: {{ tourFg }}; font:600 12.5px 'IBM Plex Sans'; cursor:pointer;">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M8 5v14l11-7z" fill="currentColor"></path></svg>
-      Tour
-    </button>
-
-    <button class="kc-hide-compact" onClick="{{ toggleBlast }}" title="Blast radius — what breaks if this changes" style="height:36px; padding:0 13px; display:flex; align-items:center; gap:7px; border-radius:9px; border:1px solid {{ blastBorder }}; background: {{ blastBg }}; color: {{ blastFg }}; font:600 12.5px 'IBM Plex Sans'; cursor:pointer;">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" fill="currentColor"></path></svg>
-      Blast radius
-    </button>
+    <div style="flex:1;"></div>
 
     <button class="kc-memory-btn" data-kc-memory-trigger onClick="{{ toggleMemory }}" title="Memory ledger — what the agents recorded, and what went stale when the code moved" style="height:36px; padding:0 13px; display:flex; align-items:center; gap:7px; border-radius:9px; border:1px solid {{ memBorder }}; background: {{ memBg }}; color: {{ memFg }}; font:600 12.5px 'IBM Plex Sans'; cursor:pointer;">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 5h16M4 10h16M4 15h10M4 20h7" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
       <span class="kc-memory-label">Memory</span>
+      <span data-kc-memory-badge style="min-width:16px; padding:1px 5px; border-radius:20px; background:rgba(248,113,113,.18); color:#f87171; text-align:center; font:700 9.5px 'IBM Plex Sans';">{{ memoryBadge }}</span>
     </button>
 
      <button onClick="{{ toggleTheme }}" title="Toggle theme" style="width:36px; height:36px; flex:none; display:flex; align-items:center; justify-content:center; border-radius:9px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer;">
       <span style="font-size:15px;">{{ themeIcon }}</span>
     </button>
 
-    <div style="height:36px; display:flex; align-items:center; padding:3px; gap:3px; border-radius:9px; border:1px solid {{ t.border }}; background: {{ t.chip }};">
-      <button onClick="{{ zoomOut }}" title="Zoom out / shrink layout" style="width:30px; height:28px; border-radius:7px; border:none; background:transparent; color: {{ t.text }}; font:800 16px 'IBM Plex Sans'; cursor:pointer;">−</button>
-      <span style="min-width:42px; text-align:center; color: {{ t.sub }}; font:700 11px 'IBM Plex Sans';">{{ zoomLabel }}</span>
-      <button onClick="{{ zoomIn }}" title="Zoom in / expand layout" style="width:30px; height:28px; border-radius:7px; border:none; background:transparent; color: {{ t.text }}; font:800 16px 'IBM Plex Sans'; cursor:pointer;">+</button>
-    </div>
+    <button onClick="{{ toggleHelp }}" title="Keyboard shortcuts and help" style="width:32px; height:32px; flex:none; display:flex; align-items:center; justify-content:center; border-radius:8px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font:700 13px 'IBM Plex Sans';">?</button>
+  </header>
 
-    <button onClick="{{ resetView }}" title="Reset view" style="height:36px; padding:0 13px; display:flex; align-items:center; gap:7px; border-radius:9px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; font:600 12.5px 'IBM Plex Sans'; cursor:pointer;">Fit</button>
-  </div>
+  <!-- Signal Console navigation rail: the graph remains the canvas, while module and type controls
+       become a persistent orientation layer instead of obscuring the stage as a floating legend. -->
+  <aside data-kc-navigation-rail class="kc-navigation-rail {{ railClass }}" aria-label="Repository navigation">
+    <div class="kc-rail-header">
+      <div class="kc-rail-title">
+        <div class="kc-rail-kicker">This repo</div>
+      </div>
+      <button onClick="{{ toggleRail }}" title="{{ railToggleLabel }}" style="width:26px; height:26px; flex:none; border-radius:7px; border:1px solid var(--kc-line); background:var(--kc-fill); color:var(--kc-muted); cursor:pointer; font:700 14px 'IBM Plex Sans';">{{ railToggleIcon }}</button>
+    </div>
+    <div class="kc-rail-body">
+      <div class="kc-rail-stats">
+        <div class="kc-rail-stat"><strong>{{ railNodeCount }}</strong><span>nodes</span></div>
+        <div class="kc-rail-stat"><strong>{{ railEdgeCount }}</strong><span>edges</span></div>
+      </div>
+      <div class="kc-rail-section"><span>Modules</span><span>{{ railModuleCount }}</span></div>
+      <sc-for list="{{ moduleList }}" as="m" hint-placeholder-count="8">
+        <button class="kc-rail-item" onClick="{{ m.onGo }}" title="{{ m.help }}" style="background:{{ m.bg }}; border-color:{{ m.border }};">
+          <span style="width:8px; height:8px; flex:none; border-radius:2px; background:{{ m.color }};"></span>
+          <span class="kc-rail-item-label">{{ m.label }}</span>
+          <span class="kc-rail-item-count">{{ m.count }}</span>
+        </button>
+      </sc-for>
+      <div style="height:1px; margin:14px 4px 12px; background:var(--kc-line);"></div>
+      <div class="kc-rail-section"><span>Node types</span><button onClick="{{ resetFilters }}" style="padding:2px 6px; border:1px solid var(--kc-line); border-radius:5px; background:var(--kc-fill); color:var(--kc-muted); cursor:pointer; font:600 9px 'IBM Plex Sans';">Reset</button></div>
+      <sc-for list="{{ kindList }}" as="k" hint-placeholder-count="8">
+        <button class="kc-rail-item" onClick="{{ k.onToggle }}" style="opacity:{{ k.op }};">
+          <span style="width:8px; height:8px; flex:none; border-radius:50%; background:{{ k.color }};"></span>
+          <span class="kc-rail-item-label" style="font-weight:500;">{{ k.label }}</span>
+          <span class="kc-rail-item-count">{{ k.count }}</span>
+        </button>
+      </sc-for>
+    </div>
+  </aside>
+
+  <sc-if value="{{ inspectorEmpty }}" hint-placeholder-val="{{ true }}">
+    <aside class="kc-inspector-empty" aria-label="Inspector placeholder">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+        <div class="kc-rail-kicker">Inspector</div>
+        <button data-kc-inspector-close onClick="{{ closeInspector }}" aria-label="Close inspector" title="Close inspector" style="width:26px; height:26px; display:flex; align-items:center; justify-content:center; border-radius:7px; border:1px solid {{ t.border }}; background:{{ t.chip }}; color:{{ t.sub }}; cursor:pointer; font:500 16px 'IBM Plex Sans';">×</button>
+      </div>
+      <strong style="margin-top:7px;">Follow the signal</strong>
+      <p>Select a module, node, or search result to inspect provenance, evidence, connections, and downstream impact.</p>
+    </aside>
+  </sc-if>
+
+  <footer data-kc-statusline class="kc-statusline" aria-label="Graph controls">
+    <span>{{ statusLabel }}</span>
+    <span>{{ statusHint }}</span>
+  </footer>
+
+  <sc-if value="{{ helpOpen }}" hint-placeholder-val="{{ true }}">
+    <div role="dialog" aria-label="Keyboard shortcuts" style="position:absolute; top:58px; right:12px; z-index:45; width:278px; padding:14px 15px; border-radius:10px; background:var(--kc-panel); border:1px solid var(--kc-line); color:var(--kc-text); box-shadow:0 20px 60px rgba(0,0,0,.42);">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+        <span class="kc-rail-kicker">Shortcuts</span>
+        <button onClick="{{ toggleHelp }}" aria-label="Close keyboard shortcuts" style="width:22px; height:22px; border-radius:6px; border:1px solid var(--kc-line); background:var(--kc-fill); color:var(--kc-muted); cursor:pointer;">×</button>
+      </div>
+      <div style="display:grid; grid-template-columns:48px 1fr; gap:8px 10px; align-items:center; font:400 11.5px 'IBM Plex Sans'; color:var(--kc-text-2);">
+        <b style="font-family:'IBM Plex Mono';">⌘K</b><span>Search the graph</span>
+        <b style="font-family:'IBM Plex Mono';">F</b><span>Fit the current view</span>
+        <b style="font-family:'IBM Plex Mono';">M</b><span>Open memory</span>
+        <b style="font-family:'IBM Plex Mono';">Esc</b><span>Close the current layer</span>
+      </div>
+    </div>
+  </sc-if>
 
   <!-- Legend / kind filter -->
-    <div style="position:absolute; left:14px; bottom:14px; z-index:20; max-width:240px; padding:11px 12px 9px; border-radius:10px; background: {{ t.panel }}; color: {{ t.text }}; border:1px solid {{ t.border }}; backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); box-shadow:0 10px 30px rgba(0,0,0,0.2);">
+    <div class="kc-legend" style="position:absolute; left:14px; bottom:14px; z-index:20; max-width:240px; padding:11px 12px 9px; border-radius:10px; background: {{ t.panel }}; color: {{ t.text }}; border:1px solid {{ t.border }}; backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); box-shadow:0 10px 30px rgba(0,0,0,0.2);">
     <div style="font-size:10.5px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color: {{ t.sub }}; margin-bottom:8px;">Node types — click to filter</div>
     <div style="display:flex; flex-wrap:wrap; gap:6px;">
       <sc-for list="{{ kindList }}" as="k" hint-placeholder-count="8">
@@ -127,8 +258,8 @@
   </div>
 
   <!-- Inspector panel -->
-  <sc-if value="{{ sel }}" hint-placeholder-val="{{ true }}">
-    <div style="position:absolute; top:80px; right:14px; bottom:14px; width:360px; max-width:360px; z-index:21; display:flex; flex-direction:column; border-radius:10px; overflow:hidden; background: {{ t.panel }}; color: {{ t.text }}; border:1px solid {{ t.border }}; backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); box-shadow:0 18px 50px rgba(0,0,0,0.3); animation: kc-panel-in 0.26s cubic-bezier(0.2,0.7,0.2,1);">
+  <sc-if value="{{ inspectorDetail }}" hint-placeholder-val="{{ true }}">
+    <div data-kc-inspector style="position:absolute; top:80px; right:14px; bottom:14px; width:360px; max-width:360px; z-index:21; display:flex; flex-direction:column; border-radius:10px; overflow:hidden; background: {{ t.panel }}; color: {{ t.text }}; border:1px solid {{ t.border }}; backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); box-shadow:0 18px 50px rgba(0,0,0,0.3); animation: kc-panel-in 0.26s cubic-bezier(0.2,0.7,0.2,1);">
       <!-- header -->
       <div style="padding:16px 16px 14px; border-bottom:1px solid {{ t.border }};">
         <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
@@ -140,17 +271,18 @@
             <sc-if value="{{ sel.backAction }}" hint-placeholder-val="{{ true }}">
               <button onClick="{{ sel.backAction }}" title="Return to functionality members" style="height:26px; padding:0 9px; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font:600 10.5px 'IBM Plex Sans';">← {{ sel.backLabel }}</button>
             </sc-if>
-            <button onClick="{{ exportSub }}" title="Export this focused view as JSON" style="height:26px; padding:0 9px; display:flex; align-items:center; gap:5px; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font:600 10.5px 'IBM Plex Sans';">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-              Export
-            </button>
-            <button onClick="{{ closePanel }}" style="width:26px; height:26px; display:flex; align-items:center; justify-content:center; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font-size:15px; line-height:1;">×</button>
+            <button data-kc-inspector-close onClick="{{ closeInspector }}" aria-label="Close inspector" title="Close inspector" style="width:26px; height:26px; display:flex; align-items:center; justify-content:center; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font-size:15px; line-height:1;">×</button>
           </div>
         </div>
         <div style="font-size:18px; font-weight:600; letter-spacing:-0.01em; margin-top:9px; word-break:break-word;">{{ sel.name }}</div>
         <sc-if value="{{ sel.qualified }}" hint-placeholder-val="{{ true }}">
           <div style="font-family:'IBM Plex Mono',monospace; font-size:11.5px; color: {{ t.sub }}; margin-top:3px;">{{ sel.qualified }}</div>
         </sc-if>
+        <div data-kc-inspector-actions style="display:grid; grid-template-columns:1fr 1fr auto; gap:6px; margin-top:13px;">
+          <button onClick="{{ showBlast }}" style="height:29px; border-radius:7px; border:1px solid {{ blastBorder }}; background:{{ blastBg }}; color:{{ blastFg }}; cursor:pointer; font:600 10.5px 'IBM Plex Sans';">Blast radius</button>
+          <button onClick="{{ showFocus }}" style="height:29px; border-radius:7px; border:1px solid {{ t.border }}; background:{{ t.chip }}; color:{{ t.text }}; cursor:pointer; font:600 10.5px 'IBM Plex Sans';">Neighbors</button>
+          <button onClick="{{ exportSub }}" title="Export this focused view as JSON" style="height:29px; padding:0 9px; border-radius:7px; border:1px solid {{ t.border }}; background:{{ t.chip }}; color:{{ t.sub }}; cursor:pointer; font:600 10.5px 'IBM Plex Sans';">Export</button>
+        </div>
       </div>
 
       <div style="flex:1; overflow-y:auto; padding:15px 16px 18px;">
@@ -163,11 +295,11 @@
         </sc-if>
 
         <!-- summary -->
-        <div style="font-size:13.5px; line-height:1.55; color: {{ t.text }};">{{ sel.summary }}</div>
+        <div data-kc-inspector-summary style="font-size:13.5px; line-height:1.55; color: {{ t.text }};">{{ sel.summary }}</div>
 
         <!-- signature -->
         <sc-if value="{{ sel.signature }}" hint-placeholder-val="{{ true }}">
-          <div style="margin-top:13px; padding:11px 12px; border-radius:10px; background: {{ t.code }}; border:1px solid {{ t.border }}; font-family:'IBM Plex Mono',monospace; font-size:12px; line-height:1.5; color: {{ t.codeText }}; overflow-x:auto; white-space:pre;">{{ sel.signature }}</div>
+          <div data-kc-inspector-signature style="margin-top:13px; padding:11px 12px; border-radius:10px; background: {{ t.code }}; border:1px solid {{ t.border }}; font-family:'IBM Plex Mono',monospace; font-size:12px; line-height:1.5; color: {{ t.codeText }}; overflow-x:auto; white-space:pre;">{{ sel.signature }}</div>
         </sc-if>
 
         <!-- meta row -->
@@ -180,38 +312,17 @@
           </sc-if>
         </div>
 
-        <!-- exact source preview, loaded through indexed node id -->
-        <sc-if value="{{ sel.source }}" hint-placeholder-val="{{ true }}">
-          <div style="margin-top:18px;">
-            <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-              <span style="font-size:11px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ t.sub }};">Source</span>
-              <div style="flex:1; height:1px; background: {{ t.border }};"></div>
-              <sc-if value="{{ sel.source.location }}" hint-placeholder-val="{{ true }}">
-                <button onClick="{{ sel.source.onCopy }}" title="Copy file and line range" style="height:24px; padding:0 8px; border-radius:6px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font:600 10px 'IBM Plex Sans';">Copy location</button>
-              </sc-if>
-            </div>
-            <sc-if value="{{ sel.source.loading }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color: {{ t.sub }};">Loading source…</div></sc-if>
-            <sc-if value="{{ sel.source.unavailable }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color: {{ t.sub }};">Source location unavailable for this node.</div></sc-if>
-            <sc-if value="{{ sel.source.failed }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color:#f87171;">{{ sel.source.message }}</div></sc-if>
-            <sc-if value="{{ sel.source.ready }}" hint-placeholder-val="{{ true }}">
-              <div style="max-height:280px; overflow:auto; border-radius:9px; border:1px solid {{ t.border }}; background: {{ t.code }}; padding:8px 0;">
-                <sc-for list="{{ sel.source.lines }}" as="line" hint-placeholder-count="5">
-                  <div style="display:flex; min-width:max-content; font:11.5px/1.55 'IBM Plex Mono',monospace; color: {{ t.codeText }};"><span style="width:48px; flex:none; padding-right:10px; text-align:right; user-select:none; color: {{ t.sub }};">{{ line.no }}</span><span style="white-space:pre; padding-right:12px;">{{ line.text }}</span></div>
-                </sc-for>
-              </div>
-              <sc-if value="{{ sel.source.truncated }}" hint-placeholder-val="{{ true }}"><div style="margin-top:6px; font-size:10.5px; color:#f59e0b;">Preview truncated at 200 lines / 64 KiB.</div></sc-if>
-            </sc-if>
-          </div>
-        </sc-if>
-
         <!-- connection sections -->
+        <div data-kc-inspector-connections>
         <sc-for list="{{ sel.sections }}" as="sec" hint-placeholder-count="3">
-          <div style="margin-top:20px;">
-            <div style="display:flex; align-items:center; gap:8px; margin-bottom:9px;">
+          <div data-kc-inspector-section style="margin-top:20px;">
+            <button onClick="{{ sec.onToggle }}" style="width:100%; display:flex; align-items:center; gap:8px; padding:0; margin:0 0 9px; border:0; background:transparent; text-align:left; cursor:pointer;">
+              <span style="color:{{ t.sub }}; font:700 9px 'IBM Plex Mono',monospace;">{{ sec.caret }}</span>
               <span style="font-size:11px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ sec.color }};">{{ sec.title }}</span>
               <span style="font-size:10.5px; color: {{ t.sub }}; background: {{ t.chip }}; padding:1px 7px; border-radius:20px;">{{ sec.count }}</span>
               <div style="flex:1; height:1px; background: {{ t.border }};"></div>
-            </div>
+            </button>
+            <sc-if value="{{ sec.open }}" hint-placeholder-val="{{ true }}">
             <div style="display:flex; flex-direction:column; gap:3px;">
               <sc-for list="{{ sec.items }}" as="it" hint-placeholder-count="2">
                 <button onClick="{{ it.onGo }}" style="display:flex; align-items:center; gap:9px; width:100%; text-align:left; padding:8px 9px; border-radius:9px; border:1px solid transparent; background:transparent; color: {{ t.text }}; cursor:pointer; font-family:'IBM Plex Sans';" style-hover="background: rgba(127,127,127,0.12); border-color: rgba(127,127,127,0.25);">
@@ -226,12 +337,43 @@
                 </button>
               </sc-for>
             </div>
+            </sc-if>
           </div>
         </sc-for>
+        </div>
+
+        <!-- exact source preview follows impact and relationships, matching the reference's scan order -->
+        <sc-if value="{{ sel.source }}" hint-placeholder-val="{{ true }}">
+          <div data-kc-inspector-source style="margin-top:18px;">
+            <button onClick="{{ toggleInspectorSource }}" style="width:100%; display:flex; align-items:center; gap:8px; margin:0 0 8px; padding:0; border:0; background:transparent; text-align:left; cursor:pointer;">
+              <span style="color:{{ t.sub }}; font:700 9px 'IBM Plex Mono',monospace;">{{ sourceCaret }}</span>
+              <span style="font-size:11px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ t.sub }};">Source</span>
+              <div style="flex:1; height:1px; background: {{ t.border }};"></div>
+            </button>
+            <sc-if value="{{ sourceOpen }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">
+              <sc-if value="{{ sel.source.location }}" hint-placeholder-val="{{ true }}">
+                <button onClick="{{ sel.source.onCopy }}" title="Copy file and line range" style="height:24px; padding:0 8px; border-radius:6px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font:600 10px 'IBM Plex Sans';">Copy location</button>
+              </sc-if>
+              </div>
+            <sc-if value="{{ sel.source.loading }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color: {{ t.sub }};">Loading source…</div></sc-if>
+            <sc-if value="{{ sel.source.unavailable }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color: {{ t.sub }};">Source location unavailable for this node.</div></sc-if>
+            <sc-if value="{{ sel.source.failed }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color:#f87171;">{{ sel.source.message }}</div></sc-if>
+            <sc-if value="{{ sel.source.ready }}" hint-placeholder-val="{{ true }}">
+              <div style="max-height:280px; overflow:auto; border-radius:9px; border:1px solid {{ t.border }}; background: {{ t.code }}; padding:8px 0;">
+                <sc-for list="{{ sel.source.lines }}" as="line" hint-placeholder-count="5">
+                  <div style="display:flex; min-width:max-content; font:11.5px/1.55 'IBM Plex Mono',monospace; color: {{ t.codeText }};"><span style="width:48px; flex:none; padding-right:10px; text-align:right; user-select:none; color: {{ t.sub }};">{{ line.no }}</span><span style="white-space:pre; padding-right:12px;">{{ line.text }}</span></div>
+                </sc-for>
+              </div>
+              <sc-if value="{{ sel.source.truncated }}" hint-placeholder-val="{{ true }}"><div style="margin-top:6px; font-size:10.5px; color:#f59e0b;">Preview truncated at 200 lines / 64 KiB.</div></sc-if>
+            </sc-if>
+            </sc-if>
+          </div>
+        </sc-if>
 
         <!-- evidence -->
         <sc-if value="{{ sel.evidence }}" hint-placeholder-val="{{ true }}">
-          <div style="margin-top:20px;">
+          <div data-kc-inspector-evidence style="margin-top:20px;">
             <div style="font-size:11px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ t.sub }}; margin-bottom:9px;">Evidence</div>
             <div style="padding:11px 12px; border-radius:10px; border-left:3px solid {{ sel.color }}; background: {{ t.chip }}; font-size:12.5px; line-height:1.5; color: {{ t.sub }}; font-style:italic;">“{{ sel.evidence }}”</div>
           </div>
@@ -668,7 +810,7 @@ class Component extends DCLogic {
   // (root + direct neighbors only) — lean by default, deep on demand — instead of always drawing
   // the full 2-hop neighborhood, which on a real repo can be hundreds of nodes with no "you are
   // here" (see toggleFocusDepth / the Horizon panel's expand control).
-  state = { theme: 'dark', mode: 'overview', selectedId: null, selectedClusterId: null, selectedClusterKind: null, clusterContext: false, clusterReturnId: null, selectedTrail: [], sourcePreview: null, blast: false, query: '', hidden: {}, ready: false, tour: false, tourStep: 0, zoomTick: 0, focusDepth: 1, memOpen: false, memLoading: false, memError: null, memData: null, memHome: null, memGroup: null, memDetail: null };
+  state = { theme: 'dark', mode: 'overview', selectedId: null, selectedClusterId: null, selectedClusterKind: null, clusterContext: false, clusterReturnId: null, selectedTrail: [], sourcePreview: null, sourceOpen: false, inspectorOpen: false, blast: false, query: '', hidden: {}, railOpen: true, helpOpen: false, openInspectorSections: {}, ready: false, tour: false, tourStep: 0, zoomTick: 0, focusDepth: 1, memOpen: false, memLoading: false, memError: null, memData: null, memHome: null, memGroup: null, memDetail: null };
 
   KIND = { file:'#7c8aa5', symbol:'#5b8cff', method:'#6f9bff', function:'#8aa8ff', class:'#5b8cff', interface:'#a78bfa', 'doc-section':'#34d399', table:'#f59e0b', column:'#fbbf24', statement:'#2dd4bf', condition:'#f87171',
            // producer-emitted kinds (viz.ts deriveNodeKind + enums.ts) that were missing → gray + 'undefined' tooltip
@@ -678,7 +820,7 @@ class Component extends DCLogic {
   REL = { calls:'#6f9bff', imports:'#7c8aa5', inherits:'#a78bfa', implements:'#a78bfa', describes:'#34d399', references:'#34d399', 'member-of':'#646f80', executes:'#2dd4bf', reads:'#38bdf8', writes:'#0ea5e9', 'guarded-by':'#f87171' };
   PHRASE = { calls:'calls', imports:'imports', inherits:'inherits from', implements:'implements', describes:'documents', references:'mentions', 'member-of':'part of', executes:'runs', reads:'reads from', writes:'writes to', 'guarded-by':'guarded by' };
   RPHRASE = { calls:'called by', imports:'imported by', inherits:'extended by', implements:'implemented by', describes:'documented in', references:'mentioned in', 'member-of':'contains', executes:'run by', reads:'read by', writes:'written by', 'guarded-by':'guards' };
-  DEPTH_COLORS = { 0:'#f8fafc', 1:'#38bdf8', 2:'#f59e0b' };
+  DEPTH_COLORS = { 0:'#f8fafc', 1:'#38bdf8', 2:'#f59e0b', 3:'#b794f6', 4:'#34d399' };
   DEP = new Set(['calls','imports','reads','writes','executes','implements','inherits']);
   // Statement-level / control-flow kinds — mirrors packages/ui/src/viz.ts NOISE_KINDS. Real signal,
   // but not architecture. Kept visible ("show everything, rank hard") yet faded by default so the
@@ -700,9 +842,9 @@ class Component extends DCLogic {
     { id:'createCharge', title:'Talking to Stripe', text:'It delegates to StripeGateway.createCharge — the concrete implementation of the PaymentGateway contract.' },
   ];
 
-  constructor(props){ super(props); this.canvasRef=React.createRef(); this.tipRef=React.createRef(); this.rootRef=React.createRef(); this.searchRef=React.createRef(); this.view={cx:0,cy:0,k:1}; this.alpha=1; this.hoverId=null; this.highlight=null;
+  constructor(props){ super(props); this.canvasRef=React.createRef(); this.miniRef=React.createRef(); this.tipRef=React.createRef(); this.rootRef=React.createRef(); this.searchRef=React.createRef(); this.inspectorToggleRef=React.createRef(); this.view={cx:0,cy:0,k:1}; this._fitOnResize=false; this.alpha=1; this.hoverId=null; this.highlight=null;
     // graph state — initialised empty so the RAF draw loop no-ops safely before loadGraph() resolves.
-    this.nodes=[]; this.edges=[]; this.clusters=[]; this.byId={}; this.deg={}; this.adj={}; this.revDep={}; this.archAdj={}; this.graphIndexes={membersByCluster:{},incidentByNode:{},archAdj:{}}; this.anchors={}; this.layoutScale=1; this.stats=''; this.largeGraph=false; this.overview=[]; this.overviewById={}; this.overviewEdges=[]; this.overviewZoom=1; this._sourceSeq=0; this._sourceAbort=null; this._searchProjection=null; this._memSeq=0; this._memAbort=null;
+    this.nodes=[]; this.edges=[]; this.clusters=[]; this.byId={}; this.deg={}; this.adj={}; this.revDep={}; this.archAdj={}; this.graphIndexes={membersByCluster:{},incidentByNode:{},archAdj:{}}; this.anchors={}; this.layoutScale=1; this.stats=''; this.largeGraph=false; this.previewNodeIds=[]; this.previewNodeIdsByModule={}; this.overview=[]; this._overviewAll=[]; this.overviewOverflow=0; this.overviewById={}; this.overviewEdges=[]; this.overviewZoom=1; this._sourceSeq=0; this._sourceAbort=null; this._searchProjection=null; this._memSeq=0; this._memAbort=null;
   }
 
   componentDidMount(){
@@ -711,7 +853,7 @@ class Component extends DCLogic {
     this.theme=this.themeP(it);
     this.canvas=this.canvasRef.current; this.ctx=this.canvas.getContext('2d');
     this.resize();
-    this.ro=new ResizeObserver(()=>this.resize()); this.ro.observe(this.rootRef.current);
+    this.ro=new ResizeObserver(()=>this.resize()); this.ro.observe(this.canvas.parentElement);
     this.bind();
     this._tick=0;
     const loop=()=>{ this.step(); this.tween(); this.draw(); this._tick++; this.raf=requestAnimationFrame(loop); };
@@ -808,16 +950,22 @@ class Component extends DCLogic {
       // namespaced ids (sym:<path>#<qualified>@L<line>) — so select()/centerOn() silently
       // no-op'd for every other repo. Deriving here makes the tour work for any soul and
       // degrades gracefully (empty TOUR) for an empty graph.
-      const ranked = nodes.filter(n => n.kind !== 'file').sort((a,b)=>(b.importance||0)-(a.importance||0)).slice(0,9);
-      this.TOUR = ranked.map(n => ({ id:n.id, title:(this.KLABEL[n.kind]||n.kind)+' · '+(n.qualified||n.label), text:n.summary||n.label }));
+      const ranked = nodes.filter(n => n.kind !== 'file').sort((a,b)=>(b.importance||0)-(a.importance||0));
+      this.previewNodeIds=ranked.slice(0,260).map(n=>n.id);
+      this.previewNodeIdsByModule={};
+      if(this.vizModules)for(const n of ranked){const moduleId=this.moduleForFile(n.file);if(!moduleId)continue;const list=this.previewNodeIdsByModule[moduleId]||(this.previewNodeIdsByModule[moduleId]=[]);if(list.length<260)list.push(n.id);}
+      this.TOUR = ranked.slice(0,9).map(n => ({ id:n.id, title:(this.KLABEL[n.kind]||n.kind)+' · '+(n.qualified||n.label), text:n.summary||n.label }));
       const N = nodes.length;
       this.layoutScale = Math.max(1, Math.pow(Math.max(1, N / 25), 0.62));
       this.largeGraph = N > 1800;
       this.buildOverview();
-      const ca = {}; const R = 480 * this.layoutScale;
+      // The unselected large-repo Focus preview only renders a capped set of important nodes.
+      // Spacing that preview by the full repository size used to scatter it far off-canvas.
+      const previewScale=this.largeGraph?1:this.layoutScale;
+      const ca = {}; const R = 480 * previewScale;
       this.clusters.forEach((c,i)=>{ const a=(i/this.clusters.length)*Math.PI*2 - Math.PI/2; ca[c.id]={x:Math.cos(a)*R,y:Math.sin(a)*R*0.82}; });
       this.anchors = ca;
-      nodes.forEach(n=>{ const a=ca[n.cluster] || ca[Object.keys(ca)[0]] || {x:0,y:0}; const ang=Math.random()*Math.PI*2, r=70+Math.random()*130*this.layoutScale; n.x=a.x+Math.cos(ang)*r; n.y=a.y+Math.sin(ang)*r; });
+      nodes.forEach(n=>{ const a=ca[n.cluster] || ca[Object.keys(ca)[0]] || {x:0,y:0}; const ang=Math.random()*Math.PI*2, r=70+Math.random()*130*previewScale; n.x=a.x+Math.cos(ang)*r; n.y=a.y+Math.sin(ang)*r; });
       nodes.forEach(n=>{ const base={file:10,class:9,interface:8,method:7,function:7,symbol:8,'doc-section':8.5,table:10,column:6.5,statement:6.5,condition:6.5,enum:8,type:8,getter:7,setter:7,property:7,'media-seg':7,explanation:7}[n.kind]||7; n.r=base+Math.min(this.deg[n.id],9)*0.85; });
       this.stats = g.stats ? (g.stats.nodes + ' nodes · ' + g.stats.edges + ' edges · ' + g.stats.clusters + ' clusters') : (nodes.length + ' nodes · ' + edges.length + ' edges · ' + this.clusters.length + ' clusters');
       const warmSteps = Math.min(120, Math.max(30, Math.floor(90000 / (N || 1))));
@@ -836,6 +984,9 @@ class Component extends DCLogic {
   step(){
     if(this.alpha<0.025) return;
     if(this.state.mode === 'overview') return;
+    // Selected neighborhoods have an intentional topology. Running the general force simulation
+    // after arranging them pulls the rings into the dense knot that Focus is meant to clarify.
+    if(this.state.selectedId && this.state.mode==='focus' && !(this.state.query||'').trim()) return;
     const ns=this.visibleNodes(), hid=this.state.hidden;
     if(!ns || !ns.length) return;
     const ld=(this.props.linkDistance ?? 1.6);
@@ -854,7 +1005,8 @@ class Component extends DCLogic {
     for(const e of activeEdges){ if(!visibleIds.has(e.src)||!visibleIds.has(e.dst))continue; const a=this.byId[e.src], b=this.byId[e.dst]; if(hid[a.kind]||hid[b.kind])continue;
       let dx=b.x-a.x, dy=b.y-a.y, d=Math.sqrt(dx*dx+dy*dy)||0.01; const tl=(L[e.rel]||95)*ld*forceScale; const f=(d-tl)*0.052; const ux=dx/d, uy=dy/d;
       a.fx+=ux*f; a.fy+=uy*f; b.fx-=ux*f; b.fy-=uy*f; }
-    for(const n of ns){ if(hid[n.kind])continue; const an=this.largeGraph?{x:0,y:0}:(this.anchors[n.cluster] || this.anchors[Object.keys(this.anchors)[0]] || {x:0,y:0}); n.fx+=(an.x-n.x)*0.026; n.fy+=(an.y-n.y)*0.026; n.fx+=(-n.x)*0.0018; n.fy+=(-n.y)*0.0018; }
+    const preview=this.largeGraph&&!this.state.selectedId&&!this.state.selectedClusterId&&!(this.state.query||'').trim();
+    for(const n of ns){ if(hid[n.kind])continue; const an=(this.largeGraph&&!preview)?{x:0,y:0}:(this.anchors[n.cluster] || this.anchors[Object.keys(this.anchors)[0]] || {x:0,y:0}); n.fx+=(an.x-n.x)*0.026; n.fy+=(an.y-n.y)*0.026; n.fx+=(-n.x)*0.0018; n.fy+=(-n.y)*0.0018; }
     // Collision is quadratic; keep it for smaller graphs where it improves readability, and skip it
     // for repo-scale graphs so the first frame is not blocked by millions of pair checks.
     if(!largeGraph){
@@ -971,10 +1123,9 @@ class Component extends DCLogic {
       if(this.DEP.has(e.rel)) cur.rel=e.rel;
       edgeMap.set(key,cur);
     }
-    this.overview = blocks;
-    this.overviewById = {};
-    blocks.forEach(b=>this.overviewById[b.id]=b);
+    this._overviewAll = blocks;
     this.overviewEdges = [...edgeMap.values()].sort((a,b)=>b.count-a.count).slice(0,120);
+    this.layoutOverview();
   }
 
   // Module-segmented overview (outcome F). Level 0 = module cards (name + purpose + counts, edges
@@ -991,12 +1142,8 @@ class Component extends DCLogic {
       const back = { id:'module:back', isBack:true, label:'← all modules', color:'#64748b',
         count:0, degree:0, importance:0, kinds:new Map(), topKind:'symbol', muted:false, topMembers:[],
         x:0,y:0,w:0,h:0 };
-      this.overview.unshift(back);
-      const cols = Math.max(3,Math.ceil(Math.sqrt(this.overview.length*1.35)));
-      const gap=30, bw=210, bh=132, rows=Math.ceil(this.overview.length/cols);
-      const ox=-((cols-1)*(bw+gap))/2, oy=-((rows-1)*(bh+gap))/2;
-      this.overview.forEach((b,i)=>{ const col=i%cols,row=Math.floor(i/cols); b.x=ox+col*(bw+gap); b.y=oy+row*(bh+gap); b.w=bw; b.h=bh; });
-      this.overviewById={}; this.overview.forEach(b=>this.overviewById[b.id]=b);
+      this._overviewAll=[back,...this._overviewAll];
+      this.layoutOverview();
       return;
     }
     const blocks = mods.map((m)=>({
@@ -1010,6 +1157,11 @@ class Component extends DCLogic {
     const shown = new Set(blocks.map(b=>b.id));
     const nodeModule = new Map();
     for(const n of this.nodes) nodeModule.set(n.id, this.moduleForFile(n.file));
+    blocks.forEach((block)=>{
+      block.topMembers=this.nodes.filter((node)=>nodeModule.get(node.id)===block.id)
+        .sort((a,b)=>(b.importance||0)-(a.importance||0)).slice(0,2)
+        .map((node)=>({id:node.id,kind:node.kind,label:node.qualified||node.label||node.id}));
+    });
     const edgeMap = new Map();
     for(const e of this.edges){
       const a=this.byId[e.src], b=this.byId[e.dst];
@@ -1025,10 +1177,9 @@ class Component extends DCLogic {
     const gap=30, bw=210, bh=132, rows=Math.ceil(blocks.length/cols);
     const ox=-((cols-1)*(bw+gap))/2, oy=-((rows-1)*(bh+gap))/2;
     blocks.forEach((b,i)=>{ const col=i%cols,row=Math.floor(i/cols); b.x=ox+col*(bw+gap); b.y=oy+row*(bh+gap); b.w=bw; b.h=bh; b.topKind='module'; });
-    this.overview = blocks;
-    this.overviewById = {};
-    blocks.forEach(b=>this.overviewById[b.id]=b);
+    this._overviewAll = blocks;
     this.overviewEdges = [...edgeMap.values()].sort((a,b)=>b.count-a.count).slice(0,120);
+    this.layoutOverview();
   }
 
   // Map a node's file to its module id (longest-prefix match; root module catches the rest).
@@ -1052,7 +1203,7 @@ class Component extends DCLogic {
     this.selectedModule=id; this._cand=null; this._nb=[]; this._nIdx=null;
     this.buildOverview();
     this.view={cx:0,cy:0,k:0.95}; this._vt=null;
-    this.setState({selectedId:null,selectedClusterId:null,selectedTrail:[],mode:'overview'});
+    this.setState({selectedId:null,selectedClusterId:null,selectedTrail:[],mode:'overview',inspectorOpen:false});
     this.reheat(0.35);
   }
   clearModule(){
@@ -1060,7 +1211,7 @@ class Component extends DCLogic {
     this.selectedModule=null; this._cand=null; this._nb=[]; this._nIdx=null;
     this.buildOverview();
     this.view={cx:0,cy:0,k:0.95}; this._vt=null;
-    this.setState({selectedId:null,selectedClusterId:null,selectedTrail:[],mode:'overview'});
+    this.setState({selectedId:null,selectedClusterId:null,selectedTrail:[],mode:'overview',inspectorOpen:false});
     this.reheat(0.35);
   }
 
@@ -1094,16 +1245,16 @@ class Component extends DCLogic {
       const projection=this.clusterProjection();
       return projection?[...projection.nodeIds].map(id=>this.byId[id]).filter(Boolean):[];
     }
-    if(!this.largeGraph) return this.nodes;
+    if(!this.largeGraph && !this.state.selectedId) return this.nodes;
     let ids = new Set();
     if(this.state.selectedId){
       // Same capped, ranked ring set arrangeNodeFocus laid out — never draw a node that wasn't
       // also positioned (and vice versa). depth respects the user's expand/collapse choice.
       const rings=this.focusRingIds(this.state.selectedId,this.state.focusDepth||1);
-      ids = new Set([rings.root,...rings.ring1,...rings.ring2]);
+      ids = new Set([rings.root,...rings.rings.flat()]);
     } else {
-      const top = [...this.nodes].filter(n=>n.kind!=='file').sort((a,b)=>(b.importance||0)-(a.importance||0)).slice(0,260);
-      for(const n of top) ids.add(n.id);
+      const preview=(this.selectedModule&&this.previewNodeIdsByModule[this.selectedModule])||this.previewNodeIds;
+      for(const id of preview) ids.add(id);
     }
     const out = [];
     for(const id of ids){ const n=this.byId[id]; if(n) out.push(n); if(out.length>=900) break; }
@@ -1157,7 +1308,7 @@ class Component extends DCLogic {
     }
     const zoom=this.graphFocusZoom(ns.length);
     const sideOffset=this.W>880?175:(this.W>620?95:0);
-    this.view={cx:sideOffset/zoom,cy:0,k:zoom}; this._vt=null;
+    this.view={cx:sideOffset/zoom,cy:0,k:zoom}; this._vt=null; this._fitOnResize=true;
   }
 
   graphFocusZoom(count){
@@ -1171,60 +1322,93 @@ class Component extends DCLogic {
   // unreadable hairball. When a ring is over cap, only the top-N BY IMPORTANCE are kept — same
   // signal buildOverview ranks modules by (see viz.ts) — and the rest are surfaced as a count in
   // the Horizon panel rather than silently vanishing.
-  RING1_CAP=60; RING2_CAP=120;
+  FOCUS_RING_CAPS=[60,120,80,60];
 
   /** The capped, ranked id set for a focus at `rootId`/`depth` — the SINGLE source of truth both
    *  `arrangeNodeFocus` (layout) and `visibleNodes` (what's actually drawn/hit-tested) read from,
    *  so a node is never positioned without also being visible, or visible without a position. */
   focusRingIds(rootId,depth){
-    const depthMap=this.computeDepthMap(rootId,depth);
-    const byDepth={1:[],2:[]};
-    for(const [nid,dep] of depthMap.entries()){ if(byDepth[dep]) byDepth[dep].push(nid); }
-    const capRing=(ids,cap)=>{
-      if(ids.length<=cap) return {kept:ids,hidden:0};
-      const sorted=[...ids].sort((a,b)=>((this.byId[b]&&this.byId[b].importance)||0)-((this.byId[a]&&this.byId[a].importance)||0));
-      return {kept:sorted.slice(0,cap),hidden:sorted.length-cap};
-    };
-    const r1=capRing(byDepth[1],this.RING1_CAP);
-    const r2=capRing(byDepth[2],this.RING2_CAP);
-    return {root:rootId,ring1:r1.kept,ring2:r2.kept,ring1Hidden:r1.hidden,ring2Hidden:r2.hidden,depthMap};
+    if(!this._focusProjectionCache || this._focusProjectionCache.root!==rootId || this._focusProjectionCache.indexes!==this.graphIndexes){
+      this._focusProjectionCache={root:rootId,indexes:this.graphIndexes,projection:KCGraphModel.focusProjection(rootId,4,this.graphIndexes,this.byId,this.FOCUS_RING_CAPS,5000)};
+    }
+    const projection=this._focusProjectionCache.projection;
+    const rings=projection.rings.slice(0,Math.max(1,Math.min(4,depth||1)));
+    return {...projection,root:rootId,rings,ring1:rings[0]||[],ring2:rings[1]||[]};
   }
 
   arrangeNodeFocus(id,depth){
     const d=depth||this.state.focusDepth||1;
     const rings=this.focusRingIds(id,d);
-    this._ring1Hidden=rings.ring1Hidden; this._ring2Hidden=rings.ring2Hidden;
-    const focusRing={1:rings.ring1.map(nid=>this.byId[nid]).filter(Boolean),2:rings.ring2.map(nid=>this.byId[nid]).filter(Boolean)};
-    const place=(items,rx,ry,phase)=>{
-      const total=Math.max(items.length,1);
-      items.forEach((n,i)=>{
-        const a=(i/total)*Math.PI*2 + phase;
-        const spread=1 + Math.min(total,80) / 140;
-        n.x=Math.cos(a)*rx*spread + Math.sin(i*1.77)*18;
-        n.y=Math.sin(a)*ry*spread + Math.cos(i*1.31)*16;
-        n.vx=0; n.vy=0;
-      });
-    };
-    const root=this.byId[id];
-    if(root){ root.x=0; root.y=0; root.vx=0; root.vy=0; }
-    place(focusRing[1],150,100,-Math.PI/2);
-    place(focusRing[2],330,225,-Math.PI/2 + 0.28);
-    const shownCount=1+focusRing[1].length+focusRing[2].length;
-    const zoom=this.graphFocusZoom(shownCount);
-    const sideOffset=this.W>880?175:(this.W>620?95:0);
-    this.view={cx:sideOffset/zoom,cy:0,k:zoom};
-    this._vt=null;
+    const layout=KCGraphModel.focusLayout(id,rings.ring1,rings.ring2,this.edges,this.graphIndexes,rings.rings.slice(2));
+    this._focusLayout=layout;
+    for(const [nodeId,point] of Object.entries(layout.positions)){
+      const n=this.byId[nodeId]; if(!n)continue;
+      n.x=point.x; n.y=point.y; n.vx=0; n.vy=0;
+    }
+    const points=Object.values(layout.positions);
+    const extentX=Math.max(1,...points.map(point=>Math.abs(point.x)));
+    const extentY=Math.max(1,...points.map(point=>Math.abs(point.y)));
+    const zoom=Math.min(1.25,(this.W-116)/(extentX*2),(this.H-190)/(extentY*2));
+    this.view={cx:0,cy:0,k:Math.max(0.01,zoom)};
+    this._vt=null; this._fitOnResize=true;
     return rings.depthMap;
   }
 
   // ---------- view ----------
-  resize(){ const c=this.canvas; if(!c)return; const dpr=window.devicePixelRatio||1; this.dpr=dpr; this.W=c.clientWidth; this.H=c.clientHeight; c.width=this.W*dpr; c.height=this.H*dpr; }
+  layoutOverview(){
+    const source=this._overviewAll&&this._overviewAll.length?this._overviewAll:this.overview;
+    if(!source||!source.length)return;
+    const CARD_W=196,CARD_H=118,GAP_X=22,GAP_Y=16;
+    const MIN_SCALE=.8,MAX_SCALE=1.12;
+    const availW=Math.max(140,(this.W||960)-56),availH=Math.max(140,(this.H||600)-112);
+    let best=null;
+    for(let n=source.length;n>=1&&!best;n--){
+      let fit=null;
+      for(let cols=1;cols<=n;cols++){
+        const rows=Math.ceil(n/cols);
+        const width=cols*CARD_W+(cols-1)*GAP_X,height=rows*CARD_H+(rows-1)*GAP_Y;
+        const scale=Math.min(availW/width,availH/height,MAX_SCALE);
+        if(!fit||scale>fit.scale)fit={cols,rows,scale};
+      }
+      if(fit&&(fit.scale>=MIN_SCALE||n===1))best={n,...fit};
+    }
+    best=best||{n:1,cols:1,rows:1,scale:MIN_SCALE};
+    this.overviewOverflow=Math.max(0,source.length-best.n);
+    const totalH=best.rows*CARD_H+(best.rows-1)*GAP_Y;
+    this.overview=source.slice(0,best.n).map((block,index)=>{
+      const col=index%best.cols,row=Math.floor(index/best.cols);
+      const rowCount=Math.min(best.cols,best.n-row*best.cols);
+      const rowW=rowCount*CARD_W+(rowCount-1)*GAP_X;
+      return {...block,w:CARD_W,h:CARD_H,x:-rowW/2+col*(CARD_W+GAP_X),y:-totalH/2+row*(CARD_H+GAP_Y)};
+    });
+    this.overviewById={}; this.overview.forEach(block=>this.overviewById[block.id]=block);
+  }
+  resize(){ const c=this.canvas; if(!c)return; const oldW=this.W,oldH=this.H; const dpr=Math.min(2,window.devicePixelRatio||1); this.dpr=dpr; this.W=c.clientWidth; this.H=c.clientHeight; c.width=Math.round(this.W*dpr); c.height=Math.round(this.H*dpr); this.layoutOverview(); if(this._fitOnResize&&this.state.mode!=='overview'&&(oldW!==this.W||oldH!==this.H)){this.fit();this.bumpZoom();} }
   w2s(x,y){ return [ (x-this.view.cx)*this.view.k + this.W/2, (y-this.view.cy)*this.view.k + this.H/2 ]; }
   s2w(x,y){ return [ (x-this.W/2)/this.view.k + this.view.cx, (y-this.H/2)/this.view.k + this.view.cy ]; }
-  fit(){ const vis=this.visibleNodes().filter(n=>!this.state.hidden[n.kind]); if(!vis.length)return; let m={x0:1e9,y0:1e9,x1:-1e9,y1:-1e9}; for(const n of vis){m.x0=Math.min(m.x0,n.x-n.r);m.y0=Math.min(m.y0,n.y-n.r);m.x1=Math.max(m.x1,n.x+n.r);m.y1=Math.max(m.y1,n.y+n.r);} const w=m.x1-m.x0, h=m.y1-m.y0; const pad=140; const k=Math.min((this.W-pad)/w,(this.H-pad-60)/h,1.8); this.view.k=Math.max(0.2,k); this.view.cx=(m.x0+m.x1)/2; this.view.cy=(m.y0+m.y1)/2+20; }
+  graphFit(){
+    const vis=this.visibleNodes().filter(n=>!this.state.hidden[n.kind]);
+    if(!vis.length)return null;
+    const m={x0:Infinity,y0:Infinity,x1:-Infinity,y1:-Infinity};
+    for(const n of vis){m.x0=Math.min(m.x0,n.x-n.r);m.y0=Math.min(m.y0,n.y-n.r);m.x1=Math.max(m.x1,n.x+n.r);m.y1=Math.max(m.y1,n.y+n.r);}
+    const k=Math.min((this.W-140)/Math.max(1,m.x1-m.x0),(this.H-200)/Math.max(1,m.y1-m.y0),1.8);
+    return {cx:(m.x0+m.x1)/2,cy:(m.y0+m.y1)/2+20,k:Math.max(0.01,k)};
+  }
+  minimumZoom(){ const fit=this.graphFit(); return fit?Math.min(0.2,fit.k):0.2; }
+  fit(){ const fit=this.graphFit(); if(!fit)return; this.view={...fit}; this._vt=null; this._fitOnResize=true; }
   /** The selected root renders (and hit-tests) larger than everything else — "you are here"
    *  should be legible from size alone, not just a glow ring. */
-  nodeRadius(n){ return n.r * (n.id===this.state.selectedId ? 1.35 : 1); }
+  nodeRadius(n){
+    if(this.state.selectedId && this.state.mode==='focus' && !this.state.blast && !(this.state.query||'').trim()){
+      const depth=this.highlight&&this.highlight.depthMap?this.highlight.depthMap.get(n.id):undefined;
+      const natural=n.r*this.view.k;
+      if(n.id===this.state.selectedId)return Math.max(16,Math.min(30,natural*1.35))/this.view.k;
+      if(depth===1)return Math.max(8,Math.min(16,natural))/this.view.k;
+      if(depth===2)return Math.max(4.5,Math.min(9,natural*0.75))/this.view.k;
+      if(depth>=3)return Math.max(3.5,Math.min(7,natural*0.65))/this.view.k;
+    }
+    return n.r * (n.id===this.state.selectedId ? 1.35 : 1);
+  }
 
   // ---------- drawing ----------
   draw(){
@@ -1236,20 +1420,24 @@ class Component extends DCLogic {
     const hid=this.state.hidden; const sel=this.state.selectedId; const hl=this.highlight;
     const q=(this.state.query||'').trim().toLowerCase();
     const isMatch=(n)=>q&&(n.label.toLowerCase().includes(q)||(n.qualified||'').toLowerCase().includes(q)||(n.file||'').toLowerCase().includes(q));
+    this.drawMini();
     if(this.state.mode === 'overview' && this.overview.length && !q){
       this.drawOverview(ctx,th);
       return;
     }
     const visible = this.visibleNodes();
     const visibleIds = new Set(visible.map(n=>n.id));
-    const activeEdges=this.visibleEdges(visibleIds);
+    const focused=!!(sel && this.state.mode==='focus' && !this.state.blast && !q && this._focusLayout);
+    const crossEdges=focused?new Set(this._focusLayout.crossEdgeIndexes.map(index=>this.edges[index])):null;
+    const activeEdges=focused?[...this._focusLayout.crossEdgeIndexes,...this._focusLayout.backboneEdgeIndexes].map(index=>this.edges[index]).filter(Boolean):this.visibleEdges(visibleIds);
     const clusterProjection=this.state.selectedClusterId&&!sel?this.clusterProjection():null;
     const clusterContextIds=new Set(clusterProjection?clusterProjection.contextIds:[]);
+    const compactPreview=this.largeGraph&&!sel&&!clusterProjection&&!q&&k<0.9;
     // cluster blobs
-    for(const c of this.clusters){ const mem=visible.filter(n=>n.cluster===c.id&&!hid[n.kind]); if(mem.length<1)continue; let cx=0,cy=0; mem.forEach(n=>{cx+=n.x;cy+=n.y;}); cx/=mem.length; cy/=mem.length; let rad=0; mem.forEach(n=>{rad=Math.max(rad,Math.hypot(n.x-cx,n.y-cy)+n.r);}); rad+=26;
+    for(const c of focused?[]:this.clusters){ const mem=visible.filter(n=>n.cluster===c.id&&!hid[n.kind]); if(mem.length<1)continue; let cx=0,cy=0; mem.forEach(n=>{cx+=n.x;cy+=n.y;}); cx/=mem.length; cy/=mem.length; let rad=0; mem.forEach(n=>{rad=Math.max(rad,Math.hypot(n.x-cx,n.y-cy)+n.r);}); rad+=26;
       const [sx,sy]=this.w2s(cx,cy); const sr=rad*k; const grd=ctx.createRadialGradient(sx,sy,sr*0.2,sx,sy,sr); const a=th.name==='dark'?0.16:0.13; grd.addColorStop(0,this.hex(c.color,a)); grd.addColorStop(1,this.hex(c.color,0)); ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(sx,sy,sr,0,7); ctx.fill();
       // label
-      ctx.font='600 '+Math.max(10,11*Math.min(k,1.3))+"px 'IBM Plex Sans', system-ui, sans-serif"; ctx.fillStyle=this.hex(c.color,0.92); ctx.textAlign='center'; ctx.textBaseline='middle'; const dim=sel&&hl&&!mem.some(n=>hl.set.has(n.id)); ctx.globalAlpha=dim?0.25:1; ctx.fillText(c.label.toUpperCase(),sx,sy-sr-2); ctx.globalAlpha=1; }
+      if(!compactPreview){ctx.font='600 '+Math.max(10,11*Math.min(k,1.3))+"px 'IBM Plex Sans', system-ui, sans-serif"; ctx.fillStyle=this.hex(c.color,0.92); ctx.textAlign='center'; ctx.textBaseline='middle'; const dim=sel&&hl&&!mem.some(n=>hl.set.has(n.id)); ctx.globalAlpha=dim?0.25:1; ctx.fillText(c.label.toUpperCase(),sx,sy-sr-2); ctx.globalAlpha=1;} }
     // edges
     ctx.lineCap='round';
     for(const e of activeEdges){ const a=this.byId[e.src], b=this.byId[e.dst]; if(hid[a.kind]||hid[b.kind])continue;
@@ -1257,25 +1445,30 @@ class Component extends DCLogic {
       const sd=hl&&hl.depthMap?hl.depthMap.get(e.src):undefined, td=hl&&hl.depthMap?hl.depthMap.get(e.dst):undefined;
       const inHorizon = sd!==undefined && td!==undefined;
       const direct = inHorizon && (sd===0 || td===0);
+      const cross=!!(crossEdges&&crossEdges.has(e));
+      const hoverEdge=this.hoverId&&(this.hoverId===e.src||this.hoverId===e.dst);
       const active = sel && hl && (this.state.blast? ((hl.set.has(e.src)&&hl.set.has(e.dst)) && this.DEP.has(e.rel)) : inHorizon);
       let col=this.REL[e.rel]||'#888'; let alpha;
       if(this.state.blast && active) col='#f87171';
-      else if(sel && inHorizon) col=direct?this.DEPTH_COLORS[1]:this.DEPTH_COLORS[2];
-      if(sel){ alpha = active?(direct?0.86:0.32):0.045; } else if(clusterProjection){ alpha=(clusterContextIds.has(e.src)||clusterContextIds.has(e.dst))?0.12:0.62; } else { alpha = 0.22; }
-      ctx.strokeStyle=this.hex(col,alpha); ctx.lineWidth=active?(direct?2.2:1.35):1;
+      else if(sel && inHorizon) col=cross?'#7dd3fc':this.DEPTH_COLORS[Math.max(sd,td)]||this.DEPTH_COLORS[2];
+      if(sel){ alpha = active?(cross?(hoverEdge?0.9:0.34):(direct?0.86:0.5)):0.045; } else if(clusterProjection){ alpha=(clusterContextIds.has(e.src)||clusterContextIds.has(e.dst))?0.12:0.62; } else { alpha = 0.22; }
+      ctx.strokeStyle=this.hex(col,alpha); ctx.lineWidth=active?(cross?(hoverEdge?2.1:1.1):(direct?2.2:1.5)):1;
       if(e.rel==='member-of'||e.rel==='references'){ ctx.setLineDash([3,4]); } else ctx.setLineDash([]);
       // slight curve
-      const mx=(ax+bx)/2, my=(ay+by)/2; const dx=bx-ax, dy=by-ay; const nlen=Math.hypot(dx,dy)||1; const cxp=mx-dy/nlen*nlen*0.06, cyp=my+dx/nlen*nlen*0.06;
+      const mx=(ax+bx)/2, my=(ay+by)/2; const dx=bx-ax, dy=by-ay; const nlen=Math.hypot(dx,dy)||1;
+      const outward=Math.hypot(mx-this.W/2,my-this.H/2)||1;
+      const cxp=cross?mx+(mx-this.W/2)/outward*Math.min(70,nlen*0.22):mx-dy*0.06;
+      const cyp=cross?my+(my-this.H/2)/outward*Math.min(70,nlen*0.22):my+dx*0.06;
       ctx.beginPath(); ctx.moveTo(ax,ay); ctx.quadraticCurveTo(cxp,cyp,bx,by); ctx.stroke(); ctx.setLineDash([]);
       // arrowhead for directed (not member-of) when active or no-sel
-      if(e.rel!=='member-of' && (active|| (!sel))){ const t=0.82; const qx=(1-t)*(1-t)*ax+2*(1-t)*t*cxp+t*t*bx; const qy=(1-t)*(1-t)*ay+2*(1-t)*t*cyp+t*t*by; const ang=Math.atan2(by-cyp,bx-cxp); const sz=active?7:5; const ex=bx-Math.cos(ang)*(b.r*k+2), ey=by-Math.sin(ang)*(b.r*k+2); ctx.fillStyle=this.hex(col,alpha); ctx.beginPath(); ctx.moveTo(ex,ey); ctx.lineTo(ex-Math.cos(ang-0.4)*sz,ey-Math.sin(ang-0.4)*sz); ctx.lineTo(ex-Math.cos(ang+0.4)*sz,ey-Math.sin(ang+0.4)*sz); ctx.closePath(); ctx.fill(); }
+      if(e.rel!=='member-of' && (!cross||hoverEdge) && (active|| (!sel))){ const ang=Math.atan2(by-cyp,bx-cxp); const sz=active?7:5; const ex=bx-Math.cos(ang)*(this.nodeRadius(b)*k+2), ey=by-Math.sin(ang)*(this.nodeRadius(b)*k+2); ctx.fillStyle=this.hex(col,alpha); ctx.beginPath(); ctx.moveTo(ex,ey); ctx.lineTo(ex-Math.cos(ang-0.4)*sz,ey-Math.sin(ang-0.4)*sz); ctx.lineTo(ex-Math.cos(ang+0.4)*sz,ey-Math.sin(ang+0.4)*sz); ctx.closePath(); ctx.fill(); }
       // edge label (plain english) when active
-      if(active&&direct){ const lab=this.state.blast?'breaks if changed':(this.PHRASE[e.rel]||e.rel); ctx.font="500 10.5px 'IBM Plex Sans', system-ui, sans-serif"; const tw=ctx.measureText(lab).width; ctx.save(); ctx.translate(cxp,cyp); let ar=Math.atan2(by-ay,bx-ax); if(ar>Math.PI/2)ar-=Math.PI; if(ar<-Math.PI/2)ar+=Math.PI; ctx.rotate(ar); ctx.fillStyle=th.labelPill; ctx.strokeStyle=this.hex(col,0.5); ctx.lineWidth=1; this.rr(ctx,-tw/2-6,-9,tw+12,18,5); ctx.fill(); ctx.stroke(); ctx.fillStyle=this.state.blast?'#f87171':th.label; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(lab,0,0); ctx.restore(); }
+      if(active&&direct&&!focused){ const lab=this.state.blast?'breaks if changed':(this.PHRASE[e.rel]||e.rel); ctx.font="500 10.5px 'IBM Plex Sans', system-ui, sans-serif"; const tw=ctx.measureText(lab).width; ctx.save(); ctx.translate(cxp,cyp); let ar=Math.atan2(by-ay,bx-ax); if(ar>Math.PI/2)ar-=Math.PI; if(ar<-Math.PI/2)ar+=Math.PI; ctx.rotate(ar); ctx.fillStyle=th.labelPill; ctx.strokeStyle=this.hex(col,0.5); ctx.lineWidth=1; this.rr(ctx,-tw/2-6,-9,tw+12,18,5); ctx.fill(); ctx.stroke(); ctx.fillStyle=this.state.blast?'#f87171':th.label; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(lab,0,0); ctx.restore(); }
     }
     // nodes
     for(const n of visible){ if(hid[n.kind])continue; const [x,y]=this.w2s(n.x,n.y);
       const isSel=n.id===sel; const isHover=n.id===this.hoverId; const inHL=hl&&hl.set.has(n.id); const depth=hl&&hl.depthMap?hl.depthMap.get(n.id):undefined; const match=isMatch(n);
-      const r=this.nodeRadius(n)*k;
+      const r=Math.max(2,this.nodeRadius(n)*k);
       let dim = (sel&&!inHL) || (q&&!match&&!isSel);
       // Fill always answers "what kind of thing is this" — kind color is never overwritten by
       // distance-from-root or blast state, so the legend stays true inside the exact neighborhood
@@ -1299,6 +1492,7 @@ class Component extends DCLogic {
       if(n.kind==='table'||n.kind==='column'){ ctx.strokeStyle=this.hex('#000',0.25); ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(x-r*0.5,y); ctx.lineTo(x+r*0.5,y); ctx.stroke(); }
       ctx.globalAlpha=1;
     }
+    if(compactPreview){this.drawCompactLabels(ctx,visible,hid,th);return;}
     // labels: priority draw with overlap culling for cleaner zoomed-in view
     const labelRects = [];
     const labelNodes = visible.filter(n => !hid[n.kind]).sort((a,b)=>{
@@ -1324,31 +1518,54 @@ class Component extends DCLogic {
       // labels likewise require primary-tier or high importance, so an expanded 2-hop ring doesn't
       // re-clutter the view with low-importance statement labels.
       if(!isSel && !isHover && !inHL && !match && k < labelZoomMin && n.tier !== 'primary') continue;
-      if(depth===2 && !isHover && n.tier !== 'primary' && (n.importance||0) < 10) continue;
-      ctx.font=(isSel?'600 ':'500 ')+Math.max(10.5,12*Math.min(k,1.25))+"px 'IBM Plex Sans', system-ui, sans-serif"; const lab=n.label; const tw=ctx.measureText(lab).width;
-      const ly=y+r+(13*Math.min(k,1.2)); const lh=17; const lx=x-tw/2-5; const lw=tw+10;
+      if(focused && depth>=2 && !isHover && n.id!==this._cand)continue;
+      if(depth>=2 && !isHover && n.tier !== 'primary' && (n.importance||0) < 10) continue;
+      ctx.font=(isSel?'600 ':'500 ')+Math.max(10.5,12*Math.min(k,1.25))+"px 'IBM Plex Sans', system-ui, sans-serif";
+      const focusName=focused&&n.kind==='file'?String(n.label).replace(/^file:/,'').split('/').pop():n.label;
+      const lab=focused&&!isSel?this.ellipsize(ctx,focusName,102):focusName;
+      const tw=ctx.measureText(lab).width; const lh=17; const lw=tw+10;
+      let lx=x-tw/2-5, ly=y+r+(13*Math.min(k,1.2));
+      if(focused&&!isSel){
+        const px=n.x, py=n.y;
+        if(Math.abs(px)>Math.abs(py)*0.43){
+          lx=px<0?x-r-lw-7:x+r+7;
+          ly=y;
+        } else {
+          lx=x-lw/2;
+          ly=py<0?y-r-13:y+r+14;
+        }
+        lx=Math.max(8,Math.min(this.W-lw-8,lx));
+      }
+      const labelBox={x:lx,y:ly-9,w:lw,h:lh};
       let overlap=false;
-      for(const rr of labelRects){ if(!(lx+lw < rr.x || lx > rr.x+rr.w || ly+lh < rr.y || ly > rr.y+rr.h)){ overlap=true; break; } }
+      for(const rr of labelRects){ if(!(labelBox.x+labelBox.w < rr.x || labelBox.x > rr.x+rr.w || labelBox.y+labelBox.h < rr.y || labelBox.y > rr.y+rr.h)){ overlap=true; break; } }
+      if(focused&&!isSel&&!isHover&&!overlap){
+        for(const other of visible){
+          if(other.id===n.id || hid[other.kind])continue;
+          const [ox,oy]=this.w2s(other.x,other.y); const or=this.nodeRadius(other)*k+3;
+          if(labelBox.x<ox+or&&labelBox.x+labelBox.w>ox-or&&labelBox.y<oy+or&&labelBox.y+labelBox.h>oy-or){overlap=true;break;}
+        }
+      }
       if(overlap) continue;
-      labelRects.push({x:lx,y:ly,w:lw,h:lh});
+      labelRects.push(labelBox);
       ctx.globalAlpha=dim?0.3:1;
       ctx.fillStyle=th.labelPill; this.rr(ctx,lx,ly-9,lw,lh,5); ctx.fill();
-      ctx.fillStyle=isSel?th.label:th.label; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(lab,x,ly); ctx.globalAlpha=1;
+      ctx.fillStyle=th.label; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(lab,lx+lw/2,ly); ctx.globalAlpha=1;
     }
-    // On-canvas "expand to 2-hop" chip — additive to the Horizon panel row (buildDetail()), so the
-    // expand affordance is visible without opening/scrolling the side panel. Only shown when
-    // collapsed (focusDepth:1) and there's actually a 2-hop ring to reveal.
+    // Progressive expansion stays visible even when the inspector is closed.
     this._expandChipRect = null;
-    if(sel && !this.state.blast && (this.state.focusDepth||1)===1 && hl && hl.depthMap){
-      let count2=0; for(const d of hl.depthMap.values()) if(d===2) count2++;
-      if(count2>0){
-        const lab='+'+count2+' more · expand';
+    const nextDepth=(this.state.focusDepth||1)+1;
+    if(sel && !this.state.blast && nextDepth<=4){
+      const projection=this.focusRingIds(sel,nextDepth);
+      const nextCount=projection.countsByDepth[nextDepth]||0;
+      if(nextCount>0){
+        const lab='+'+nextCount+(projection.truncated?'+':'')+' · show '+nextDepth+' hops';
         ctx.font="600 12px 'IBM Plex Sans', system-ui, sans-serif";
         const tw=ctx.measureText(lab).width; const pw=tw+30, ph=34;
         const px=this.W/2-pw/2, py=this.H-ph-20;
-        ctx.fillStyle=th.labelPill; ctx.strokeStyle=this.hex(this.DEPTH_COLORS[2],0.6); ctx.lineWidth=1.4;
+        ctx.fillStyle=th.labelPill; ctx.strokeStyle=this.hex(this.DEPTH_COLORS[nextDepth],0.6); ctx.lineWidth=1.4;
         this.rr(ctx,px,py,pw,ph,17); ctx.fill(); ctx.stroke();
-        ctx.fillStyle=this.DEPTH_COLORS[2]; ctx.beginPath(); ctx.arc(px+18,py+ph/2,4,0,7); ctx.fill();
+        ctx.fillStyle=this.DEPTH_COLORS[nextDepth]; ctx.beginPath(); ctx.arc(px+18,py+ph/2,4,0,7); ctx.fill();
         ctx.fillStyle=th.label; ctx.textAlign='center'; ctx.textBaseline='middle';
         ctx.fillText(lab,px+pw/2+7,py+ph/2+0.5);
         this._expandChipRect={x0:px,y0:py,x1:px+pw,y1:py+ph};
@@ -1356,83 +1573,100 @@ class Component extends DCLogic {
     }
   }
 
+  overviewScale(){
+    const blocks=this.overview;if(!blocks.length)return 1;
+    const x0=Math.min(...blocks.map(b=>b.x)),x1=Math.max(...blocks.map(b=>b.x+b.w));
+    const y0=Math.min(...blocks.map(b=>b.y)),y1=Math.max(...blocks.map(b=>b.y+b.h));
+    return Math.min((this.W-56)/Math.max(1,x1-x0),(this.H-112)/Math.max(1,y1-y0),1.12)*this.overviewZoom;
+  }
+  drawCompactLabels(ctx,visible,hid,th){
+    const groups=new Map();
+    for(const n of visible){if(hid[n.kind])continue; const group=groups.get(n.cluster)||{nodes:[],cluster:this.clusters.find(c=>c.id===n.cluster)};group.nodes.push(n);groups.set(n.cluster,group);}
+    const placed=[];
+    for(const group of [...groups.values()].sort((a,b)=>b.nodes.length-a.nodes.length).slice(0,14)){
+      const c=group.cluster;if(!c)continue;
+      const xw=group.nodes.reduce((sum,n)=>sum+n.x,0)/group.nodes.length;
+      const yw=group.nodes.reduce((sum,n)=>sum+n.y,0)/group.nodes.length;
+      const [sx,sy]=this.w2s(xw,yw);
+      if(sx<-80||sx>this.W+80||sy<-40||sy>this.H+40)continue;
+      const name=this.formatRailLabel(c.label).replace(/^Packages \/ /,'').replace(/ \/ Src\b/,'');
+      ctx.font="600 11px 'IBM Plex Sans', system-ui, sans-serif";
+      const label=this.ellipsize(ctx,name,108),width=Math.min(174,ctx.measureText(label).width+54);
+      const x=Math.max(8,Math.min(this.W-width-8,sx-width/2));
+      const y=Math.max(48,Math.min(this.H-32,sy-28-Math.sqrt(group.nodes.length)*2));
+      if(placed.some(r=>x<r.x+r.w+7&&x+width+7>r.x&&y<r.y+27&&y+27>r.y))continue;
+      placed.push({x,y,w:width});
+      ctx.fillStyle=th.labelPill;ctx.strokeStyle=this.hex(c.color||'#5b8cff',.6);ctx.lineWidth=1;
+      this.rr(ctx,x,y,width,25,7);ctx.fill();ctx.stroke();
+      ctx.fillStyle=c.color||'#5b8cff';ctx.beginPath();ctx.arc(x+11,y+12.5,3.5,0,7);ctx.fill();
+      ctx.fillStyle=th.label;ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(label,x+21,y+12.5);
+      ctx.fillStyle=th.label;ctx.textAlign='right';ctx.fillText(String(group.nodes.length),x+width-9,y+12.5);
+    }
+  }
   drawOverview(ctx,th){
-    const blocks=this.overview;
-    if(!blocks.length) return;
-    ctx.save();
-    ctx.translate(this.W/2,this.H/2+28);
-    const maxX=Math.max(...blocks.map(b=>Math.abs(b.x)+b.w/2),1);
-    const maxY=Math.max(...blocks.map(b=>Math.abs(b.y)+b.h/2),1);
-    const scale=Math.min((this.W-120)/(maxX*2),(this.H-190)/(maxY*2),1.25)*this.overviewZoom;
-    ctx.scale(scale,scale);
+    const blocks=this.overview;if(!blocks.length)return;
+    const scale=this.overviewScale(),centerX=this.W/2,centerY=this.H/2+4;
+    const screen=(x,y)=>[centerX+x*scale,centerY+y*scale];
     ctx.lineCap='round';
     for(const e of this.overviewEdges){
-      const a=this.overviewById[e.src], b=this.overviewById[e.dst];
-      if(!a||!b)continue;
-      const ax=a.x+a.w/2, ay=a.y+a.h/2, bx=b.x+b.w/2, by=b.y+b.h/2;
+      const a=this.overviewById[e.src],b=this.overviewById[e.dst];if(!a||!b)continue;
+      const [ax,ay]=screen(a.x+a.w/2,a.y+a.h/2),[bx,by]=screen(b.x+b.w/2,b.y+b.h/2);
       const col=this.REL[e.rel]||'#64748b';
-      ctx.strokeStyle=this.hex(col,Math.min(0.38,0.08+e.count/35));
-      ctx.lineWidth=Math.min(4,1+Math.log2(e.count+1)*0.45);
-      ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(bx,by); ctx.stroke();
+      ctx.strokeStyle=this.hex(col,Math.min(.3,.06+e.count/40));ctx.lineWidth=Math.min(3.4,1+Math.log2(e.count+1)*.4);
+      ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();
     }
-    for(const b of blocks){
-      const selected=b.id===this.state.selectedClusterId;
-      const col=b.muted?'#64748b':(b.color||this.KIND[b.topKind]||'#5b8cff');
+    const topImportance=Math.max(1,...blocks.map(block=>block.importance||0));
+    for(const block of blocks){
+      const col=block.muted?'#64748b':(block.color||this.KIND[block.topKind]||'#5b8cff');
+      const selected=block.id===this.state.selectedClusterId||block.id===this.selectedModule;
+      const [x,y]=screen(block.x,block.y),w=block.w*scale,h=block.h*scale;
+      const spacing=Math.max(.55,Math.min(1.25,scale)),typeScale=Math.max(.95,spacing);
       ctx.save();
-      ctx.fillStyle=this.hex(col,b.muted?0.07:(selected?0.22:0.12));
-      ctx.strokeStyle=this.hex(col,b.muted?0.24:(selected?0.95:0.42));
-      ctx.lineWidth=selected?2.5:1.2;
-      this.rr(ctx,b.x,b.y,b.w,b.h,10); ctx.fill(); ctx.stroke();
-      this.rr(ctx,b.x+7,b.y+7,b.w-14,b.h-14,7); ctx.clip();
-      ctx.fillStyle=this.hex(col,0.95);
-      ctx.beginPath(); ctx.arc(b.x+18,b.y+20,6,0,7); ctx.fill();
-      ctx.fillStyle=th.label;
-      ctx.font="700 13px 'IBM Plex Sans', system-ui, sans-serif";
-      ctx.textAlign='left'; ctx.textBaseline='middle';
-      const label=this.ellipsize(ctx,String(b.label||b.id).replace(/^cluster:/,''),b.w-48);
-      ctx.fillText(label,b.x+32,b.y+20);
+      ctx.fillStyle=th.name==='dark'?'rgba(16,20,28,.94)':'rgba(255,255,255,.96)';this.rr(ctx,x,y,w,h,10*scale);ctx.fill();
+      ctx.fillStyle=this.hex(col,block.muted?.04:(selected?.16:.07));ctx.fill();
+      ctx.strokeStyle=this.hex(col,block.muted?.2:(selected?.9:.34));ctx.lineWidth=selected?2:1.1;ctx.stroke();
+      this.rr(ctx,x,y,w,h,10*scale);ctx.clip();
+      ctx.fillStyle=this.hex(col,.95);this.rr(ctx,x,y,3.5*scale,h,2);ctx.fill();
+      ctx.textAlign='left';ctx.textBaseline='middle';
+      ctx.fillStyle=th.label;ctx.font='700 '+(13*typeScale).toFixed(1)+"px 'IBM Plex Sans', system-ui, sans-serif";
+      const title=block.isModule?this.formatRailLabel(block.label||block.id):String(block.label||block.id).replace(/^cluster:/,'');
+      ctx.fillText(this.ellipsize(ctx,title,w-30*spacing),x+16*spacing,y+20*spacing);
+      ctx.fillStyle=th.sub||'#8b97a8';ctx.font='500 '+(10.5*typeScale).toFixed(1)+"px 'IBM Plex Sans', system-ui, sans-serif";
+      const meta=block.isModule?(block.count+' symbols · '+(block.clusterIds?block.clusterIds.length:0)+' clusters'):block.isBack?'Back to every module':block.isNode?(Math.round(block.degree)+' caller'+(Math.round(block.degree)===1?'':'s')):(block.count+' nodes · '+(block.muted?'summary':Math.round(block.degree)+' links'));
+      ctx.fillText(this.ellipsize(ctx,meta,w-30*spacing),x+16*spacing,y+37*spacing);
       ctx.fillStyle=th.sub||'#8b97a8';
-      ctx.font="500 11px 'IBM Plex Sans', system-ui, sans-serif";
-      const line1=b.isModule?(b.count+' symbols · '+(b.clusterIds?b.clusterIds.length:0)+' clusters'):b.isBack?'back to the module list':b.isNode?(Math.round(b.degree)+' caller'+(Math.round(b.degree)===1?'':'s')):(b.count+' nodes · '+(b.muted?'summary':Math.round(b.degree)+' links'));
-      ctx.fillText(this.ellipsize(ctx,line1,b.w-28),b.x+14,b.y+50);
-      b.memberHits = [];
-      if(b.isModule){
-        // purpose text (~60 chars) — the module-segmented overview's reason for existing.
-        ctx.fillText(this.ellipsize(ctx,b.purpose||'no purpose yet',b.w-28),b.x+14,b.y+72);
-      } else if(b.isBack){
-        ctx.fillText(this.ellipsize(ctx,'',b.w-28),b.x+14,b.y+72);
-      } else if(b.isNode || b.muted || !b.topMembers || !b.topMembers.length){
-        const line2=b.isNode?(this.KLABEL[b.topKind]||b.topKind):(b.muted?'Hidden from overview links':(this.KLABEL[b.topKind]||b.topKind)+' heavy');
-        ctx.fillText(this.ellipsize(ctx,line2,b.w-28),b.x+14,b.y+72);
-      } else {
-        ctx.font="500 10.5px 'IBM Plex Sans', system-ui, sans-serif";
-        b.topMembers.forEach((m,i)=>{
-          const mx=b.x+14, my=b.y+68+i*18;
-          const mcol=this.KIND[m.kind]||'#888';
-          ctx.fillStyle=mcol;
-          ctx.beginPath(); ctx.arc(mx+5,my,4,0,7); ctx.fill();
-          ctx.fillStyle=th.label;
-          const lab=this.ellipsize(ctx,m.label,b.w-38);
-          ctx.fillText(lab,mx+14,my+1);
-          b.memberHits.push({id:m.id, x:mx-b.x, y:my-7-b.y, w:b.w-28, h:14});
-        });
-      }
-      ctx.fillStyle=this.hex(col,0.18);
-      // Bar reflects importance relative to the top-ranked block, not raw count — so a single
-      // high-importance orphan card and a 40-member module read on the same meaningful scale.
-      const topImportance=blocks[0].importance||1;
-      const bar=Math.min(b.w-28,Math.max(18,((b.importance||0)/topImportance)*(b.w-28)));
-      this.rr(ctx,b.x+14,b.y+b.h-22,bar,6,4); ctx.fill();
+      const purpose=block.purpose||(block.isBack?'Return to the architecture map':block.muted?'Additional uncategorized symbols':(this.KLABEL[block.topKind]||block.topKind)+' functionality');
+      ctx.fillText(this.ellipsize(ctx,purpose,w-30*spacing),x+16*spacing,y+53*spacing);
+      block.memberHits=[];
+      (block.topMembers||[]).slice(0,2).forEach((member,index)=>{
+        const memberY=y+(72+index*16)*spacing;
+        ctx.fillStyle=this.KIND[member.kind]||'#888';ctx.beginPath();ctx.arc(x+20*spacing,memberY,3.4*spacing,0,7);ctx.fill();
+        ctx.fillStyle=th.label;ctx.fillText(this.ellipsize(ctx,member.label,w-44*spacing),x+30*spacing,memberY+.5);
+        block.memberHits.push({id:member.id,x:14,y:65+index*16,w:block.w-28,h:14});
+      });
+      ctx.fillStyle=th.name==='dark'?'rgba(255,255,255,.08)':'rgba(15,23,42,.08)';this.rr(ctx,x+16*spacing,y+h-14*spacing,w-32*spacing,4*spacing,2*spacing);ctx.fill();
+      ctx.fillStyle=this.hex(col,.55);this.rr(ctx,x+16*spacing,y+h-14*spacing,(w-32*spacing)*((block.importance||0)/topImportance),4*spacing,2*spacing);ctx.fill();
       ctx.restore();
     }
-    ctx.restore();
-    ctx.fillStyle=th.label;
-    ctx.font="700 18px 'IBM Plex Sans', system-ui, sans-serif";
-    ctx.textAlign='center';
-    ctx.fillText('Architecture overview',this.W/2,102);
-    ctx.fillStyle=th.sub||'#8b97a8';
-    ctx.font="500 12px 'IBM Plex Sans', system-ui, sans-serif";
-    ctx.fillText(this.ellipsize(ctx,'Click a block to focus. Search narrows to matching neighborhoods. Showing top '+blocks.length+' modules from '+this.nodes.length+' nodes.',this.W-80),this.W/2,124);
+  }
+
+  drawMini(){
+    const canvas=this.miniRef.current;if(!canvas)return;
+    const ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height,th=this.theme;
+    ctx.clearRect(0,0,w,h);ctx.fillStyle=th.bg;ctx.fillRect(0,0,w,h);
+    if(this.state.mode==='overview'&&this.overview.length){
+      const x0=Math.min(...this.overview.map(b=>b.x)),x1=Math.max(...this.overview.map(b=>b.x+b.w));
+      const y0=Math.min(...this.overview.map(b=>b.y)),y1=Math.max(...this.overview.map(b=>b.y+b.h));
+      const s=Math.min((w-12)/Math.max(1,x1-x0),(h-12)/Math.max(1,y1-y0)),ox=(w-(x1-x0)*s)/2-x0*s,oy=(h-(y1-y0)*s)/2-y0*s;
+      for(const block of this.overview){ctx.fillStyle=this.hex(block.color||'#5b8cff',.55);ctx.fillRect(block.x*s+ox,block.y*s+oy,Math.max(2,block.w*s),Math.max(2,block.h*s));}
+      ctx.strokeStyle='rgba(157,186,255,.9)';ctx.lineWidth=1.2;ctx.strokeRect(5,5,w-10,h-10);return;
+    }
+    const nodes=this.visibleNodes();if(!nodes.length)return;
+    const x0=Math.min(...nodes.map(n=>n.x)),x1=Math.max(...nodes.map(n=>n.x)),y0=Math.min(...nodes.map(n=>n.y)),y1=Math.max(...nodes.map(n=>n.y));
+    const s=Math.min((w-14)/Math.max(1,x1-x0),(h-14)/Math.max(1,y1-y0)),ox=(w-(x1-x0)*s)/2-x0*s,oy=(h-(y1-y0)*s)/2-y0*s;
+    const edges=this.state.selectedId&&this._focusLayout&&!this.state.blast?this._focusLayout.edgeIndexes.map(index=>this.edges[index]).filter(Boolean):this.visibleEdges(new Set(nodes.map(n=>n.id)));
+    for(const edge of edges){const a=this.byId[edge.src],b=this.byId[edge.dst];if(!a||!b)continue;ctx.strokeStyle='rgba(203,213,225,.2)';ctx.lineWidth=.7;ctx.beginPath();ctx.moveTo(a.x*s+ox,a.y*s+oy);ctx.lineTo(b.x*s+ox,b.y*s+oy);ctx.stroke();}
+    for(const node of nodes){ctx.fillStyle=this.hex(this.KIND[node.kind]||'#8aa8ff',node.id===this.state.selectedId?1:.7);ctx.beginPath();ctx.arc(node.x*s+ox,node.y*s+oy,node.id===this.state.selectedId?3:1.7,0,7);ctx.fill();}
   }
   ellipsize(ctx,text,maxWidth){ text=String(text||''); if(ctx.measureText(text).width<=maxWidth) return text; const ell='…'; let lo=0, hi=text.length; while(lo<hi){ const mid=Math.ceil((lo+hi)/2); if(ctx.measureText(text.slice(0,mid)+ell).width<=maxWidth) lo=mid; else hi=mid-1; } return text.slice(0,Math.max(0,lo))+ell; }
   rr(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
@@ -1444,39 +1678,43 @@ class Component extends DCLogic {
 
   // ---------- interaction ----------
   bind(){ const c=this.canvas;
-    this.onWheel=(e)=>{ e.preventDefault(); this._vt=null; const [wx,wy]=this.s2w(e.offsetX,e.offsetY); const f=Math.exp(-e.deltaY*0.0014); this.view.k=Math.min(3.5,Math.max(0.18,this.view.k*f)); const [nx,ny]=this.s2w(e.offsetX,e.offsetY); this.view.cx+=wx-nx; this.view.cy+=wy-ny; };
+    this.onWheel=(e)=>{ e.preventDefault(); this._vt=null; this._fitOnResize=false; const [wx,wy]=this.s2w(e.offsetX,e.offsetY); const f=Math.exp(-e.deltaY*0.0014); this.view.k=Math.min(4.5,Math.max(this.minimumZoom(),this.view.k*f)); const [nx,ny]=this.s2w(e.offsetX,e.offsetY); this.view.cx+=wx-nx; this.view.cy+=wy-ny; };
     this.onDown=(e)=>{ c.setPointerCapture(e.pointerId); const chip=this.hitExpandChip(e.offsetX,e.offsetY); const block=!chip&&this.state.mode==='overview'&&this.overview.length?this.hitOverview(e.offsetX,e.offsetY):null; const n=(chip||block)?null:this.hit(e.offsetX,e.offsetY); this._p={x:e.offsetX,y:e.offsetY,sx:e.offsetX,sy:e.offsetY,node:n,block,chip,moved:false}; if(n){ n.pin=true; c.style.cursor='grabbing'; } else c.style.cursor='grabbing'; };
     this.onMove=(e)=>{ const p=this._p;
       if(p){ const dx=e.offsetX-p.x, dy=e.offsetY-p.y; if(Math.abs(e.offsetX-p.sx)+Math.abs(e.offsetY-p.sy)>3)p.moved=true;
         if(p.chip){ p.x=e.offsetX; p.y=e.offsetY; return; }
         if(p.block){ p.x=e.offsetX; p.y=e.offsetY; return; }
-        if(p.node){ const [wx,wy]=this.s2w(e.offsetX,e.offsetY); p.node.x=wx; p.node.y=wy; p.node.vx=0; p.node.vy=0; this.reheat(0.3); } else { this._vt=null; this.view.cx-=dx/this.view.k; this.view.cy-=dy/this.view.k; } p.x=e.offsetX; p.y=e.offsetY; return; }
+        if(p.node){ const [wx,wy]=this.s2w(e.offsetX,e.offsetY); p.node.x=wx; p.node.y=wy; p.node.vx=0; p.node.vy=0; this.reheat(0.3); } else { this._vt=null; this._fitOnResize=false; this.view.cx-=dx/this.view.k; this.view.cy-=dy/this.view.k; } p.x=e.offsetX; p.y=e.offsetY; return; }
       const chip=this.hitExpandChip(e.offsetX,e.offsetY); const block=!chip&&this.state.mode==='overview'&&this.overview.length?this.hitOverview(e.offsetX,e.offsetY):null; const n=(chip||block)?null:this.hit(e.offsetX,e.offsetY); this.hoverId=n?n.id:null; c.style.cursor=(chip||n||block)?'pointer':'grab'; this.tip(n,e.offsetX,e.offsetY);
     };
+    this.onLeave=()=>{ this.hoverId=null; this.tip(null,0,0); };
     this.onUp=(e)=>{ const p=this._p; this._p=null; c.style.cursor='grab'; if(!p)return; if(p.node)p.node.pin=false; if(!p.moved){ if(p.chip) this.toggleFocusDepth(); else if(p.block&&p.block.isModule) this.selectModule(p.block.moduleId); else if(p.block&&p.block.isBack) this.clearModule(); else if(p.block&&p.block.isNode) this.select(p.block.nodeId); else if(p.block) this.selectCluster(p.block.id); else if(p.node) this.select(p.node.id); else this.closePanel(); } };
-    this.onKey=(e)=>{ const k=e.key; const tag=(e.target&&e.target.tagName)||''; if(tag==='INPUT'){ if(k==='Escape')e.target.blur(); return; }
+    this.onKey=(e)=>{ const k=e.key; const tag=(e.target&&e.target.tagName)||'';
+      if((e.metaKey||e.ctrlKey)&&k.toLowerCase()==='k'){e.preventDefault();if(this.searchRef.current)this.searchRef.current.focus();return;}
+      if(tag==='INPUT'){ if(k==='Escape')e.target.blur(); return; }
       if(this.state.tour){ if(k==='ArrowRight'||k===' '||k==='ArrowDown'){e.preventDefault(); this.tourGo(this.state.tourStep+1);} else if(k==='ArrowLeft'||k==='ArrowUp'){e.preventDefault(); this.tourGo(this.state.tourStep-1);} else if(k==='Escape'){this.exitTour();} return; }
       // The memory overlay is dismissed FIRST: it sits above the node panel, and Escape should
       // close what the operator is actually looking at. Previously this fell straight through to
       // closePanel() and the memory panel could only be dismissed with the mouse.
       if(k==='Escape'&&this.state.memOpen){ this.closeMemory(); return; }
+      if(k==='Escape'&&this.state.helpOpen){ this.setState({helpOpen:false}); return; }
       if(k==='Escape'){ this._cand=null; this.closePanel(); return; }
+      if(k.toLowerCase()==='m'){this.toggleMemory();return;}
+      if(k.toLowerCase()==='f'){this.resetView();return;}
       const sel=this.state.selectedId; if(!sel)return; const nb=this._nb||[]; if(!nb.length)return;
       if(k==='ArrowRight'||k==='ArrowDown'){ e.preventDefault(); this._nIdx=((this._nIdx==null?-1:this._nIdx)+1)%nb.length; this._cand=nb[this._nIdx]; }
       else if(k==='ArrowLeft'||k==='ArrowUp'){ e.preventDefault(); this._nIdx=((this._nIdx==null?0:this._nIdx)-1+nb.length)%nb.length; this._cand=nb[this._nIdx]; }
       else if(k==='Enter'&&this._cand){ e.preventDefault(); const c=this._cand; this.select(c); this.centerOn(c,Math.max(this.view.k,0.95)); }
     };
-    c.addEventListener('wheel',this.onWheel,{passive:false}); c.addEventListener('pointerdown',this.onDown); c.addEventListener('pointermove',this.onMove); c.addEventListener('pointerup',this.onUp); window.addEventListener('keydown',this.onKey);
+    c.addEventListener('wheel',this.onWheel,{passive:false}); c.addEventListener('pointerdown',this.onDown); c.addEventListener('pointermove',this.onMove); c.addEventListener('pointerup',this.onUp); c.addEventListener('pointerleave',this.onLeave); window.addEventListener('keydown',this.onKey);
   }
-  unbind(){ const c=this.canvas; if(!c)return; c.removeEventListener('wheel',this.onWheel); c.removeEventListener('pointerdown',this.onDown); c.removeEventListener('pointermove',this.onMove); c.removeEventListener('pointerup',this.onUp); window.removeEventListener('keydown',this.onKey); }
-  hit(sx,sy){ let best=null,bd=1e9; for(const n of this.visibleNodes()){ if(this.state.hidden[n.kind])continue; const [x,y]=this.w2s(n.x,n.y); const d=Math.hypot(x-sx,y-sy); if(d<this.nodeRadius(n)*this.view.k+5 && d<bd){bd=d;best=n;} } return best; }
+  unbind(){ const c=this.canvas; if(!c)return; c.removeEventListener('wheel',this.onWheel); c.removeEventListener('pointerdown',this.onDown); c.removeEventListener('pointermove',this.onMove); c.removeEventListener('pointerup',this.onUp); c.removeEventListener('pointerleave',this.onLeave); window.removeEventListener('keydown',this.onKey); }
+  hit(sx,sy){ let best=null,bd=1e9; for(const n of this.visibleNodes()){ if(this.state.hidden[n.kind])continue; const [x,y]=this.w2s(n.x,n.y); const d=Math.hypot(x-sx,y-sy); if(d<Math.max(2,this.nodeRadius(n)*this.view.k)+5 && d<bd){bd=d;best=n;} } return best; }
   hitExpandChip(sx,sy){ const r=this._expandChipRect; if(!r) return false; return sx>=r.x0 && sx<=r.x1 && sy>=r.y0 && sy<=r.y1; }
   hitOverview(sx,sy){
     const blocks=this.overview; if(!blocks.length)return null;
-    const maxX=Math.max(...blocks.map(b=>Math.abs(b.x)+b.w/2),1);
-    const maxY=Math.max(...blocks.map(b=>Math.abs(b.y)+b.h/2),1);
-    const scale=Math.min((this.W-120)/(maxX*2),(this.H-190)/(maxY*2),1.25)*this.overviewZoom;
-    const x=(sx-this.W/2)/scale, y=(sy-(this.H/2+28))/scale;
+    const scale=this.overviewScale();
+    const x=(sx-this.W/2)/scale, y=(sy-(this.H/2+4))/scale;
     for(let i=blocks.length-1;i>=0;i--){ const b=blocks[i]; if(x>=b.x&&x<=b.x+b.w&&y>=b.y&&y<=b.y+b.h){
       if(b.muted) return null;
       if(b.memberHits){ for(const m of b.memberHits){ if(x>=b.x+m.x&&x<=b.x+m.x+m.w&&y>=b.y+m.y&&y<=b.y+m.y+m.h) return {isNode:true, nodeId:m.id, id:m.id}; } }
@@ -1491,23 +1729,22 @@ class Component extends DCLogic {
   // whether the previous node had been expanded to 2-hop; expansion is a per-node choice, not a
   // sticky mode. arrangeNodeFocus is passed depth=1 explicitly so it doesn't read the (about to be
   // stale) previous state.focusDepth before setState lands.
-  select(id,returnClusterId=null){ if(!this.byId[id]) return; const n=this.byId[id]; const originCluster=returnClusterId||(!this.state.selectedId?this.state.selectedClusterId:null)||this.state.clusterReturnId; this._cand=null; this._nb=[...new Set(this.archAdj[id]||[])]; this._nIdx=null; this.arrangeNodeFocus(id,1);
+  select(id,returnClusterId=null){ if(!this.byId[id]) return; const n=this.byId[id]; const originCluster=returnClusterId||(!this.state.selectedId?this.state.selectedClusterId:null)||this.state.clusterReturnId; this._cand=null; this._nb=[...new Set(this.archAdj[id]||[])]; this._nIdx=null; this._searchProjection=null; if(this.searchRef.current)this.searchRef.current.value=''; this.arrangeNodeFocus(id,1);
     const trail=[...(this.state.selectedTrail||[]).filter(t=>t.id!==id),{id,label:n.qualified||n.label||id}].slice(-4);
-    this.setState({selectedId:id, selectedClusterId:n.cluster, clusterReturnId:originCluster, selectedTrail:trail, mode:'focus', focusDepth:1}); this.loadSource(id); this.reheat(0.08); }
-  /** Toggle between 1-hop and 2-hop context for the currently selected node — the explicit
-   *  "expand neighbors" affordance (Horizon panel's depth-2 row), replacing the old always-on
-   *  2-hop hairball with an opt-in reveal. */
-  toggleFocusDepth(){
+    this.setState({selectedId:id, selectedClusterId:n.cluster, clusterReturnId:originCluster, selectedTrail:trail, query:'', mode:'focus', focusDepth:1, inspectorOpen:true}); this.loadSource(id); this.reheat(0.08); }
+  /** Reveal the next actual architectural hop, retaining a bounded, connected subset. */
+  setFocusDepth(next){
     const sel=this.state.selectedId; if(!sel) return;
-    const next=(this.state.focusDepth||1)>=2?1:2;
+    next=Math.max(1,Math.min(4,next));
     this.arrangeNodeFocus(sel,next);
     this.setState({focusDepth:next});
     this.reheat(0.3);
   }
-  selectCluster(id){ if(!this.overviewById[id]) return; this._cand=null; this._nb=[]; this._nIdx=null; this.arrangeClusterFocus(id,null,false); this.setState({selectedId:null, selectedClusterId:id, selectedClusterKind:null, clusterContext:false, clusterReturnId:null, selectedTrail:[], sourcePreview:null, mode:'focus'}); this.reheat(0.35); }
+  toggleFocusDepth(){ this.setFocusDepth((this.state.focusDepth||1)+1); }
+  selectCluster(id){ if(!this.overviewById[id]) return; this._cand=null; this._nb=[]; this._nIdx=null; this.arrangeClusterFocus(id,null,false); this.setState({selectedId:null, selectedClusterId:id, selectedClusterKind:null, clusterContext:false, clusterReturnId:null, selectedTrail:[], sourcePreview:null, mode:'focus', inspectorOpen:true}); this.reheat(0.35); }
   setClusterKind(kind){ const id=this.state.selectedClusterId; if(!id)return; this.arrangeClusterFocus(id,kind,this.state.clusterContext); this.setState({selectedClusterKind:kind}); this.reheat(0.25); }
   toggleClusterContext(){ const id=this.state.selectedClusterId; if(!id)return; const next=!this.state.clusterContext; this.arrangeClusterFocus(id,this.state.selectedClusterKind,next); this.setState({clusterContext:next}); this.reheat(0.25); }
-  returnToCluster(){ const id=this.state.clusterReturnId; if(!id||!this.overviewById[id])return; this.arrangeClusterFocus(id,this.state.selectedClusterKind,false); this.setState({selectedId:null,selectedClusterId:id,clusterContext:false,clusterReturnId:null,selectedTrail:[],sourcePreview:null,mode:'focus'}); this.reheat(0.25); }
+  returnToCluster(){ const id=this.state.clusterReturnId; if(!id||!this.overviewById[id])return; this.arrangeClusterFocus(id,this.state.selectedClusterKind,false); this.setState({selectedId:null,selectedClusterId:id,clusterContext:false,clusterReturnId:null,selectedTrail:[],sourcePreview:null,mode:'focus',inspectorOpen:true}); this.reheat(0.25); }
   async loadSource(id){
     const n=this.byId[id]; const seq=++this._sourceSeq;
     if(this._sourceAbort)this._sourceAbort.abort();
@@ -1523,7 +1760,7 @@ class Component extends DCLogic {
     }catch(err){ if(controller.signal.aborted||seq!==this._sourceSeq)return; this.setState({sourcePreview:{nodeId:id,status:'error',message:String(err&&err.message||err),lines:[]}}); }
   }
   copyLocation(location){ if(!location)return; if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(location).catch(()=>{}); }
-  closePanel(){ this._cand=null; this._nb=[]; this._nIdx=null; if(this._sourceAbort)this._sourceAbort.abort(); this.setState({selectedId:null, selectedClusterId:null, selectedClusterKind:null, clusterContext:false, clusterReturnId:null, selectedTrail:[], sourcePreview:null}); }
+  closePanel(){ this._cand=null; this._nb=[]; this._nIdx=null; if(this._sourceAbort)this._sourceAbort.abort(); this.setState({selectedId:null, selectedClusterId:null, selectedClusterKind:null, clusterContext:false, clusterReturnId:null, selectedTrail:[], sourcePreview:null, inspectorOpen:false}); }
   // ── memory ledger (G5.4) ──────────────────────────────────────────────────
   // Same fetch discipline as loadSource: AbortController + sequence guard, so a slow ledger
   // response can never overwrite a newer view, and closing the panel cancels the in-flight read.
@@ -1807,17 +2044,36 @@ class Component extends DCLogic {
     return out; }
   toggleTheme(){ this.setState(s=>({theme:s.theme==='dark'?'light':'dark'})); }
   toggleBlast(){ this.setState(s=>({blast:!s.blast})); this.reheat(0.2); }
-  showOverview(){ if(!this.overview.length)return; this.setState({mode:'overview', selectedId:null, selectedClusterId:null, selectedClusterKind:null, clusterContext:false, clusterReturnId:null, selectedTrail:[], sourcePreview:null}); }
-  showFocus(){ if(this.state.selectedId){ this.arrangeNodeFocus(this.state.selectedId); this.setState({mode:'focus'}); this.reheat(0.08); return; } this.setState({mode:'focus'}); setTimeout(()=>this.fit(),0); this.reheat(0.25); }
+  showOverview(){ if(!this.overview.length)return; this.setState({mode:'overview', blast:false, selectedId:null, selectedClusterId:null, selectedClusterKind:null, clusterContext:false, clusterReturnId:null, selectedTrail:[], sourcePreview:null, inspectorOpen:false}); }
+  showFocus(){ if(this.state.selectedId){ this.arrangeNodeFocus(this.state.selectedId); this.setState({mode:'focus',blast:false}); this.reheat(0.08); return; } this.setState({mode:'focus',blast:false}); setTimeout(()=>this.fit(),0); this.reheat(0.25); }
+  showBlast(){ if(this.state.mode==='overview')this.setState({mode:'focus',blast:true});else this.setState({blast:true}); this.reheat(.2); }
+  toggleHelp(){ this.setState(s=>({helpOpen:!s.helpOpen})); }
+  toggleInspector(){ if(this.state.inspectorOpen){this.closeInspector();return;} this.setState({inspectorOpen:true}); }
+  closeInspector(){ this.setState({inspectorOpen:false},()=>{if(this.inspectorToggleRef.current)this.inspectorToggleRef.current.focus();}); }
+  toggleInspectorSection(title,defaultOpen){ this.setState(s=>({openInspectorSections:{...s.openInspectorSections,[title]:!(s.openInspectorSections[title]!==undefined?s.openInspectorSections[title]:defaultOpen)}})); }
+  toggleInspectorSource(){ this.setState(s=>({sourceOpen:!s.sourceOpen})); }
+  toggleRail(){ this.setState((s)=>({railOpen:!s.railOpen})); }
+  resetFilters(){ this.setState({hidden:{}}); this.reheat(0.3); }
+  formatRailLabel(value){
+    const normalized=String(value||'')
+      .replace(/^module:/,'')
+      .replace(/^packages\//,'')
+      .replace(/^@knowledge-crib\//,'')
+      .replace(/\/src(?:\/.*)?$/,'')
+      .trim();
+    if(!normalized||normalized==='(root)') return 'Workspace';
+    const initialisms={cli:'CLI',mcp:'MCP',ui:'UI'};
+    return normalized.split('/').map((part)=>part.split('-').map((word)=>initialisms[word.toLowerCase()]||(word?word[0].toUpperCase()+word.slice(1):word)).join(' ')).join(' / ');
+  }
   bumpZoom(){ this.setState(s=>({zoomTick:(s.zoomTick||0)+1})); }
-  zoomOut(){ if(this.state.mode==='overview'&&this.overview.length){ this.overviewZoom=Math.max(0.45,this.overviewZoom/1.18); this.bumpZoom(); return; } this.view.k=Math.max(0.12,this.view.k/1.18); this.bumpZoom(); }
-  zoomIn(){ if(this.state.mode==='overview'&&this.overview.length){ this.overviewZoom=Math.min(2.8,this.overviewZoom*1.18); this.bumpZoom(); return; } this.view.k=Math.min(4.5,this.view.k*1.18); this.bumpZoom(); }
+  zoomOut(){ if(this.state.mode==='overview'&&this.overview.length){ this.overviewZoom=Math.max(0.45,this.overviewZoom/1.18); this.bumpZoom(); return; } this._fitOnResize=false; this.view.k=Math.max(this.minimumZoom(),this.view.k/1.18); this.bumpZoom(); }
+  zoomIn(){ if(this.state.mode==='overview'&&this.overview.length){ this.overviewZoom=Math.min(2.8,this.overviewZoom*1.18); this.bumpZoom(); return; } this._fitOnResize=false; this.view.k=Math.min(4.5,this.view.k*1.18); this.bumpZoom(); }
   resetView(){ if(this.state.mode==='overview'&&this.overview.length){ this.overviewZoom=1; this.bumpZoom(); return; } this.fit(); this.bumpZoom(); }
   onSearch(e){
     const query=e.target.value;
     this.selectedModule=null;
     this._searchProjection=null;
-    this.setState({query,mode:query.trim()?'focus':(this.overview.length?'overview':'focus'),selectedId:null,selectedClusterId:null,selectedClusterKind:null,clusterContext:false,clusterReturnId:null,selectedTrail:[],sourcePreview:null},()=>{
+    this.setState({query,mode:query.trim()?'focus':(this.overview.length?'overview':'focus'),selectedId:null,selectedClusterId:null,selectedClusterKind:null,clusterContext:false,clusterReturnId:null,selectedTrail:[],sourcePreview:null,inspectorOpen:false},()=>{
       if(query.trim())this.arrangeSearch(query);
       if(!this.largeGraph||query.trim())this.fit();
       this.bumpZoom();
@@ -1847,18 +2103,13 @@ class Component extends DCLogic {
     return depthMap;
   }
 
-  // `depthMap` here is always the FULL 2-hop reach (informational — powers the Horizon panel's
-  // "N direct neighbors" / "N wider nodes" counts and the pre-expand preview), independent of what
-  // is actually drawn. `set` (what canvas highlighting/fade reads) instead reflects the CAPPED,
-  // current-focusDepth ring — the same thing `visibleNodes()` returns — so highlighting never
-  // references a node that isn't on screen.
-  computeHL(){ const sel=this.state.selectedId; if(!sel) return null; const set=new Set([sel]); const blast=new Map(); const depthMap=this.computeDepthMap(sel,2);
+  // Depth counts describe discovered real hops; highlights describe only the capped nodes on the
+  // canvas. Keeping these distinct makes both the layout and omission disclosure honest.
+  computeHL(){ const sel=this.state.selectedId; if(!sel) return null; const set=new Set([sel]); const blast=new Map(); const rings=this.focusRingIds(sel,this.state.focusDepth||1); const depthMap=rings.depthMap;
     if(this.state.blast){ // reverse-dependency BFS — shows the full ripple, not ring-capped
       blast.set(sel,0); const queue=[sel]; while(queue.length){ const cur=queue.shift(); const d=blast.get(cur); for(const dep of this.revDep[cur]){ if(!blast.has(dep)){ blast.set(dep,d+1); set.add(dep); queue.push(dep); } } }
     } else {
-      const rings=this.focusRingIds(sel,this.state.focusDepth||1);
-      for(const id of rings.ring1) set.add(id);
-      for(const id of rings.ring2) set.add(id);
+      for(const id of rings.rings.flat()) set.add(id);
     }
     return {set,blast,depthMap};
   }
@@ -1875,8 +2126,8 @@ class Component extends DCLogic {
     const sections=[]; const add=(title,color,items)=>{ if(items.length) sections.push({title,color,count:items.length,items}); };
     const hl=this.computeHL();
     if(hl&&hl.depthMap){
-      const counts={0:0,1:0,2:0};
-      for(const depth of hl.depthMap.values()) if(counts[depth]!=null) counts[depth]++;
+      const projection=this.focusRingIds(sel,this.state.focusDepth||1);
+      const currentDepth=this.state.focusDepth||1;
       const trail=(this.state.selectedTrail||[]).map((t,i)=>({
         id:t.id,
         label:t.label,
@@ -1887,15 +2138,18 @@ class Component extends DCLogic {
         onGo:()=>this.select(t.id),
         badge:null,
       }));
-      // depth-2 is the explicit expand/collapse affordance (P5 declutter): default focus shows only
-      // depth-1, so this row is the ONLY way to reveal wider context — its label/action must say so,
-      // not just silently report a count with a no-op click (the old behavior).
-      const expanded=(this.state.focusDepth||1)>=2;
-      const ring1Hidden=this._ring1Hidden||0;
       const horizon=[
-        { id:'depth-0', label:'Selected node', color:this.DEPTH_COLORS[0], relColor:this.DEPTH_COLORS[0], phrase:String(counts[0]||1), tail:' in focus', onGo:()=>this.select(sel), badge:null },
-        { id:'depth-1', label:'Direct neighbors', color:this.DEPTH_COLORS[1], relColor:this.DEPTH_COLORS[1], phrase:String(counts[1]||0), tail:ring1Hidden>0?(' 1-hop links · showing top '+(this.RING1_CAP)+' by importance'):' 1-hop links', onGo:()=>this.select(sel), badge:null },
-        { id:'depth-2', label:expanded?'2-hop context (shown)':'Expand to 2-hop context', color:this.DEPTH_COLORS[2], relColor:this.DEPTH_COLORS[2], phrase:String(counts[2]||0), tail:expanded?' wider nodes — click to collapse':' wider nodes available — click to reveal', onGo:()=>this.toggleFocusDepth(), badge:null },
+        { id:'depth-0', label:'Selected node', color:this.DEPTH_COLORS[0], relColor:this.DEPTH_COLORS[0], phrase:'1', tail:' in focus', onGo:()=>this.select(sel), badge:null },
+        ...[1,2,3,4].filter(hop=>hop<=currentDepth+1 && (projection.countsByDepth[hop]||0)>0).map(hop=>{
+          const shown=hop<=currentDepth;
+          const count=projection.countsByDepth[hop]||0;
+          const hidden=projection.hiddenByDepth[hop]||0;
+          const label=hop===1?'Direct neighbors':(shown?hop+'-hop context':'Expand to '+hop+'-hop context');
+          const tail=(shown?' · '+projection.rings[hop-1].length+' shown':' available · click to reveal')+
+            (hidden?' · '+hidden+' beyond display cap':'')+(projection.truncated?' · reach may be incomplete':'');
+          return {id:'depth-'+hop,label,color:this.DEPTH_COLORS[hop],relColor:this.DEPTH_COLORS[hop],phrase:String(count)+(projection.truncated?'+':''),tail,onGo:()=>this.setFocusDepth(shown?Math.max(1,hop-1):hop),badge:null};
+        }),
+        ...(currentDepth>1?[{id:'depth-reset',label:'Return to 1 hop',color:this.DEPTH_COLORS[1],relColor:this.DEPTH_COLORS[1],phrase:'Reset',tail:' · keep the same selected node',onGo:()=>this.setFocusDepth(1),badge:null}]:[]),
         ...trail,
       ];
       add('Horizon',this.DEPTH_COLORS[1],horizon);
@@ -1979,20 +2233,43 @@ class Component extends DCLogic {
     // stable order) instead of a hardcoded list that omitted symbol/media-seg/explanation/
     // enum/type/getter/setter/property — those nodes rendered but had no filter toggle.
     const kinds=[...new Set(this.nodes.map(n=>n.kind))].sort();
-    const kindList=kinds.map(k=>({ key:k, label:this.KLABEL[k]||k, color:this.KIND[k]||'#888', op:this.state.hidden[k]?0.32:(this.NOISE_KINDS.has(k)?0.5:1), onToggle:()=>this.toggleKind(k) }));
+    const kindList=kinds.map(k=>({ key:k, label:this.KLABEL[k]||k, count:String(this.nodes.filter(n=>n.kind===k).length), color:this.KIND[k]||'#888', op:this.state.hidden[k]?0.32:(this.NOISE_KINDS.has(k)?0.5:1), onToggle:()=>this.toggleKind(k) }));
+    // The rail consumes the same server overview as the canvas. Older servers do not provide
+    // modules, so it safely falls back to the graph's functionality clusters.
+    const railSource=this.vizModules||this.clusters;
+    const moduleList=railSource.slice(0,14).map((m)=>{
+      const count=typeof m.memberCount==='number'?m.memberCount:(typeof m.count==='number'?m.count:(m.clusterIds?m.clusterIds.length:0));
+      const selected=this.selectedModule===m.id||this.state.selectedClusterId===m.id;
+      return { id:m.id, label:this.formatRailLabel(m.label||m.id), count:String(count), color:m.color||'#6e94ff', bg:selected?this.hex(m.color||'#6e94ff',.12):'transparent', border:selected?this.hex(m.color||'#6e94ff',.42):'transparent',
+        help:this.vizModules?'Open this module in the architecture overview':'Open this functionality cluster',
+        onGo:()=>this.vizModules?this.selectModule(m.id):this.selectCluster(m.id) };
+    });
     const sel=this.buildDetail();
+    if(sel)sel.sections=(sel.sections||[]).map((section,index)=>{
+      const defaultOpen=index===0&&section.title!=='Members';
+      const open=this.state.openInspectorSections[section.title]!==undefined?this.state.openInspectorSections[section.title]:defaultOpen;
+      return {...section,open,caret:open?'▾':'▸',onToggle:()=>this.toggleInspectorSection(section.title,defaultOpen)};
+    });
+    const inspectorOpen=this.state.inspectorOpen;
      const blastOn=this.state.blast;
      const overviewOn=this.state.mode==='overview'&&this.overview.length>0;
      const focusOn=!overviewOn;
     // Focus empty-state: large repo, focus mode, nothing selected and no search — show the "how to
     // start" hint. Small graphs default to focus with nodes already visible, so no hint there.
-    const focusEmpty = this.largeGraph && focusOn && !this.state.selectedId && !this.state.selectedClusterId && !(this.state.query||'').trim();
-    const zoomLabel=Math.round((overviewOn?this.overviewZoom:this.view.k)*100)+'%';
+    const focusEmpty = this.largeGraph && focusOn && !this.state.selectedId && !this.state.selectedClusterId && !(this.state.query||'').trim() && !this.visibleNodes().some(n=>!this.state.hidden[n.kind]);
+     const zoomLabel=Math.round((overviewOn?this.overviewZoom:this.view.k)*100)+'%';
     const compactStats=(this.stats||'…').replace(/\s+·\s+/g,' · ');
     const searchQuery=(this.state.query||'').trim();
     const searchProjection=searchQuery?this.searchProjection(searchQuery):null;
     const searchStatus=searchProjection?(searchProjection.totalMatches?searchProjection.totalMatches+' match'+(searchProjection.totalMatches===1?'':'es')+' · '+searchProjection.contextIds.length+' related':'No graph matches'):null;
-    const searchStatusColor=searchProjection&&searchProjection.totalMatches===0?'#f87171':t.sub;
+     const searchStatusColor=searchProjection&&searchProjection.totalMatches===0?'#f87171':t.sub;
+    const selectedNode=this.state.selectedId&&this.byId[this.state.selectedId];
+    const selectedBlock=this.state.selectedClusterId&&this.overviewById[this.state.selectedClusterId];
+    const selectedModule=this.selectedModule&&railSource.find(m=>m.id===this.selectedModule);
+    const stageSecondary=selectedModule?this.formatRailLabel(selectedModule.label||selectedModule.id):(selectedBlock?this.formatRailLabel(selectedBlock.label||selectedBlock.id):(focusOn?'Focus':null));
+    const stageTertiary=selectedNode?(selectedNode.qualified||selectedNode.label||selectedNode.id):null;
+    const badgeData=this.state.memData;
+    const memoryBadge=badgeData&&badgeData.counts?String((badgeData.counts.stale||0)+(badgeData.counts.moved||0)):'•';
      const tOn=this.state.tour; const ts=this.TOUR[this.state.tourStep]||{title:'No tour available',text:'This project has no indexed symbols to tour yet.'}; const isLast=this.state.tourStep>=this.TOUR.length-1; const isFirst=this.state.tourStep<=0;
     // ── memory ledger view model (G5.4) ── the /memory.json projection is already display-shaped;
     // this only adds chrome (colors, chips, handlers) and the lazy per-record detail sub-view.
@@ -2156,14 +2433,25 @@ class Component extends DCLogic {
       tour:{ on:tOn, step:this.state.tourStep+1, total:this.TOUR.length, title:ts.title, text:ts.text, nextLabel:isLast?'Finish':'Next', prevOp:isFirst?0.4:1, onNext:()=>this.tourGo(this.state.tourStep+1), onPrev:()=>this.tourGo(this.state.tourStep-1), onExit:()=>this.exitTour() },
       startTour:()=>this.startTour(), exportSub:()=>this.exportSubgraph(),
       tourBg: tOn?'rgba(91,140,255,0.16)':t.chip, tourBorder: tOn?'rgba(91,140,255,0.5)':t.border, tourFg: tOn?'#5b8cff':t.text,
-       rootRef:this.rootRef, canvasRef:this.canvasRef, tipRef:this.tipRef, searchRef:this.searchRef,
-        t, stats:this.stats||'…', compactStats, kindList, sel, focusEmpty, searchStatus, searchStatusColor,
+       rootRef:this.rootRef, canvasRef:this.canvasRef, miniRef:this.miniRef, tipRef:this.tipRef, searchRef:this.searchRef, inspectorToggleRef:this.inspectorToggleRef,
+        t, stats:this.stats||'…', compactStats, kindList, moduleList, sel, focusEmpty, searchStatus, searchStatusColor,
+      railClass:this.state.railOpen?'':'kc-rail-collapsed', railWidth:this.state.railOpen?'256px':'64px',
+      inspectorClass:inspectorOpen?'':'kc-inspector-closed', inspectorEmpty:inspectorOpen&&!sel, inspectorDetail:inspectorOpen&&!!sel,
+      inspectorExpanded:inspectorOpen?'true':'false', inspectorToggleLabel:inspectorOpen?'Hide inspector':'Open inspector',
+       railNodeCount:this.nodes.length.toLocaleString(), railEdgeCount:this.edges.length.toLocaleString(), railModuleCount:String(railSource.length),
+        stageSecondary, stageTertiary, stageOverflowOn:this.overviewOverflow>0, stageOverflowLabel:'+'+this.overviewOverflow+' more modules', memoryBadge, helpOpen:this.state.helpOpen, sourceOpen:this.state.sourceOpen, sourceCaret:this.state.sourceOpen?'▾':'▸',
+       statusLabel:(this.state.mode==='overview'?'Architecture overview':'Focused graph')+' · '+railSource.length+' modules · '+this.nodes.length+' nodes',
+       statusHint:'Drag to pan · Scroll to zoom · Fit to reset · M memory · Esc back',
+      railToggleIcon:this.state.railOpen?'‹':'›', railToggleLabel:this.state.railOpen?'Collapse navigation':'Expand navigation',
       zoomLabel,
       overviewBg: overviewOn?'#5b8cff':'transparent', overviewFg: overviewOn?'#fff':t.text,
-      focusBg: focusOn?'#5b8cff':'transparent', focusFg: focusOn?'#fff':t.text,
+      focusBg: focusOn&&!blastOn?'#5b8cff':'transparent', focusFg: focusOn&&!blastOn?'#fff':t.text,
+      blastSegmentBg:blastOn?'rgba(248,113,113,.2)':'transparent', blastSegmentFg:blastOn?'#f87171':t.text,
        themeIcon: theme==='dark'?'☾':'☀',
-       blastBg: blastOn?'rgba(248,113,113,0.16)':t.chip, blastBorder: blastOn?'rgba(248,113,113,0.5)':t.border, blastFg: blastOn?'#f87171':t.text,
-      showOverview:()=>this.showOverview(), showFocus:()=>this.showFocus(),
+      blastBg: blastOn?'rgba(248,113,113,0.16)':t.chip, blastBorder: blastOn?'rgba(248,113,113,0.5)':t.border, blastFg: blastOn?'#f87171':t.text,
+       showOverview:()=>this.showOverview(), showFocus:()=>this.showFocus(), showBlast:()=>this.showBlast(), toggleHelp:()=>this.toggleHelp(), toggleInspectorSource:()=>this.toggleInspectorSource(),
+      toggleInspector:()=>this.toggleInspector(), closeInspector:()=>this.closeInspector(),
+      toggleRail:()=>this.toggleRail(), resetFilters:()=>this.resetFilters(),
       zoomOut:()=>this.zoomOut(), zoomIn:()=>this.zoomIn(),
       toggleTheme:()=>this.toggleTheme(), toggleBlast:()=>this.toggleBlast(), resetView:()=>this.resetView(), onSearch:(e)=>this.onSearch(e), closePanel:()=>this.closePanel(),
       mem, toggleMemory:()=>this.toggleMemory(), closeMemory:()=>this.closeMemory(),
