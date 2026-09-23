@@ -85,7 +85,9 @@ describe('viz web asset: memory ledger panel (G5.4)', () => {
     expect(html).toContain('--kc-accent-code');
     expect(html).toContain('@media (prefers-reduced-motion: reduce)');
     expect(html).toContain('grid-template-rows:52px minmax(0,1fr) 26px');
-    expect(html).toContain('grid-template-columns:var(--kc-rail-width) minmax(0,1fr) var(--kc-inspector-width)');
+    expect(html).toContain(
+      'grid-template-columns:var(--kc-rail-width) minmax(0,1fr) var(--kc-inspector-width)',
+    );
     expect(html).toContain('grid-area:2 / 2');
     expect(html).toContain('grid-area:2 / 1 / 3 / 4');
     expect(html).toContain('z-index:40 !important');
