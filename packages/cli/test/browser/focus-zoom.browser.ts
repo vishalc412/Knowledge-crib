@@ -27,19 +27,23 @@ test('Focus fits a repo-scale graph and keeps its compact zoom usable', async ({
     importance: 1_809 - i,
     tier: i < 90 ? 'primary' : 'detail',
   }));
-  await page.route('**/graph.json', (route) =>
-    route.fulfill({
+  await page.route('**/graph.json', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    await route.fulfill({
       json: {
         nodes,
         edges: [],
         clusters,
         stats: { nodes: nodes.length, edges: 0, clusters: clusters.length },
       },
-    }),
-  );
+    });
+  });
   await page.route('**/overview.json', (route) => route.fulfill({ json: { modules: [] } }));
   await page.goto(backend.url);
 
+  await expect(page.locator('[data-kc-navigation-rail] .kc-rail-stat strong').first()).toHaveText(
+    '1,809',
+  );
   await expect(page.locator('[data-kc-command="focus"]')).toBeVisible();
   const zoom = page.locator('[data-kc-stage-zoom]');
   const fit = zoom.locator('button').nth(1);

@@ -125,7 +125,7 @@ describe('crib viz — buildVizGraph (DC runtime contract)', () => {
     expect(html).toContain('selectedTrail');
     expect(html).toContain('depthMap');
     expect(html).toContain('Horizon');
-    expect(html).toContain('2-hop context');
+    expect(html).toContain('onGo:()=>this.setFocusDepth(shown?Math.max(1,hop-1):hop)');
   });
 
   it('presents focused selections as a compact local graph cockpit', () => {
