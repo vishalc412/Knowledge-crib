@@ -11,6 +11,7 @@
 <script src="./vendor/react.production.min.js"></script>
 <script src="./vendor/react-dom.production.min.js"></script>
 <script src="./graph-model.js"></script>
+<script src="./explorer-projection.js"></script>
 <script src="./support.js"></script>
 </head>
 <body>
@@ -50,6 +51,38 @@
   .kc-stage-float { pointer-events:auto; display:flex; align-items:center; gap:7px; padding:5px 9px; border-radius:8px; border:1px solid var(--kc-line); background:rgba(16,20,28,.9); color:var(--kc-muted); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); box-shadow:0 8px 24px rgba(0,0,0,.16); }
   .kc-stage-tool { width:28px; height:26px; border:0; border-radius:6px; background:transparent; color:var(--kc-text); cursor:pointer; font:700 15px 'IBM Plex Sans'; }
   .kc-stage-tool:hover { background:var(--kc-fill); }
+  .kc-presentation { display:flex; align-items:center; gap:2px; padding:2px; border:1px solid var(--kc-line); border-radius:8px; background:var(--kc-fill); }
+  .kc-presentation button { min-height:32px; padding:0 10px; border:0; border-radius:6px; background:transparent; color:var(--kc-text); cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; }
+  .kc-presentation button[aria-pressed="true"] { background:#5b8cff; color:#fff; }
+  .kc-result-panel { position:absolute; inset:0; z-index:5; display:none; flex-direction:column; overflow:hidden; background:var(--kc-panel); color:var(--kc-text); }
+  .kc-presentation-list .kc-result-panel, .kc-presentation-split .kc-result-panel { display:flex; }
+  .kc-presentation-list .kc-stage-canvas, .kc-presentation-list .kc-stage-chrome { display:none !important; }
+  .kc-presentation-split .kc-stage-canvas { width:50%; }
+  .kc-presentation-split .kc-stage-chrome { right:calc(50% + 12px) !important; }
+  .kc-presentation-split .kc-result-panel { left:50%; border-left:1px solid var(--kc-line); }
+  .kc-result-head { flex:none; padding:16px; border-bottom:1px solid var(--kc-line); }
+  .kc-result-head h2 { margin:0 0 5px; font:600 18px/1.3 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; }
+  .kc-result-summary { margin:0; color:var(--kc-text-2); font:400 12px/1.5 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; }
+  .kc-result-note { margin:8px 0 0; color:var(--kc-text-2); font:400 12px/1.5 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; }
+  .kc-result-list { flex:1; min-height:0; overflow:auto; margin:0; padding:8px 12px 16px; list-style:none; }
+  .kc-blast-scroll { flex:1; min-height:0; overflow:auto; padding:8px 12px 16px; }
+  .kc-blast-table { width:100%; border-collapse:collapse; text-align:left; font:400 12px/1.5 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; }
+  .kc-blast-table th, .kc-blast-table td { padding:10px 8px; border-bottom:1px solid var(--kc-line); vertical-align:top; overflow-wrap:anywhere; }
+  .kc-blast-table thead th { position:sticky; top:0; background:var(--kc-panel); color:var(--kc-text-2); font-weight:700; }
+  .kc-blast-table .kc-blast-group th { background:var(--kc-fill); color:var(--kc-text); font-size:12px; }
+  .kc-blast-table tbody th[scope="row"] { color:var(--kc-text); font-weight:600; }
+  .kc-result-row { margin:0 0 8px; padding:12px; border:1px solid var(--kc-line); border-radius:9px; background:var(--kc-fill); }
+  .kc-result-row:focus-within { border-color:#43d8c9; }
+  .kc-result-row-head { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+  .kc-result-row-name { min-width:0; overflow-wrap:anywhere; font:600 14px/1.4 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; }
+  .kc-result-row-kind { flex:none; color:var(--kc-text-2); font:600 12px/1.4 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; text-transform:capitalize; }
+  .kc-result-row-meta { margin:5px 0 0; color:var(--kc-text-2); font:400 12px/1.5 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; overflow-wrap:anywhere; }
+  .kc-result-row button, .kc-result-head button, .kc-result-pager button, .kc-result-empty button, .kc-blast-table button { min-height:32px; padding:0 10px; border:1px solid var(--kc-line); border-radius:7px; background:var(--kc-bg); color:var(--kc-text); cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; }
+  .kc-result-row button { margin-top:8px; }
+  .kc-result-pager { flex:none; display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px 16px; border-top:1px solid var(--kc-line); color:var(--kc-text-2); font:500 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; }
+  .kc-result-pager button:disabled { opacity:.45; cursor:not-allowed; }
+  .kc-result-empty { padding:24px 16px; color:var(--kc-text-2); font:400 14px/1.55 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; }
+  .kc-result-empty p { margin:0 0 12px; }
   .kc-navigation-rail { grid-column:1; grid-row:2; position:relative !important; top:auto !important; bottom:auto !important; left:auto !important; z-index:22; width:auto !important; display:flex; flex-direction:column; overflow:hidden; border:0; border-right:1px solid var(--kc-line); border-radius:0; background:var(--kc-panel); box-shadow:none; backdrop-filter:none; -webkit-backdrop-filter:none; transition:width 180ms ease; }
   .kc-rail-header { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:12px 12px 10px; border-bottom:1px solid var(--kc-line); }
   .kc-rail-body { flex:1; min-width:0; overflow:auto; padding:11px 8px 12px; }
@@ -77,6 +110,8 @@
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; scroll-behavior:auto !important; transition-duration:0.01ms !important; } }
   @media (max-width: 1100px) { [data-kc-shell="signal-console"]:not(.kc-inspector-closed) { --kc-inspector-width: 310px !important; } .kc-hide-compact { display:none !important; } }
   @media (max-width: 760px) { [data-kc-shell="signal-console"], [data-kc-shell="signal-console"]:not(.kc-inspector-closed) { --kc-inspector-width: 0px !important; --kc-rail-width: 52px !important; } .kc-navigation-rail { width:auto !important; } .kc-navigation-rail .kc-rail-body, .kc-navigation-rail .kc-rail-title { display:none; } .kc-inspector-empty, [data-kc-inspector] { grid-area:2 / 2 !important; border-left:0 !important; } .kc-statusline { display:none; } }
+  @media (max-width: 1279px) { [data-kc-presentation="split"] { display:none; } }
+  @media (max-width: 760px) { .kc-presentation button, .kc-result-row button, .kc-result-head button, .kc-result-pager button, .kc-result-empty button, .kc-blast-table button { min-height:44px; } }
   @media (max-width: 900px) {
     .kc-topbar { gap: 8px !important; padding: 0 10px !important; }
     .kc-brand { flex: 0 0 34px !important; min-width: 34px !important; overflow: hidden !important; }
@@ -105,8 +140,8 @@
 </helmet>
 <div ref="{{ rootRef }}" data-kc-shell="signal-console" class="{{ inspectorClass }}" style="--kc-bg:{{ t.bg }}; --kc-panel:{{ t.panel }}; --kc-raised:{{ t.code }}; --kc-text:{{ t.text }}; --kc-text-2:{{ t.sub }}; --kc-muted:{{ t.sub }}; --kc-line:{{ t.border }}; --kc-fill:{{ t.chip }}; --kc-rail-width:{{ railWidth }}; --kc-inspector-width:356px; position:fixed; inset:0; overflow:hidden; font-family:'IBM Plex Sans',system-ui,sans-serif; background:var(--kc-bg);">
 
-  <main data-kc-graph-stage aria-label="Knowledge graph stage">
-    <canvas ref="{{ canvasRef }}" class="kc-stage-canvas"></canvas>
+  <main data-kc-graph-stage class="{{ stageClass }}" aria-label="Knowledge graph stage">
+    <canvas ref="{{ canvasRef }}" class="kc-stage-canvas" role="img" aria-label="Interactive code graph. Use List for accessible results and actions."></canvas>
     <div class="kc-stage-chrome" style="top:10px; left:12px; right:12px; display:flex; align-items:flex-start; gap:8px;">
       <div data-kc-stage-breadcrumbs class="kc-stage-float" aria-label="Graph location">
         <button onClick="{{ showOverview }}" style="padding:0; border:0; background:none; color:#9dbaff; cursor:pointer; font:600 11.5px 'IBM Plex Sans';">Overview</button>
@@ -123,6 +158,7 @@
         <button data-kc-stage-overflow onClick="{{ toggleRail }}" class="kc-stage-float" style="cursor:pointer; font:500 11px 'IBM Plex Sans';">{{ stageOverflowLabel }}</button>
       </sc-if>
       <button ref="{{ inspectorToggleRef }}" data-kc-inspector-toggle onClick="{{ toggleInspector }}" aria-label="{{ inspectorToggleLabel }}" aria-expanded="{{ inspectorExpanded }}" class="kc-stage-float" style="margin-left:auto; cursor:pointer; color:var(--kc-text); font:600 11px 'IBM Plex Sans';">{{ inspectorToggleLabel }}</button>
+      <button onClick="{{ showList }}" class="kc-stage-float" style="cursor:pointer; color:var(--kc-text); font:600 12px 'IBM Plex Sans';">Use List for accessible results</button>
     </div>
     <div class="kc-stage-chrome" style="right:12px; bottom:12px; display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
       <div data-kc-minimap class="kc-stage-float" style="padding:6px;">
@@ -134,6 +170,42 @@
         <button onClick="{{ zoomIn }}" title="Zoom in" class="kc-stage-tool">+</button>
       </div>
     </div>
+    <section class="kc-result-panel" aria-label="Textual graph explorer">
+      <div class="kc-result-head">
+        <h2 data-kc-explorer-scope tabindex="-1">{{ resultHeading }}</h2>
+        <p class="kc-result-summary" role="status" aria-live="polite">{{ resultCountLabel }}</p>
+        <sc-if value="{{ resultBack }}" hint-placeholder-val="{{ true }}"><button onClick="{{ backExplorer }}" style="margin-top:8px;">Back to results</button></sc-if>
+        <sc-if value="{{ resultMoreHops }}" hint-placeholder-val="{{ true }}"><button onClick="{{ showNextHop }}" style="margin-top:8px;">Show {{ nextHop }} hops</button></sc-if>
+        <sc-if value="{{ resultResetHops }}" hint-placeholder-val="{{ true }}"><button onClick="{{ resetHops }}" style="margin-top:8px;">Return to 1 hop</button></sc-if>
+        <sc-if value="{{ resultNote }}" hint-placeholder-val="{{ true }}"><p class="kc-result-note">{{ resultNote }}</p></sc-if>
+      </div>
+      <sc-if value="{{ resultListVisible }}" hint-placeholder-val="{{ true }}">
+        <ul data-kc-result-list ref="{{ resultListRef }}" onScroll="{{ onResultScroll }}" class="kc-result-list" aria-label="Graph results">
+          <sc-for list="{{ resultRows }}" as="r" hint-placeholder-count="10">
+            <li class="kc-result-row" data-kc-result-row data-kc-row-id="{{ r.id }}">
+              <div class="kc-result-row-head"><span class="kc-result-row-name">{{ r.qualified }}</span><span class="kc-result-row-kind">{{ r.kind }}</span></div>
+              <sc-if value="{{ r.path }}" hint-placeholder-val="{{ true }}"><p class="kc-result-row-meta">{{ r.path }}</p></sc-if>
+              <sc-if value="{{ r.summary }}" hint-placeholder-val="{{ true }}"><p class="kc-result-row-meta">{{ r.summary }}</p></sc-if>
+              <sc-if value="{{ r.relationship }}" hint-placeholder-val="{{ true }}"><p class="kc-result-row-meta">{{ r.relationship }} · hop {{ r.hop }}</p></sc-if>
+              <sc-if value="{{ r.group }}" hint-placeholder-val="{{ true }}"><p class="kc-result-row-meta">{{ r.group }}</p></sc-if>
+              <button onClick="{{ r.onOpen }}" aria-label="{{ r.actionLabel }}">{{ r.actionLabel }}</button>
+            </li>
+          </sc-for>
+        </ul>
+      </sc-if>
+      <sc-if value="{{ resultBlastVisible }}" hint-placeholder-val="{{ true }}">
+        <div class="kc-blast-scroll"><table class="kc-blast-table" aria-label="Blast results"><thead><tr><th scope="col">Affected symbol</th><th scope="col">Relationship</th><th scope="col">Hop</th><th scope="col">Module</th><th scope="col">Action</th></tr></thead><tbody>
+          <sc-for list="{{ resultRows }}" as="r" hint-placeholder-count="10">
+            <sc-if value="{{ r.groupStart }}" hint-placeholder-val="{{ true }}"><tr class="kc-blast-group"><th scope="colgroup" colspan="5">{{ r.group }}</th></tr></sc-if>
+            <tr data-kc-result-row data-kc-row-id="{{ r.id }}"><th scope="row">{{ r.qualified }}<sc-if value="{{ r.path }}" hint-placeholder-val="{{ true }}"><span style="display:block; color:var(--kc-text-2); font-weight:400;">{{ r.path }}</span></sc-if></th><td>{{ r.relationship }}</td><td>{{ r.hop }}</td><td>{{ r.module }}</td><td><button onClick="{{ r.onOpen }}" aria-label="{{ r.actionLabel }}">{{ r.actionLabel }}</button></td></tr>
+          </sc-for>
+        </tbody></table></div>
+      </sc-if>
+      <sc-if value="{{ resultEmpty }}" hint-placeholder-val="{{ true }}"><div class="kc-result-empty"><p>{{ resultEmptyMessage }}</p><sc-if value="{{ resultClearSearch }}" hint-placeholder-val="{{ true }}"><button onClick="{{ clearSearch }}">Clear search</button></sc-if><sc-if value="{{ resultClearFilters }}" hint-placeholder-val="{{ true }}"><button onClick="{{ resetFilters }}">Clear filters</button></sc-if></div></sc-if>
+      <div class="kc-result-pager"><button onClick="{{ previousResultPage }}" disabled="{{ resultPrevDisabled }}">Previous</button><span>{{ resultPageLabel }}</span><button onClick="{{ nextResultPage }}" disabled="{{ resultNextDisabled }}">Next</button></div>
+    </section>
+    <sc-if value="{{ graphUnavailable }}" hint-placeholder-val="{{ true }}"><div class="kc-graph-error" role="alert" style="position:absolute; z-index:8; left:50%; top:50%; transform:translate(-50%,-50%); max-width:min(360px,90%); padding:20px; border:1px solid var(--kc-line); border-radius:10px; background:var(--kc-panel); color:var(--kc-text);"><strong>Graph could not load</strong><p>{{ graphErrorMessage }}</p><button onClick="{{ retryGraph }}" style="min-height:32px; padding:0 12px; border:1px solid var(--kc-line); border-radius:7px; background:var(--kc-fill); color:var(--kc-text); cursor:pointer;">Retry graph</button></div></sc-if>
+    <sc-if value="{{ graphEmpty }}" hint-placeholder-val="{{ true }}"><div role="status" style="position:absolute; z-index:8; left:50%; top:50%; transform:translate(-50%,-50%); max-width:min(360px,90%); padding:20px; border:1px solid var(--kc-line); border-radius:10px; background:var(--kc-panel); color:var(--kc-text);"><strong>{{ resultEmptyMessage }}</strong><p style="font-size:12px; color:var(--kc-text-2);">Search covers the code graph in this repository.</p><sc-if value="{{ resultClearSearch }}" hint-placeholder-val="{{ true }}"><button onClick="{{ clearSearch }}" style="min-height:32px; padding:0 12px; border:1px solid var(--kc-line); border-radius:7px; background:var(--kc-fill); color:var(--kc-text); cursor:pointer;">Clear search</button></sc-if><sc-if value="{{ resultClearFilters }}" hint-placeholder-val="{{ true }}"><button onClick="{{ resetFilters }}" style="min-height:32px; padding:0 12px; border:1px solid var(--kc-line); border-radius:7px; background:var(--kc-fill); color:var(--kc-text); cursor:pointer;">Clear filters</button></sc-if></div></sc-if>
   </main>
 
   <!-- Top bar -->
@@ -153,6 +225,11 @@
       <button data-kc-command="overview" onClick="{{ showOverview }}" title="Architecture overview" style="height:26px; padding:0 11px; border-radius:6px; border:none; background: {{ overviewBg }}; color: {{ overviewFg }}; font:600 11.5px 'IBM Plex Sans'; cursor:pointer;">Overview</button>
       <button data-kc-command="focus" onClick="{{ showFocus }}" title="Neighborhood of the selected node" style="height:26px; padding:0 11px; border-radius:6px; border:none; background: {{ focusBg }}; color: {{ focusFg }}; font:600 11.5px 'IBM Plex Sans'; cursor:pointer;">Focus</button>
       <button data-kc-command="blast" onClick="{{ showBlast }}" title="What breaks if the selected node changes" style="height:26px; padding:0 11px; border-radius:6px; border:none; background: {{ blastSegmentBg }}; color: {{ blastSegmentFg }}; font:600 11.5px 'IBM Plex Sans'; cursor:pointer;">Blast</button>
+    </div>
+    <div class="kc-presentation" role="group" aria-label="Explorer presentation">
+      <button data-kc-presentation="graph" onClick="{{ showGraph }}" aria-pressed="{{ graphPressed }}">Graph</button>
+      <button data-kc-presentation="list" onClick="{{ showList }}" aria-pressed="{{ listPressed }}">List</button>
+      <button data-kc-presentation="split" onClick="{{ showSplit }}" aria-pressed="{{ splitPressed }}">Split</button>
     </div>
 
     <div class="kc-search" style="position:relative; display:flex; align-items:center; flex:1 1 auto; max-width:520px; min-width:150px;">
@@ -274,7 +351,7 @@
             <button data-kc-inspector-close onClick="{{ closeInspector }}" aria-label="Close inspector" title="Close inspector" style="width:26px; height:26px; display:flex; align-items:center; justify-content:center; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font-size:15px; line-height:1;">×</button>
           </div>
         </div>
-        <div style="font-size:18px; font-weight:600; letter-spacing:-0.01em; margin-top:9px; word-break:break-word;">{{ sel.name }}</div>
+        <h2 data-kc-inspector-heading tabindex="-1" style="font-size:18px; font-weight:600; letter-spacing:-0.01em; margin:9px 0 0; word-break:break-word;">{{ sel.name }}</h2>
         <sc-if value="{{ sel.qualified }}" hint-placeholder-val="{{ true }}">
           <div style="font-family:'IBM Plex Mono',monospace; font-size:11.5px; color: {{ t.sub }}; margin-top:3px;">{{ sel.qualified }}</div>
         </sc-if>
@@ -290,7 +367,7 @@
         <sc-if value="{{ sel.blastOn }}" hint-placeholder-val="{{ true }}">
           <div style="display:flex; gap:10px; align-items:flex-start; padding:11px 12px; border-radius:11px; background: rgba(248,113,113,0.12); border:1px solid rgba(248,113,113,0.4); margin-bottom:15px;">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" style="flex:none; margin-top:1px;"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" fill="#f87171"></path></svg>
-            <div style="font-size:12.5px; line-height:1.45;"><b style="color:#f87171;">{{ sel.blastCount }} nodes affected.</b> <span style="color: {{ t.sub }};">Changing this can ripple out to everything that depends on it.</span></div>
+            <div style="font-size:12.5px; line-height:1.45;"><b style="color:#f87171;">{{ sel.blastCount }} discovered affected nodes.</b> <span style="color: {{ t.sub }};">{{ sel.blastExplanation }}</span></div>
           </div>
         </sc-if>
 
@@ -810,7 +887,7 @@ class Component extends DCLogic {
   // (root + direct neighbors only) — lean by default, deep on demand — instead of always drawing
   // the full 2-hop neighborhood, which on a real repo can be hundreds of nodes with no "you are
   // here" (see toggleFocusDepth / the Horizon panel's expand control).
-  state = { theme: 'dark', mode: 'overview', selectedId: null, selectedClusterId: null, selectedClusterKind: null, clusterContext: false, clusterReturnId: null, selectedTrail: [], sourcePreview: null, sourceOpen: false, inspectorOpen: false, blast: false, query: '', hidden: {}, railOpen: true, helpOpen: false, openInspectorSections: {}, ready: false, tour: false, tourStep: 0, zoomTick: 0, focusDepth: 1, memOpen: false, memLoading: false, memError: null, memData: null, memHome: null, memGroup: null, memDetail: null };
+  state = { theme: 'dark', mode: 'overview', selectedId: null, selectedClusterId: null, selectedClusterKind: null, clusterContext: false, clusterReturnId: null, selectedTrail: [], sourcePreview: null, sourceOpen: false, inspectorOpen: false, blast: false, query: '', hidden: {}, railOpen: true, helpOpen: false, openInspectorSections: {}, ready: false, tour: false, tourStep: 0, zoomTick: 0, focusDepth: 1, memOpen: false, memLoading: false, memError: null, memData: null, memHome: null, memGroup: null, memDetail: null, presentationPreference:window.innerWidth<760?'list':'graph', viewportWidth:window.innerWidth, listPage:0 };
 
   KIND = { file:'#7c8aa5', symbol:'#5b8cff', method:'#6f9bff', function:'#8aa8ff', class:'#5b8cff', interface:'#a78bfa', 'doc-section':'#34d399', table:'#f59e0b', column:'#fbbf24', statement:'#2dd4bf', condition:'#f87171',
            // producer-emitted kinds (viz.ts deriveNodeKind + enums.ts) that were missing → gray + 'undefined' tooltip
@@ -821,7 +898,7 @@ class Component extends DCLogic {
   PHRASE = { calls:'calls', imports:'imports', inherits:'inherits from', implements:'implements', describes:'documents', references:'mentions', 'member-of':'part of', executes:'runs', reads:'reads from', writes:'writes to', 'guarded-by':'guarded by' };
   RPHRASE = { calls:'called by', imports:'imported by', inherits:'extended by', implements:'implemented by', describes:'documented in', references:'mentioned in', 'member-of':'contains', executes:'run by', reads:'read by', writes:'written by', 'guarded-by':'guards' };
   DEPTH_COLORS = { 0:'#f8fafc', 1:'#38bdf8', 2:'#f59e0b', 3:'#b794f6', 4:'#34d399' };
-  DEP = new Set(['calls','imports','reads','writes','executes','implements','inherits']);
+  DEP = KCExplorerProjection.DEPENDENCY_RELS;
   // Statement-level / control-flow kinds — mirrors packages/ui/src/viz.ts NOISE_KINDS. Real signal,
   // but not architecture. Kept visible ("show everything, rank hard") yet faded by default so the
   // architectural layer (file/class/interface/method/route/table/component) reads first; a
@@ -842,7 +919,7 @@ class Component extends DCLogic {
     { id:'createCharge', title:'Talking to Stripe', text:'It delegates to StripeGateway.createCharge — the concrete implementation of the PaymentGateway contract.' },
   ];
 
-  constructor(props){ super(props); this.canvasRef=React.createRef(); this.miniRef=React.createRef(); this.tipRef=React.createRef(); this.rootRef=React.createRef(); this.searchRef=React.createRef(); this.inspectorToggleRef=React.createRef(); this.view={cx:0,cy:0,k:1}; this._fitOnResize=false; this.alpha=1; this.hoverId=null; this.highlight=null;
+  constructor(props){ super(props); this.canvasRef=React.createRef(); this.miniRef=React.createRef(); this.tipRef=React.createRef(); this.rootRef=React.createRef(); this.searchRef=React.createRef(); this.inspectorToggleRef=React.createRef(); this.resultListRef=React.createRef(); this.view={cx:0,cy:0,k:1}; this._fitOnResize=false; this.alpha=1; this.hoverId=null; this.highlight=null; this._explorerTrail=[]; this._listScroll=0; this._explorerCache=null;
     // graph state — initialised empty so the RAF draw loop no-ops safely before loadGraph() resolves.
     this.nodes=[]; this.edges=[]; this.clusters=[]; this.byId={}; this.deg={}; this.adj={}; this.revDep={}; this.archAdj={}; this.graphIndexes={membersByCluster:{},incidentByNode:{},archAdj:{}}; this.anchors={}; this.layoutScale=1; this.stats=''; this.largeGraph=false; this.previewNodeIds=[]; this.previewNodeIdsByModule={}; this.overview=[]; this._overviewAll=[]; this.overviewOverflow=0; this.overviewById={}; this.overviewEdges=[]; this.overviewZoom=1; this._sourceSeq=0; this._sourceAbort=null; this._searchProjection=null; this._memSeq=0; this._memAbort=null;
   }
@@ -854,6 +931,8 @@ class Component extends DCLogic {
     this.canvas=this.canvasRef.current; this.ctx=this.canvas.getContext('2d');
     this.resize();
     this.ro=new ResizeObserver(()=>this.resize()); this.ro.observe(this.canvas.parentElement);
+    this.onViewportResize=()=>{ const width=window.innerWidth; if(width!==this.state.viewportWidth)this.setState({viewportWidth:width},()=>this.resize()); };
+    window.addEventListener('resize',this.onViewportResize);
     this.bind();
     this._tick=0;
     const loop=()=>{ this.step(); this.tween(); this.draw(); this._tick++; this.raf=requestAnimationFrame(loop); };
@@ -861,7 +940,7 @@ class Component extends DCLogic {
     this.loadGraph();
     this.setState({ready:true});
   }
-  componentWillUnmount(){ cancelAnimationFrame(this.raf); if(this.ro)this.ro.disconnect(); if(this._sourceAbort)this._sourceAbort.abort(); this.unbind(); }
+  componentWillUnmount(){ cancelAnimationFrame(this.raf); if(this.ro)this.ro.disconnect(); if(this._sourceAbort)this._sourceAbort.abort(); window.removeEventListener('resize',this.onViewportResize); this.unbind(); }
 
   // ---------- data ----------
   async loadGraph(){
@@ -945,6 +1024,7 @@ class Component extends DCLogic {
       this.graphIndexes=KCGraphModel.buildIndexes(nodes,edges);
       this.archAdj=this.graphIndexes.archAdj;
       this._searchProjection=null;
+      this._explorerCache=null;
       // Build a per-repo guided tour from the highest-degree non-file nodes. The static
       // TOUR below hardcodes one demo project's BARE names, but buildVizGraph emits
       // namespaced ids (sym:<path>#<qualified>@L<line>) — so select()/centerOn() silently
@@ -1204,7 +1284,7 @@ class Component extends DCLogic {
     this.selectedModule=id; this._cand=null; this._nb=[]; this._nIdx=null;
     this.buildOverview();
     this.view={cx:0,cy:0,k:0.95}; this._vt=null;
-    this.setState({selectedId:null,selectedClusterId:null,selectedTrail:[],mode:'overview',inspectorOpen:false});
+    this.setState({selectedId:null,selectedClusterId:null,selectedTrail:[],mode:'overview',inspectorOpen:false,listPage:0});
     this.reheat(0.35);
   }
   clearModule(){
@@ -1212,7 +1292,7 @@ class Component extends DCLogic {
     this.selectedModule=null; this._cand=null; this._nb=[]; this._nIdx=null;
     this.buildOverview();
     this.view={cx:0,cy:0,k:0.95}; this._vt=null;
-    this.setState({selectedId:null,selectedClusterId:null,selectedTrail:[],mode:'overview',inspectorOpen:false});
+    this.setState({selectedId:null,selectedClusterId:null,selectedTrail:[],mode:'overview',inspectorOpen:false,listPage:0});
     this.reheat(0.35);
   }
 
@@ -1230,7 +1310,7 @@ class Component extends DCLogic {
 
   visibleEdges(visibleIds){
     const q=(this.state.query||'').trim();
-    if(q)return this.searchProjection(q).edgeIndexes.map(i=>this.edges[i]).filter(Boolean);
+    if(q&&!this.state.selectedId&&!this.state.selectedClusterId)return this.searchProjection(q).edgeIndexes.map(i=>this.edges[i]).filter(Boolean);
     if(this.state.selectedClusterId && !this.state.selectedId){
       const projection=this.clusterProjection();
       return projection?projection.edgeIndexes.map(i=>this.edges[i]).filter(Boolean):[];
@@ -1241,7 +1321,7 @@ class Component extends DCLogic {
 
   visibleNodes(){
     const q=(this.state.query||'').trim();
-    if(q)return [...this.searchProjection(q).nodeIds].map(id=>this.byId[id]).filter(Boolean);
+    if(q&&!this.state.selectedId&&!this.state.selectedClusterId)return [...this.searchProjection(q).nodeIds].map(id=>this.byId[id]).filter(Boolean);
     if(this.state.selectedClusterId && !this.state.selectedId){
       const projection=this.clusterProjection();
       return projection?[...projection.nodeIds].map(id=>this.byId[id]).filter(Boolean):[];
@@ -1419,7 +1499,7 @@ class Component extends DCLogic {
     // dot grid
     const k=this.view.k; const gs=34*k; if(gs>14){ const [ox,oy]=this.w2s(0,0); ctx.fillStyle=th.dot; for(let x=ox%gs; x<this.W; x+=gs){ for(let y=oy%gs; y<this.H; y+=gs){ ctx.beginPath(); ctx.arc(x,y,1,0,7); ctx.fill(); } } }
     const hid=this.state.hidden; const sel=this.state.selectedId; const hl=this.highlight;
-    const q=(this.state.query||'').trim().toLowerCase();
+    const q=(this.state.selectedId||this.state.selectedClusterId?'':(this.state.query||'')).trim().toLowerCase();
     const isMatch=(n)=>q&&(n.label.toLowerCase().includes(q)||(n.qualified||'').toLowerCase().includes(q)||(n.file||'').toLowerCase().includes(q));
     this.drawMini();
     if(this.state.mode === 'overview' && this.overview.length && !q){
@@ -1730,9 +1810,9 @@ class Component extends DCLogic {
   // whether the previous node had been expanded to 2-hop; expansion is a per-node choice, not a
   // sticky mode. arrangeNodeFocus is passed depth=1 explicitly so it doesn't read the (about to be
   // stale) previous state.focusDepth before setState lands.
-  select(id,returnClusterId=null){ if(!this.byId[id]) return; const n=this.byId[id]; const originCluster=returnClusterId||(!this.state.selectedId?this.state.selectedClusterId:null)||this.state.clusterReturnId; this._cand=null; this._nb=[...new Set(this.archAdj[id]||[])]; this._nIdx=null; this._searchProjection=null; if(this.searchRef.current)this.searchRef.current.value=''; this.arrangeNodeFocus(id,1);
+  select(id,returnClusterId=null){ if(!this.byId[id]) return; const n=this.byId[id]; const originCluster=returnClusterId||(!this.state.selectedId?this.state.selectedClusterId:null)||this.state.clusterReturnId; this._cand=null; this._nb=[...new Set(this.archAdj[id]||[])]; this._nIdx=null; this.arrangeNodeFocus(id,1);
     const trail=[...(this.state.selectedTrail||[]).filter(t=>t.id!==id),{id,label:n.qualified||n.label||id}].slice(-4);
-    this.setState({selectedId:id, selectedClusterId:n.cluster, clusterReturnId:originCluster, selectedTrail:trail, query:'', mode:'focus', focusDepth:1, inspectorOpen:true}); this.loadSource(id); this.reheat(0.08); }
+    this.setState({selectedId:id, selectedClusterId:n.cluster, clusterReturnId:originCluster, selectedTrail:trail, mode:'focus', focusDepth:1, inspectorOpen:true, listPage:0}); this.loadSource(id); this.reheat(0.08); }
   /** Reveal the next actual architectural hop, retaining a bounded, connected subset. */
   setFocusDepth(next){
     const sel=this.state.selectedId; if(!sel) return;
@@ -1742,7 +1822,7 @@ class Component extends DCLogic {
     this.reheat(0.3);
   }
   toggleFocusDepth(){ this.setFocusDepth((this.state.focusDepth||1)+1); }
-  selectCluster(id){ if(!this.overviewById[id]) return; this._cand=null; this._nb=[]; this._nIdx=null; this.arrangeClusterFocus(id,null,false); this.setState({selectedId:null, selectedClusterId:id, selectedClusterKind:null, clusterContext:false, clusterReturnId:null, selectedTrail:[], sourcePreview:null, mode:'focus', inspectorOpen:true}); this.reheat(0.35); }
+  selectCluster(id){ if(!this.clusters.some(c=>c.id===id)) return; this._cand=null; this._nb=[]; this._nIdx=null; this.arrangeClusterFocus(id,null,false); this.setState({selectedId:null, selectedClusterId:id, selectedClusterKind:null, clusterContext:false, clusterReturnId:null, selectedTrail:[], sourcePreview:null, mode:'focus', inspectorOpen:true, listPage:0}); this.reheat(0.35); }
   setClusterKind(kind){ const id=this.state.selectedClusterId; if(!id)return; this.arrangeClusterFocus(id,kind,this.state.clusterContext); this.setState({selectedClusterKind:kind}); this.reheat(0.25); }
   toggleClusterContext(){ const id=this.state.selectedClusterId; if(!id)return; const next=!this.state.clusterContext; this.arrangeClusterFocus(id,this.state.selectedClusterKind,next); this.setState({clusterContext:next}); this.reheat(0.25); }
   returnToCluster(){ const id=this.state.clusterReturnId; if(!id||!this.overviewById[id])return; this.arrangeClusterFocus(id,this.state.selectedClusterKind,false); this.setState({selectedId:null,selectedClusterId:id,clusterContext:false,clusterReturnId:null,selectedTrail:[],sourcePreview:null,mode:'focus',inspectorOpen:true}); this.reheat(0.25); }
@@ -2070,27 +2150,70 @@ class Component extends DCLogic {
   zoomOut(){ if(this.state.mode==='overview'&&this.overview.length){ this.overviewZoom=Math.max(0.45,this.overviewZoom/1.18); this.bumpZoom(); return; } this._fitOnResize=false; this.view.k=Math.max(this.minimumZoom(),this.view.k/1.18); this.bumpZoom(); }
   zoomIn(){ if(this.state.mode==='overview'&&this.overview.length){ this.overviewZoom=Math.min(2.8,this.overviewZoom*1.18); this.bumpZoom(); return; } this._fitOnResize=false; this.view.k=Math.min(4.5,this.view.k*1.18); this.bumpZoom(); }
   resetView(){ if(this.state.mode==='overview'&&this.overview.length){ this.overviewZoom=1; this.bumpZoom(); return; } this.fit(); this.bumpZoom(); }
+  effectivePresentation(){ const pref=this.state.presentationPreference; return pref==='split'&&this.state.viewportWidth<1280?'list':pref; }
+  setPresentation(next){ if(next==='split'&&this.state.viewportWidth<1280)return; this._listScroll=this.resultListRef.current?this.resultListRef.current.scrollTop:this._listScroll;
+    this.setState({presentationPreference:next},()=>{this.resize();if(this.resultListRef.current)this.resultListRef.current.scrollTop=this._listScroll;}); }
+  explorerProjection(){
+    const s=this.state;
+    const key=[s.query,s.selectedId,s.selectedClusterId,this.selectedModule,s.blast,s.focusDepth,this.overviewOverflow,JSON.stringify(s.hidden)].join('|');
+    if(!this._explorerCache||this._explorerCache.key!==key||this._explorerCache.nodes!==this.nodes){
+      const query=s.selectedId||s.selectedClusterId?'':s.query;
+      const prepared=KCExplorerProjection.prepare({nodes:this.nodes,edges:this.edges,byId:this.byId,indexes:this.graphIndexes,
+        modules:this.vizModules||[],clusters:this.clusters,moduleId:this.selectedModule,clusterId:s.selectedClusterId,
+        selectedId:s.selectedId,blast:s.blast,query,hiddenKinds:s.hidden,depth:s.focusDepth||1,
+        canvasFocus:s.selectedId&&!s.blast?this.focusRingIds(s.selectedId,s.focusDepth||1):null,overviewOverflow:this.overviewOverflow,
+        searchProjection:query?this.searchProjection(query):null});
+      this._explorerCache={key,nodes:this.nodes,prepared};
+    }
+    return KCExplorerProjection.paginate(this._explorerCache.prepared,s.listPage,50);
+  }
+  openExplorerRow(row,event){
+    const keyboard=!!(event&&event.detail===0);
+    this._explorerTrail.push({rowId:row.id,moduleId:this.selectedModule,selectedClusterId:this.state.selectedClusterId,
+      selectedId:this.state.selectedId,mode:this.state.mode,blast:this.state.blast,page:this.state.listPage});
+    if(row.kind==='module')this.selectModule(row.id);
+    else if(row.kind==='cluster')this.selectCluster(row.id);
+    else this.select(row.id);
+    if(keyboard)this.keepFocus(row.kind==='module'||row.kind==='cluster'?'[data-kc-explorer-scope]':'[data-kc-inspector-heading]');
+  }
+  backExplorer(){
+    const prior=this._explorerTrail.pop(); if(!prior)return;
+    this.selectedModule=prior.moduleId; this.buildOverview();
+    if(prior.selectedId)this.arrangeNodeFocus(prior.selectedId,1);
+    else if(prior.selectedClusterId)this.arrangeClusterFocus(prior.selectedClusterId,null,false);
+    else if(this.state.query)this.arrangeSearch(this.state.query);
+    this.setState({selectedId:prior.selectedId,selectedClusterId:prior.selectedClusterId,mode:prior.mode,
+      blast:prior.blast,listPage:prior.page,inspectorOpen:!!(prior.selectedId||prior.selectedClusterId)},()=>{
+      const row=this.rootRef.current&&[...this.rootRef.current.querySelectorAll('[data-kc-result-row]')].find(el=>el.getAttribute('data-kc-row-id')===prior.rowId);
+      if(row){const button=row.querySelector('button');if(button)button.focus();}
+    });
+  }
+  clearSearch(){ if(this.searchRef.current)this.searchRef.current.value=''; this._searchProjection=null; this.selectedModule=null; this.buildOverview();
+    this.setState({query:'',selectedId:null,selectedClusterId:null,mode:this.overview.length?'overview':'focus',blast:false,listPage:0,inspectorOpen:false}); }
+  resultPage(delta){ this.setState(s=>({listPage:Math.max(0,s.listPage+delta)}),()=>{if(this.resultListRef.current)this.resultListRef.current.scrollTop=0;}); }
   onSearch(e){
     const query=e.target.value;
     this.selectedModule=null;
     this._searchProjection=null;
-    this.setState({query,mode:query.trim()?'focus':(this.overview.length?'overview':'focus'),selectedId:null,selectedClusterId:null,selectedClusterKind:null,clusterContext:false,clusterReturnId:null,selectedTrail:[],sourcePreview:null,inspectorOpen:false},()=>{
+    this.setState({query,mode:query.trim()?'focus':(this.overview.length?'overview':'focus'),selectedId:null,selectedClusterId:null,selectedClusterKind:null,clusterContext:false,clusterReturnId:null,selectedTrail:[],sourcePreview:null,inspectorOpen:false,listPage:0},()=>{
       if(query.trim())this.arrangeSearch(query);
       if(!this.largeGraph||query.trim())this.fit();
       this.bumpZoom();
     });
   }
-  toggleKind(k){ this.setState(s=>({hidden:{...s.hidden,[k]:!s.hidden[k]}})); this.reheat(0.3); }
+  toggleKind(k){ this.setState(s=>({hidden:{...s.hidden,[k]:!s.hidden[k]},listPage:0})); this.reheat(0.3); }
 
   // Depth counts describe discovered real hops; highlights describe only the capped nodes on the
   // canvas. Keeping these distinct makes both the layout and omission disclosure honest.
   computeHL(){ const sel=this.state.selectedId; if(!sel) return null; const set=new Set([sel]); const blast=new Map(); const rings=this.focusRingIds(sel,this.state.focusDepth||1); const depthMap=rings.depthMap;
-    if(this.state.blast){ // reverse-dependency BFS — shows the full ripple, not ring-capped
-      blast.set(sel,0); const queue=[sel]; while(queue.length){ const cur=queue.shift(); const d=blast.get(cur); for(const dep of this.revDep[cur]){ if(!blast.has(dep)){ blast.set(dep,d+1); set.add(dep); queue.push(dep); } } }
+    if(this.state.blast){
+      this.explorerProjection();
+      blast.set(sel,0);
+      for(const row of this._explorerCache.prepared.allRows){ blast.set(row.id,row.hop); set.add(row.id); }
     } else {
       for(const id of rings.rings.flat()) set.add(id);
     }
-    return {set,blast,depthMap};
+    return {set,blast,depthMap,truncated:!!(this.state.blast&&this._explorerCache&&this._explorerCache.prepared.truncated)};
   }
 
   buildDetail(){ const sel=this.state.selectedId; if(!sel) return this.buildClusterDetail(); const n=this.byId[sel]; const col=this.KIND[n.kind]||'#888';
@@ -2141,7 +2264,7 @@ class Component extends DCLogic {
      const preview=this.state.sourcePreview&&this.state.sourcePreview.nodeId===sel?this.state.sourcePreview:null;
      const source=preview?{...preview,loading:preview.status==='loading',ready:preview.status==='ready',unavailable:preview.status==='unavailable',failed:preview.status==='error',onCopy:()=>this.copyLocation(preview.location)}:null;
      const fileDisplay=n.file?(n.file+(n.span?':'+n.span.start+(n.span.end!==n.span.start?'-'+n.span.end:''):'')):null;
-     return { id:sel, name:n.label, qualified:n.qualified, kindLabel:this.KLABEL[n.kind]||n.kind, color:col, glow:this.hex(col,0.22), summary:n.summary, signature:n.signature, file:n.file, fileDisplay, span:n.span, lang:n.lang, sections, evidence, source, backLabel:this.state.clusterReturnId?'Back to functionality':null, backAction:this.state.clusterReturnId?()=>this.returnToCluster():null, blastOn:this.state.blast, blastCount };
+     return { id:sel, name:n.label, qualified:n.qualified, kindLabel:this.KLABEL[n.kind]||n.kind, color:col, glow:this.hex(col,0.22), summary:n.summary, signature:n.signature, file:n.file, fileDisplay, span:n.span, lang:n.lang, sections, evidence, source, backLabel:this.state.clusterReturnId?'Back to functionality':null, backAction:this.state.clusterReturnId?()=>this.returnToCluster():null, blastOn:this.state.blast, blastCount, blastExplanation:hl&&hl.truncated?'Traversal reached its limit; more nodes may be affected.':'Ranked direct impact appears first in List.' };
    }
 
   buildClusterDetail(){
@@ -2242,9 +2365,19 @@ class Component extends DCLogic {
      const zoomLabel=Math.round((overviewOn?this.overviewZoom:this.view.k)*100)+'%';
     const compactStats=(this.stats||'…').replace(/\s+·\s+/g,' · ');
     const searchQuery=(this.state.query||'').trim();
-    const searchProjection=searchQuery?this.searchProjection(searchQuery):null;
-    const searchStatus=searchProjection?(searchProjection.totalMatches?searchProjection.totalMatches+' match'+(searchProjection.totalMatches===1?'':'es')+' · '+searchProjection.contextIds.length+' related':'No graph matches'):null;
-     const searchStatusColor=searchProjection&&searchProjection.totalMatches===0?'#f87171':t.sub;
+    const searchProjection=searchQuery&&!this.state.selectedId&&!this.state.selectedClusterId?this.searchProjection(searchQuery):null;
+    const explorer=this.explorerProjection();
+    const presentation=this.effectivePresentation();
+    const searchStatus=searchProjection?(explorer.total?explorer.total+' code graph match'+(explorer.total===1?'':'es'):'No code graph matches'):null;
+     const searchStatusColor=searchProjection&&explorer.total===0?'#f87171':t.sub;
+    const resultEmptyMessage=this.state.error?'The code graph could not load: '+this.state.error:
+      this.nodes.length===0?'The code graph index is empty.':
+      explorer.scope==='blast'?'No reverse dependencies were discovered for this symbol.':
+      explorer.scope==='focus'?'No architectural neighbors were discovered at this depth.':
+      explorer.scope==='cluster'?'No indexed symbols in this cluster under current filters.':
+      explorer.scope==='module'||explorer.scope==='module-symbols'?'No indexed results in this module under current filters.':
+      explorer.scope==='search'?(searchProjection&&searchProjection.totalMatches>0?'No matches under current filters':'No matches in the code graph'):
+      'No results in this code graph scope.';
     const selectedNode=this.state.selectedId&&this.byId[this.state.selectedId];
     const selectedBlock=this.state.selectedClusterId&&this.overviewById[this.state.selectedClusterId];
     const selectedModule=this.selectedModule&&railSource.find(m=>m.id===this.selectedModule);
@@ -2415,8 +2548,28 @@ class Component extends DCLogic {
       tour:{ on:tOn, step:this.state.tourStep+1, total:this.TOUR.length, title:ts.title, text:ts.text, nextLabel:isLast?'Finish':'Next', prevOp:isFirst?0.4:1, onNext:()=>this.tourGo(this.state.tourStep+1), onPrev:()=>this.tourGo(this.state.tourStep-1), onExit:()=>this.exitTour() },
       startTour:()=>this.startTour(), exportSub:()=>this.exportSubgraph(),
       tourBg: tOn?'rgba(91,140,255,0.16)':t.chip, tourBorder: tOn?'rgba(91,140,255,0.5)':t.border, tourFg: tOn?'#5b8cff':t.text,
-       rootRef:this.rootRef, canvasRef:this.canvasRef, miniRef:this.miniRef, tipRef:this.tipRef, searchRef:this.searchRef, inspectorToggleRef:this.inspectorToggleRef,
+       rootRef:this.rootRef, canvasRef:this.canvasRef, miniRef:this.miniRef, tipRef:this.tipRef, searchRef:this.searchRef, inspectorToggleRef:this.inspectorToggleRef, resultListRef:this.resultListRef,
         t, stats:this.stats||'…', compactStats, kindList, moduleList, sel, focusEmpty, searchStatus, searchStatusColor,
+      stageClass:'kc-presentation-'+presentation, graphPressed:presentation==='graph'?'true':'false', listPressed:presentation==='list'?'true':'false', splitPressed:presentation==='split'?'true':'false',
+      showGraph:()=>this.setPresentation('graph'),showList:()=>this.setPresentation('list'),showSplit:()=>this.setPresentation('split'),
+      resultHeading:({overview:'Repository modules',module:'Module clusters','module-symbols':'Module symbols',cluster:'Cluster symbols',search:'Search results',focus:'Focus neighbors',blast:'Blast impact'})[explorer.scope],
+      resultCountLabel:this.state.loading?'Loading code graph…':(explorer.total+' '+(explorer.scope==='blast'?'discovered affected nodes':'code graph results')+(explorer.total?' · '+(explorer.page*50+1)+'–'+Math.min((explorer.page+1)*50,explorer.total):'')),
+      resultNote:explorer.graphNote||null,resultListVisible:!this.state.loading&&!this.state.error&&explorer.total>0&&explorer.scope!=='blast',resultBlastVisible:explorer.scope==='blast'&&!this.state.loading&&!this.state.error,
+      resultMoreHops:explorer.scope==='focus'&&(this.state.focusDepth||1)<4&&this.focusRingIds(this.state.selectedId,4).countsByDepth[(this.state.focusDepth||1)+1]>0,
+      resultResetHops:explorer.scope==='focus'&&(this.state.focusDepth||1)>1,nextHop:(this.state.focusDepth||1)+1,
+      showNextHop:()=>this.setFocusDepth((this.state.focusDepth||1)+1),resetHops:()=>this.setFocusDepth(1),
+      resultRows:explorer.rows.map((r,i,all)=>({...r,group:explorer.scope==='blast'?('Hop '+r.hop+' · '+(r.module||'Unassigned module')):null,
+        groupStart:explorer.scope==='blast'&&(i===0||r.hop!==all[i-1].hop||r.module!==all[i-1].module),
+        actionLabel:(r.kind==='module'||r.kind==='cluster'?'Open ':'Inspect ')+(r.qualified||r.label),onOpen:(e)=>this.openExplorerRow(r,e)})),
+      resultEmpty:!this.state.loading&&!!this.state.error||(!this.state.loading&&!this.state.error&&explorer.total===0),
+      resultEmptyMessage,
+      resultClearSearch:explorer.scope==='search'&&!!(this.state.query||'').trim()&&(!searchProjection||searchProjection.totalMatches===0),
+      resultClearFilters:Object.values(this.state.hidden).some(Boolean)&&explorer.total===0,
+      clearSearch:()=>this.clearSearch(),backExplorer:()=>this.backExplorer(),resultBack:this._explorerTrail.length>0,
+      previousResultPage:()=>this.resultPage(-1),nextResultPage:()=>this.resultPage(1),resultPrevDisabled:explorer.page===0,resultNextDisabled:explorer.page>=explorer.pageCount-1,
+      resultPageLabel:'Page '+(explorer.page+1)+' of '+explorer.pageCount,onResultScroll:(e)=>{this._listScroll=e.target.scrollTop;},
+      graphUnavailable:!!this.state.error&&presentation!=='list',graphErrorMessage:this.state.error,retryGraph:()=>this.loadGraph(),
+      graphEmpty:presentation==='graph'&&!this.state.loading&&!this.state.error&&explorer.total===0&&(explorer.scope==='search'||this.nodes.length===0),
       railClass:this.state.railOpen?'':'kc-rail-collapsed', railWidth:this.state.railOpen?'256px':'64px',
       inspectorClass:inspectorOpen?'':'kc-inspector-closed', inspectorEmpty:inspectorOpen&&!sel, inspectorDetail:inspectorOpen&&!!sel,
       inspectorExpanded:inspectorOpen?'true':'false', inspectorToggleLabel:inspectorOpen?'Hide inspector':'Open inspector',
