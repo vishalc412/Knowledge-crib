@@ -169,7 +169,8 @@ const all = [...seen.values()];
 // One anchor below reached `seen` by READING the row it names, not by the token regex - the bare
 // continuation. So `distinctCitations` is not purely the regex's output, and reporting only it would
 // let a reader take 84 for a count the declared method produces when the method produces 83. Both are
-// reported so the one-token gap is visible instead of implied.
+// reported so the one-token gap is visible instead of implied. (Those two figures are the ones the run
+// that found the gap reported; they are illustrative of the shape, not live values - see the log.)
 const handResolved = all.filter(r => r.bareContinuation).length;
 const tally = { stable: 0, moved: 0, notInStamp: 0, notAtHead: 0 };
 for (const r of all) tally[r.status]++;
@@ -179,6 +180,28 @@ const comparable = tally.stable + tally.moved;
 const cfgTokens = all.filter(r => !tracked.includes(r.path) && !r.path.startsWith('.crib/'));
 const artifacts = all.filter(r => r.path.startsWith('.crib/'));
 const trackedTokens = all.filter(r => !r.path.startsWith('.crib/'));
+
+// Whether a path is IN a revision is a fact about HEAD's tree, not about the index: a `git add` makes a
+// file staged, and this bin sat staged for most of the session before it was committed. Asking HEAD
+// directly is what stops the bounds below from asserting "present in no revision" about files a reader
+// can now check out - the same defect class this bin exists to catch, one commit later.
+const headTreeCache = new Map();
+const inHead = (p) => {
+  if (!headTreeCache.has(p)) {
+    try { execSync("git cat-file -e 'HEAD:" + p + "'", { cwd: REPO, stdio: 'ignore' }); headTreeCache.set(p, true); }
+    catch { headTreeCache.set(p, false); }
+  }
+  return headTreeCache.get(p);
+};
+const cribPaths = [...new Set(artifacts.map(r => r.path))].sort();
+const cribInHead = cribPaths.filter(inHead);
+const cribNotInHead = cribPaths.filter(p => !inHead(p));
+const binFilesCommitted = files.every(([rel]) => inHead('.crib/bins/developer-trust/' + rel));
+// notInStamp is defined against the STAMP tree, so an anchor the stamp lacks but HEAD holds is classified
+// notInStamp while resolving perfectly well today. Both facts are reported rather than one standing in for
+// the other: these are exactly the .crib/ anchors the commit above moved from "in no revision" to "in this
+// revision".
+const stampAbsentAtHead = all.filter(r => r.status === 'notInStamp' && r.namesAtHead !== null);
 
 // The claim "the working tree differing from HEAD affects no anchor here" is computed, not asserted.
 const dirty = ls('git diff HEAD --name-only').filter(p => !p.startsWith('.crib/'));
@@ -202,18 +225,20 @@ const bareProvenanceClause = '`bareLineTokens` documents the ' + BARE_CONTINUATI
 
 const codeHeadNote = [
   'This stamp is the revision the bin was DECLARED against, and the measurement below is what it does not cover.',
-  'The anchors in this bin were read from the live working tree at ' + HEAD + ', not from ' + STAMP.slice(0, 8) + ': anchorDriftAtHead checks every path:line token in every .md and .json file here against both revisions, and ' + trackedTokens.length + ' of ' + all.length + ' tokens name a tracked repo file while the other ' + artifacts.length + ' name .crib/ artifacts that no revision holds.',
+  'The anchors in this bin were read from the live working tree at ' + HEAD + ', not from ' + STAMP.slice(0, 8) + ': anchorDriftAtHead checks every path:line token in every .md and .json file here against both revisions, and ' + trackedTokens.length + ' of ' + all.length + ' tokens name a tracked repo file while the other ' + artifacts.length + ' name .crib/ paths — ' + cribInHead.length + ' of those paths HEAD holds and ' + cribNotInHead.length + ' exist in no revision yet, both lists at anchorDriftAtHead.cribPathRevisions.',
   'Every one of those ' + trackedTokens.length + ' resolves at ' + HEAD.slice(0, 8) + ', and ' + tally.moved + ' of them hold different text at the stamp named above — they are listed at anchorDriftAtHead.movedAnchors with the row each names.',
   'Where the stamp and the bin disagree the measurement decides, and the bin is not always the side that matches the code: environment-findings.md:79 quotes the code its line holds, but the freshness-status line open-blockers.md:100 names has moved twice since the stamp - that text is at packages/cli/src/cli.ts:3929 at 060898de, :3933 at 3434c19f, and ' + fslAtHead + ' - so that file now carries all three revisions rather than the single number it was written against, and every anchor whose text moved is listed by revision at anchorDriftAtHead.movedAnchors.',
   'A bare basename is resolved only when the citing file itself disambiguates it, by naming exactly one of the tracked files that bear that name: the bins introduce packages/ui/web/index.html once and then cite index.html bare, and docs/site/index.html is a different tracked file with 108 lines, so a first-match resolver silently attached this bin\'s citations to a file it never named. anchorDriftAtHead.bareBasenameResolutions records each such choice; anchorDriftAtHead.ambiguousBasenames records the bare tokens nothing disambiguated, which are excluded from every count here rather than guessed.',
   'Re-stamping is the bin owner\'s decision and was not taken here: this field records the disagreement instead of resolving it.',
-  'One bound on the measurement: the files in this bin are staged but not committed, so they exist in no revision and the comparison above is between ' + STAMP.slice(0, 8) + ' and ' + HEAD.slice(0, 8) + ' alone. That the cited files are clean is not assumed — `git diff HEAD --name-only` outside .crib/ names ' + (dirty.length ? dirty.join(', ') : 'nothing') + ', and ' + citedDirty.length + ' of those paths is named by an anchor in this bin — so the working tree differing from ' + HEAD.slice(0, 8) + ' affects no anchor here.',
+  'One bound on the measurement: ' + (binFilesCommitted ? 'the files in this bin are committed, and the comparison above is between ' + STAMP.slice(0, 8) + ' and ' + HEAD.slice(0, 8) + ', which HEAD held when this ran' : 'the files in this bin are not in HEAD, so they exist in no revision and the comparison above is between ' + STAMP.slice(0, 8) + ' and ' + HEAD.slice(0, 8) + ' alone') + '. ' + stampAbsentAtHead.length + ' anchors are classified notInStamp because the STAMP tree lacks them, and every one of those resolves at ' + HEAD.slice(0, 8) + ' — so the label reports the stamp, not a broken anchor. That the cited files are clean is not assumed — `git diff HEAD --name-only` outside .crib/ names ' + (dirty.length ? dirty.join(', ') : 'nothing') + ', and ' + citedDirty.length + ' of those paths is named by an anchor in this bin — so the working tree differing from ' + HEAD.slice(0, 8) + ' affects no anchor here.',
   'A second bound: this measurement compares the text a line holds at two revisions, so it detects an anchor that MOVED and cannot detect one that resolves to the wrong thing at BOTH — a stale number landing on unrelated code is reported stable. Only reading the row the anchor names catches that class, which is what rule 3 of .crib/bins/README.md requires of every anchor here.',
   'A third bound, on coverage rather than on method: ' + BARE_TOKEN_TOTAL + ' bare `:NNNN` tokens appear in this bin\'s .md files with no filename attached, and ' + bareCoverageClause + ', so every count above is a floor over that class.',
+  'A fourth bound, on this field\'s own revision: `head` is where HEAD stood when the measurement ran, so in the committed bin it trails the commit that carries this file — a commit cannot contain its own hash. Re-running the generator is what refreshes it (see anchorDriftAtHead.headBound).',
 ].join(' ');
 
 const drift = {
   measuredAt: '2026-09-24',
+  headBound: 'The `head` below is the revision HEAD pointed at when this ran, which is some ancestor of the commit that carries this file and never that commit itself - a commit cannot contain its own hash, so the file must be written before the commit that records it exists. In the committed bin `head` therefore trails, and the honest response is to re-run the generator (it is committed for exactly that reason) rather than to read `head` as "the revision this file lives in".',
   head: HEAD,
   stamp: STAMP,
   method: 'Every path:line token (and every bare basename:line token) in every .md and .json file in this bin was read as trim()ed text from `git show <stamp>:<path>` and from `git show HEAD:<path>` and compared. A token counts as MOVED when the line exists at both revisions and holds different text, as notInStamp when the stamp tree has no such line or file, and as notAtHead when HEAD has no such line. A bare basename is resolved only when the citing file names exactly one of the tracked files bearing it; a bare basename nothing disambiguates is recorded under ambiguousBasenames and excluded from every count here, because the measurement cannot say which file it meant. Of the ' + all.length + ' distinct citations, ' + (all.length - handResolved) + ' came from the token regex and ' + handResolved + ' from reading the row it names (see distinctCitationsResolvedByReading); distinctCitations is their sum, not the regex alone, and distinctCitationsByTokenRegex carries the regex-only figure. A THIRD token shape this measurement does NOT enumerate: a bare `:NNNN` with no filename at all, of which this run counted ' + BARE_TOKEN_TOTAL + ' in the bin\'s .md files read exactly as they sit on disk. index.json is excluded from that count on purpose: its pretty-printed JSON holds tokens like `"lines": 2329` the tokenizer cannot match, so counting a compact re-serialization of it would add structural values that are not citations and drop prose ones - an earlier run of this generator reported 247 that way, for a bin holding ' + BARE_TOKEN_TOTAL + '. Counting the class is sound where enumerating it is not. They are not enumerated because the file one belongs to cannot be recovered from proximity - repair-round-log.md\'s `:100` follows `packages/cli/src/cli.ts:3933` on the immediately preceding line and yet denotes `open-blockers.md:100` - so a rule would attribute them wrongly rather than resolve them. ' + bareProvenanceClause,
@@ -225,7 +250,7 @@ const drift = {
   notInStamp: tally.notInStamp,
   notAtHead: tally.notAtHead,
   resolvesAtHead: comparable,
-  reading: 'Zero of the ' + trackedTokens.length + ' tracked-file anchors fail at ' + HEAD.slice(0, 8) + '; ' + tally.moved + ' fail at the declared stamp. The stamp therefore does not describe the revision this bin was verified against. ' + artifacts.length + ' tokens name .crib/ artifacts (this bin itself and .crib/bins/README.md among them), which are uncommitted and so present in no revision; nothing is claimed about their content across revisions. ' + ambiguous.size + ' further bare tokens are excluded as unresolvable: ' + [...ambiguous.values()].map(a => a.basename + ' in ' + a.file).join(', ') + '. And none of the ' + BARE_UNCOVERED + ' bare `:NNNN` tokens in the bin\'s .md files is counted here at all, so every count below is a floor over that class.',
+  reading: 'Zero of the ' + trackedTokens.length + ' tracked-file anchors fail at ' + HEAD.slice(0, 8) + '; ' + tally.moved + ' fail at the declared stamp. The stamp therefore does not describe the revision this bin was verified against. ' + artifacts.length + ' tokens name .crib/ paths, and this is a fact about the stamp rather than about today: ' + cribInHead.length + ' of those paths HEAD holds (listed at cribPathRevisions.inHead) and ' + cribNotInHead.length + ' exist in no revision yet' + (binFilesCommitted ? ', so a reader at ' + HEAD.slice(0, 8) + ' can check the first group out and diff it, and nothing here is claimed about it across revisions' : '') + '. Of the ' + tally.notInStamp + ' anchors classified notInStamp, ' + stampAbsentAtHead.length + ' resolve at ' + HEAD.slice(0, 8) + ' — the label reports which tree lacks them, not that they are broken. ' + ambiguous.size + ' further bare tokens are excluded as unresolvable: ' + [...ambiguous.values()].map(a => a.basename + ' in ' + a.file).join(', ') + '. And none of the ' + BARE_UNCOVERED + ' bare `:NNNN` tokens in the bin\'s .md files is counted here at all, so every count below is a floor over that class.',
   bareLineTokens: {
     scope: 'the bin\'s .md files, read as they sit on disk; index.json is excluded because it is generated (see method)',
     totalInMdFiles: BARE_TOKEN_TOTAL,
@@ -236,6 +261,13 @@ const drift = {
     whyNotEnumerated: 'The file a bare `:NNNN` token belongs to is not recoverable from proximity. repair-round-log.md\'s `:100` follows `packages/cli/src/cli.ts:3933` on the immediately preceding line and denotes open-blockers.md:100; b5-update-visibility.md cites `:67`..`:73` many lines below the table header row that names docs/bench/perf-gates.md. A proximity rule would therefore attribute tokens wrongly rather than resolve them, so the class is excluded and counted instead of guessed.',
   },
   notInStampAnchors: [...new Set(all.filter(r => r.status === 'notInStamp').map(r => r.path + ':' + r.line))],
+  cribPathRevisions: {
+    binFilesInHead: binFilesCommitted,
+    inHead: cribInHead,
+    notInAnyRevision: cribNotInHead,
+    notInStampButResolveAtHead: stampAbsentAtHead.length,
+    note: 'notInStamp is decided against the STAMP tree, so an anchor the stamp lacks but HEAD holds carries that label while resolving today. The two counts above are reported separately for that reason: the label names which revision lacks the anchor, never that the anchor is broken.',
+  },
   bareBasenameResolutions: [...resolutions.values()],
   ambiguousBasenames: [...ambiguous.values()],
   movedAnchors: moved.map(r => ({ path: r.path, line: r.line, citedBy: r.citedBy, namesAtStamp: r.namesAtStamp, namesAtHead: r.namesAtHead, bareContinuation: r.bareContinuation })),

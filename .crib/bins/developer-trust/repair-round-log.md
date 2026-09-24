@@ -145,15 +145,17 @@ of *what differs*, never as evidence of *who changed it*.
 
 ---
 
-## The verification round after the closing round (2 real defects, both in this bin's own manifest)
+## The verification round after the closing round (4 defects, all in this bin's own manifest)
 
 An independent verification pass followed the closing round: six re-derivations of named claims, each
 with its own evidence, then a coverage scan. **Four of the six returned a result; two did not**
 (`verify:no-verdict-restatement`, `verify:self-consistency`), so this round says nothing about the two
 dimensions those covered and is not a clean bill of health on them. Of the four that returned, two
-were fully confirmed and two carried refutations that I re-measured myself — the two defects below
-survived that re-measurement. Both are in `index.json`'s **generated** fields, not in any prose file,
-so neither moved a line.
+were fully confirmed and two carried refutations that I re-measured myself — items 1 and 3 survived
+that re-measurement, and item 2 was found while re-measuring item 1. All four are in `index.json`'s
+**generated** fields rather than in a prose file, so none of them moved a line of prose. Item 4 was
+found later still, by running the committed generator from outside the repository after the commit —
+it is the defect that committing this bin created.
 
 **1. `bareLineTokens` was counting a file this bin does not contain.** The field reported **247** bare
 `:NNNN` tokens "in these files". That was not a count of the files. The generator read `index.json`
@@ -198,9 +200,24 @@ hand entries, so a re-run cannot report a token as enumerated when the regex alr
 **3. A guard that does no work was described as if it did.** The overlap exclusion in the bare-token
 scan was commented as preventing one citation from being counted twice. Measured with and without it,
 the count was 228 either way at that run: none of these files quotes a `path:line` inside backticks. It
-is kept —
-that is the shape which would defeat a naive scan — but the comment now says it is a no-op on these
-files instead of claiming a job.
+is kept — that is the shape which would defeat a naive scan — but the comment now says it is a no-op on
+these files instead of claiming a job.
+
+**4. Committing the bin made two of the manifest's own bounds false, and neither was computed.** The
+generator had asserted that "the files in this bin are staged but not committed, so they exist in no
+revision" and that the `.crib/` anchors "are uncommitted and so present in no revision". Both were true
+of the tree they were measured on and became false the moment the bin was committed — at which point
+19 anchors that the manifest still labelled `notInStamp` did resolve at HEAD, because the tree that
+lacked them was the *stamp*, not HEAD. Found by running the committed generator from outside the
+repository after the commit, which is the one check that exercises the file a reader actually gets. The
+manifest now asks HEAD's tree directly (`git cat-file -e HEAD:<path>`) instead of inferring commit state
+from the index, reports which of the two trees lacks an anchor rather than letting one label stand for
+both, and carries the distinction in `anchorDriftAtHead.cribPathRevisions`.
+
+A fifth consequence of committing, named rather than repaired: `head` in the manifest is where HEAD
+stood when the measurement ran, and a commit cannot contain its own hash — so the committed bin's `head`
+trails the commit that carries it, by construction. That is now stated in the manifest (fourth bound,
+`anchorDriftAtHead.headBound`) rather than left for a reader to notice as an inconsistency.
 
 ### One register observation taken in this round, not repaired
 
