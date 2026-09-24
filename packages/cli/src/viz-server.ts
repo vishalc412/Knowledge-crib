@@ -2,11 +2,12 @@ import { randomBytes } from 'node:crypto';
 import { readFile, realpath } from 'node:fs/promises';
 import { isAbsolute, relative, resolve } from 'node:path';
 import type { SoulStore } from '@knowledge-crib/core';
-import type { ReaderFreshness } from '@knowledge-crib/mcp';
+import { type ReaderFreshness, STALE_REASONS } from '@knowledge-crib/mcp';
 import {
   type AuditResult,
   DEFAULT_LEDGER_PAGE,
   DEFAULT_PENDING_PAGE,
+  type EvidenceInspection,
   type GetResult,
   type GraphAssertion,
   type GraphConflictGroup,
@@ -14,8 +15,10 @@ import {
   type IntakeCheckpoint,
   type IntakeRequirement,
   LEDGER_GROUPS,
+  LEDGER_VIEWS,
   type LedgerGroup,
   type LedgerResult,
+  type LedgerView,
   MAX_LEDGER_PAGE,
   MAX_PENDING_PAGE,
   type MemoryApi,
@@ -150,6 +153,7 @@ export async function resolveVizAsset(assetsRoot: string, pathname: string): Pro
 export interface VizLedgerQuery {
   offset: number;
   limit: number;
+  /** History's lifecycle tab; rejected together with `view`. */
   group?: LedgerGroup;
   /**
    * WP5 §7.1 Step B — re-check each record's evidence against the code as it is TODAY, so the row can
@@ -164,6 +168,8 @@ export interface VizLedgerQuery {
    * hides the fault.
    */
   revalidate: boolean;
+  /** a working view (Active / Needs review); omitted = History, the unfiltered ledger. */
+  view?: LedgerView;
 }
 
 /**
@@ -201,11 +207,24 @@ export function parseMemoryLedgerQuery(params: URLSearchParams): VizLedgerQuery 
     }
     group = rawGroup as LedgerGroup;
   }
+  let view: LedgerView | undefined;
+  const rawView = params.get('view');
+  if (rawView !== null) {
+    if (!(LEDGER_VIEWS as readonly string[]).includes(rawView)) {
+      throw new VizHttpError(400, `unknown view: ${rawView}`);
+    }
+    view = rawView as LedgerView;
+  }
+  // `group` is History's lifecycle tab; a working view has no tabs, so the pair is a caller error.
+  if (group !== undefined && view !== undefined) {
+    throw new VizHttpError(400, 'group and view cannot be combined');
+  }
   return {
     offset: parseCount('offset', params.get('offset')),
     limit: Math.min(MAX_LEDGER_PAGE, parseCount('limit', params.get('limit'))),
     ...(group !== undefined ? { group } : {}),
     revalidate: parseRevalidateFlag(params),
+    ...(view !== undefined ? { view } : {}),
   };
 }
 
@@ -228,7 +247,12 @@ export interface VizMemoryHomeOperations {
     reason?: string;
   };
   capture?: { lastSuccessfulAt?: string; pending?: number; dead?: number };
-  codeIndex?: { lastSuccessfulAt?: string; behindHead?: boolean; workerRunning?: boolean };
+  codeIndex?: {
+    checkedRevision?: string;
+    lastSuccessfulAt?: string;
+    behindHead?: boolean;
+    workerRunning?: boolean;
+  };
   sync?: { configured: boolean; lastSuccessfulAt?: string; pending?: number; dead?: number };
   /** WP4.7 — this viz process's reader freshness (cold shape: the viz server has no refresh loop). */
   readerFreshness?: ReaderFreshness;
@@ -283,6 +307,43 @@ export function recoveryFor(
   return out;
 }
 
+/** Keep the published graph and the snapshot held by this viz process separate. */
+export function projectVizHealth(
+  published: {
+    behindHead: boolean;
+    lastKnownGood?: { head: string; publishedAt: string };
+  },
+  disk: ReaderFreshness,
+  loaded: { head: string | null; lastSuccessfulAt: string | null },
+): Pick<VizMemoryHomeOperations, 'codeIndex' | 'readerFreshness'> {
+  const publishedHead = published.lastKnownGood?.head ?? disk.indexedHead;
+  const publishedAt = published.lastKnownGood?.publishedAt ?? disk.lastSuccessfulRefreshAt;
+  const behindHead = published.lastKnownGood
+    ? published.behindHead
+    : publishedHead !== null && disk.currentHead !== null && publishedHead !== disk.currentHead;
+  const readerBehind =
+    loaded.head !== null && disk.currentHead !== null && loaded.head !== disk.currentHead;
+  const sourceUnknown = loaded.head !== null && disk.currentHead === null;
+  return {
+    codeIndex: {
+      ...(publishedHead ? { checkedRevision: publishedHead } : {}),
+      ...(publishedAt ? { lastSuccessfulAt: publishedAt } : {}),
+      behindHead,
+    },
+    readerFreshness: {
+      ...disk,
+      indexedHead: loaded.head,
+      lastSuccessfulRefreshAt: loaded.lastSuccessfulAt,
+      stale: readerBehind || sourceUnknown,
+      staleReasons: readerBehind
+        ? [STALE_REASONS.HEAD_MOVED]
+        : sourceUnknown
+          ? [STALE_REASONS.SOURCE_UNKNOWN]
+          : [],
+    },
+  };
+}
+
 /**
  * The memory home is the session-facing projection over the same API that powers the ledger.
  * It intentionally returns counts plus small preview lists; full history and record detail stay on
@@ -318,11 +379,17 @@ export function readMemoryHome(
     now: new Date().toISOString(),
     revalidate: true,
   });
-  // Deliberately NOT re-checked, and the asymmetry is the §7.1 correction: `counts` is the ledger's
-  // GROUP counts, which are anchor-derived and do not move when evidence stops grounding, so a
-  // re-check here would buy nothing and cost a second full fold. The one field on this read that can
-  // go stale — whether a record NEEDS ATTENTION — comes from `handoff` above, which does re-check.
-  const ledger = api.ledger({ offset: 0, limit: 1 });
+  // Tile counts come from the ledger's own view predicates, so every number equals the total of the
+  // list its tile opens. Handoff still owns Pending and Work; its agent contract is unchanged.
+  //
+  // Re-checked, exactly as `/memory.json` re-checks by default (WP5 §7.1): the working views read
+  // `eligible` and the evidence verdict, which a re-check can move (valid → invalid drops a record
+  // out of Active and into Needs review). A tile folded from stamps while its destination list is
+  // folded from a re-check would count one set of records and open another. `evaluate()` is
+  // memoized per content at a dependency generation, so the second fold here is paid once per code
+  // generation, not per read.
+  const ledger = api.ledger({ offset: 0, limit: 1, revalidate: true });
+  const needsReviewCount = ledger.views.needsReview;
   // Resumable only: `count` is the full history including completed and cancelled intakes, and a
   // "work to resume" tile that counts finished work is simply lying to the operator. Stale work
   // (idle for two weeks or more) is counted apart for the same reason.
@@ -377,17 +444,17 @@ export function readMemoryHome(
             ? step.pending(pending)
             : staleCount > 0
               ? `${staleCount} piece(s) of work went idle for two weeks or more — open Work to resume and mark each one done or cancel it.`
-              : handoff.counts.needsAttention > 0
-                ? 'Open Needs review and inspect the evidence or supersede the stale claim.'
+              : needsReviewCount > 0
+                ? `${needsReviewCount} claim(s) need review — open Needs review to see why each one is listed.`
                 : health.retrieval?.mode === 'lexical-fallback'
                   ? step.noModel(health.retrieval.reason)
                   : 'Nothing needs you. Agents capture memories with memory_observe as they work, and each session re-checks what is pending.';
   return {
     configured: true as const,
     sections: {
-      active: { count: handoff.counts.active, preview: handoff.recent },
+      active: { count: ledger.views.active, preview: handoff.recent },
       pending: { count: handoff.counts.pendingCaptures, preview: handoff.pendingCaptures },
-      needsReview: { count: handoff.counts.needsAttention, preview: handoff.needsAttention },
+      needsReview: { count: needsReviewCount, preview: handoff.needsAttention },
       history: { count: ledger.total, groups: ledger.counts },
       resume: {
         count: resumeCount,
@@ -453,6 +520,127 @@ export function parseDismissBody(v: unknown): VizDismissBody {
   const reason = requireString(o.reason ?? '', 'reason', { allowEmpty: true }).trim();
   return { id, ...(reason ? { reason } : {}) };
 }
+
+// ─── evidence inspection + concern reporting (UI remediation Phase 4) ─────────
+
+/** `/memory/evidence.json` accepts a record id and an evidence index — never a path. */
+export interface VizEvidenceQuery {
+  recordId: string;
+  index: number;
+}
+
+export function parseEvidenceQuery(params: URLSearchParams): VizEvidenceQuery {
+  const recordId = params.get('recordId');
+  if (!recordId || recordId.length > MAX_MUTATION_FIELD) {
+    throw new VizHttpError(400, 'missing or invalid recordId');
+  }
+  const raw = params.get('index');
+  const index = raw === null ? Number.NaN : Number(raw);
+  if (!Number.isInteger(index) || index < 0) throw new VizHttpError(400, `invalid index: ${raw}`);
+  return { recordId, index };
+}
+
+/** What the inspector can show of the evidence's CURRENT source, or exactly why it cannot. */
+export type VizEvidenceExcerpt =
+  | {
+      status: 'ready';
+      nodeId: string;
+      file: string;
+      span: { start: number; end: number };
+      excerpt: VizSourceResponse['excerpt'];
+    }
+  | { status: 'unavailable'; reason: string }
+  | { status: 'not-applicable' };
+
+export type VizEvidenceResponse = EvidenceInspection & { current: VizEvidenceExcerpt };
+
+/**
+ * One evidence item, explained. The record resolves through the authorized Memory API (a missing,
+ * foreign, or out-of-range item is one indistinguishable 404), and any current source excerpt is
+ * read through {@link readVizNodeSource} by indexed node id — the browser never names a file.
+ */
+export async function readMemoryEvidence(
+  api: MemoryApi,
+  soul: SoulStore,
+  repoRoot: string,
+  query: VizEvidenceQuery,
+): Promise<VizEvidenceResponse> {
+  const inspected = api.inspectEvidence(query.recordId, query.index);
+  if (!inspected.found) throw new VizHttpError(404, 'evidence not found');
+  const { found: _found, ...inspection } = inspected;
+  const detail = inspection.detail;
+  const location =
+    detail.kind === 'source-quote' || detail.kind === 'committed-policy'
+      ? detail.location
+      : undefined;
+  let current: VizEvidenceExcerpt = { status: 'not-applicable' };
+  if (location === null) {
+    current = { status: 'unavailable', reason: 'This evidence records no indexed location.' };
+  } else if (location) {
+    if (!location.readableNodeId) {
+      current = {
+        status: 'unavailable',
+        reason:
+          location.state === 'ambiguous'
+            ? 'The indexed location now matches several places, so none is shown as current.'
+            : location.state === 'uncheckable'
+              ? 'The code index is not available to this server, so currentness cannot be checked.'
+              : 'The indexed location no longer exists; only the saved record remains.',
+      };
+    } else {
+      try {
+        const source = await readVizNodeSource(soul, repoRoot, location.readableNodeId);
+        current = {
+          status: 'ready',
+          nodeId: source.nodeId,
+          file: source.file,
+          span: source.span,
+          excerpt: source.excerpt,
+        };
+      } catch (err) {
+        current = {
+          status: 'unavailable',
+          reason:
+            err instanceof VizHttpError && err.status === 422
+              ? 'The indexed node has no source span to read.'
+              : 'The source file could not be read from this checkout.',
+        };
+      }
+    }
+  }
+  return { ...inspection, current };
+}
+
+/** Longest concern a person can report; enough for a sentence or two, bounded for the ledger. */
+export const MAX_CONCERN_REASON = 500;
+
+export interface VizFeedbackBody {
+  recordId: string;
+  reason: string;
+}
+
+/** The concern POST: a record id and the reporter's reason. The actor is never client-supplied. */
+export function parseFeedbackBody(v: unknown): VizFeedbackBody {
+  const o = requireObject(v);
+  const recordId = requireString(o.recordId, 'recordId');
+  if (typeof o.reason !== 'string') {
+    throw new VizMutationError('bad-request', 400, 'a reason is required');
+  }
+  const reason = o.reason.trim();
+  if (reason.length === 0) throw new VizMutationError('bad-request', 400, 'a reason is required');
+  if (reason.length > MAX_CONCERN_REASON) {
+    throw new VizMutationError(
+      'bad-request',
+      400,
+      `the reason must be at most ${MAX_CONCERN_REASON} characters`,
+    );
+  }
+  return { recordId, reason };
+}
+
+/** The honest outcome copy: a report is feedback, not a lifecycle change. */
+export const CONCERN_RECORDED_MESSAGE =
+  'Recorded for review; this does not automatically retract or quarantine the claim.';
 
 /** The `/memory/record.json` body: the full `get` projection plus the record's audit trail. */
 export type VizLedgerDetailResponse = GetResult & { audit: AuditResult };

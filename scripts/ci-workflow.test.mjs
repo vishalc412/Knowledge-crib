@@ -913,8 +913,8 @@ assert.match(
 );
 assert.match(
   soulRefreshWorkflow,
-  /on:\n\s+push:\n\s+branches:\n\s+-\s+main\n\s+-\s+master/,
-  'soul-refresh must trigger on push to main + master (merge)',
+  /on:\n\s+push:\n\s+branches:\n\s+-\s+main\n\s+-\s+master\n(?:\s+#.*\n)*\s+-\s+Master\n/,
+  'soul-refresh must trigger on push to main + master + Master (the real default branch; filters are case-sensitive)',
 );
 assert.match(
   soulRefreshWorkflow,
@@ -975,3 +975,31 @@ assert.equal(
 );
 
 console.log('ci-workflow tests ok');
+
+// Branch filters are case-sensitive and the default branch is `Master`. Every push-triggered
+// workflow that names the lowercase spellings must also name the real one, or it never fires on a
+// merge — the defect that kept CI and soul-refresh from ever running on the default branch.
+for (const [name, text] of [
+  ['ci.yml', releaseWorkflow],
+  ['beta-installers.yml', workflow],
+  ['crib-soul-refresh.yml', soulRefreshWorkflow],
+]) {
+  const push = text.match(/\n {2}push:\n {4}branches:\n((?: {6}.*\n)+)/);
+  assert.ok(push, `${name} must declare push branches`);
+  assert.match(
+    push[1],
+    /^ {6}- Master$/m,
+    `${name} push trigger must name the default branch Master`,
+  );
+}
+
+// The cross-platform matrix runs after the release gate but must not be SKIPPED by its failure.
+const matrixJob = releaseWorkflow.match(/\n {2}verify-matrix:\n((?: {4}.*\n|\s*\n)+?) {4}steps:/);
+assert.ok(matrixJob, 'ci.yml must define verify-matrix');
+assert.match(matrixJob[1], /needs:\s*release-gate/, 'verify-matrix stays ordered after the gate');
+assert.match(
+  matrixJob[1],
+  /if:\s*\$\{\{\s*!cancelled\(\)\s*\}\}/,
+  'verify-matrix must run even when the release gate fails',
+);
+process.stdout.write('ci-workflow branch-filter and matrix assertions ok\n');

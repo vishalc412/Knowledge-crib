@@ -122,14 +122,20 @@ let root = '';
 /** Every failure the store reported through `onCacheFailure`, in order. */
 let observed: Array<{ phase: string; error: unknown; attempted: number }> = [];
 
+/** Every store a test opened, closed before its directory is removed: Windows cannot delete an
+ *  open SQLite file, so an unclosed store failed cleanup there with EBUSY (CI, 2026-09-24). */
+const opened: Array<InstanceType<typeof MemoryVectorStore>> = [];
+
 function newStore(dbPath: string): InstanceType<typeof MemoryVectorStore> {
-  return new MemoryVectorStore({
+  const store = new MemoryVectorStore({
     dbPath,
     embedderId: EMBEDDER_ID,
     textVersion: TEXT_VERSION,
     dim: DIM,
     onCacheFailure: (failure) => observed.push(failure),
   });
+  opened.push(store);
+  return store;
 }
 
 /** A store backed by a real file, so its rows genuinely outlive one call. */
@@ -151,6 +157,7 @@ afterEach(() => {
   trace.failGet = false;
   trace.failAll = false;
   trace.failRun = false;
+  for (const store of opened.splice(0)) store.close();
   rmSync(root, { recursive: true, force: true });
 });
 

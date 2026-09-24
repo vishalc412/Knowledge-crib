@@ -1,0 +1,114 @@
+/* Knowledge Crib semantic tokens.
+ *
+ * The shell sets data-kc-theme="dark|light"; every surface, text and control colour resolves
+ * from these names. The canvas cannot read CSS directly, so the component caches the
+ * --kc-canvas-* values from the computed style once per theme change.
+ *
+ * Contrast pairings (WCAG 2.2, measured on the opaque surfaces below):
+ *   dark  text-primary     #e8edf5 on surface-floating #141822  15.1:1
+ *   dark  text-secondary   #b3bdcc on surface-floating #141822   9.4:1
+ *   dark  border-control   #64748b on surface-panel    #12161f   3.8:1 (non-text, >= 3:1)
+ *   light text-primary     #1e293b on surface-floating #ffffff  14.6:1
+ *   light text-secondary   #475569 on surface-floating #ffffff   7.6:1
+ *   light border-control   #64748b on surface-page     #f4f6f9   4.4:1 (non-text, >= 3:1)
+ *   both  selected-text    #ffffff on selected-surface #3d63dd   5.2:1
+ */
+[data-kc-shell="signal-console"] {
+  --kc-space-1: 4px;
+  --kc-space-2: 8px;
+  --kc-space-3: 12px;
+  --kc-space-4: 16px;
+  --kc-space-6: 24px;
+  --kc-font-body: 14px;
+  --kc-font-support: 12px;
+  --kc-font-section: 16px;
+  --kc-font-heading: 20px;
+  --kc-target-desktop: 32px;
+  --kc-target-touch: 44px;
+  --kc-accent-code: #6e94ff;
+  --kc-accent-knowledge: #43d8c9;
+  --kc-accent-review: #f5b942;
+  --kc-accent-risk: #fb7b75;
+  --kc-accent-positive: #34d399;
+  --kc-selected-surface: #3d63dd;
+  --kc-selected-text: #ffffff;
+  /* Status tints and edges derive from the accents, so every hue has exactly one source. */
+  --kc-tint-code: color-mix(in srgb, var(--kc-accent-code) 16%, transparent);
+  --kc-tint-knowledge: color-mix(in srgb, var(--kc-accent-knowledge) 12%, transparent);
+  --kc-tint-positive: color-mix(in srgb, var(--kc-accent-positive) 14%, transparent);
+  --kc-tint-review: color-mix(in srgb, var(--kc-accent-review) 14%, transparent);
+  --kc-tint-risk: color-mix(in srgb, var(--kc-accent-risk) 14%, transparent);
+  --kc-edge-code: color-mix(in srgb, var(--kc-accent-code) 50%, transparent);
+  --kc-edge-knowledge: color-mix(in srgb, var(--kc-accent-knowledge) 45%, transparent);
+  --kc-edge-positive: color-mix(in srgb, var(--kc-accent-positive) 45%, transparent);
+  --kc-edge-review: color-mix(in srgb, var(--kc-accent-review) 45%, transparent);
+  --kc-edge-risk: color-mix(in srgb, var(--kc-accent-risk) 45%, transparent);
+  /* Interaction states on neutral surfaces. */
+  --kc-state-hover: color-mix(in srgb, var(--kc-text-primary) 10%, transparent);
+  --kc-state-selected: color-mix(in srgb, var(--kc-text-primary) 14%, transparent);
+  --kc-scrollbar-thumb: color-mix(in srgb, var(--kc-text-secondary) 40%, transparent);
+}
+
+[data-kc-shell="signal-console"][data-kc-theme="dark"] {
+  color-scheme: dark;
+  --kc-surface-page: #0c0f16;
+  --kc-surface-panel: #12161f;
+  --kc-surface-floating: #141822;
+  --kc-surface-raised: #1b202b;
+  --kc-text-primary: #e8edf5;
+  --kc-text-secondary: #b3bdcc;
+  --kc-text-interactive: #a7beff;
+  --kc-text-knowledge: #43d8c9;
+  --kc-text-positive: #34d399;
+  --kc-text-review: #f5b942;
+  --kc-text-risk: #fb7b75;
+  --kc-border-control: #64748b;
+  --kc-border-separator: rgba(255, 255, 255, 0.12);
+  --kc-focus: #43d8c9;
+  --kc-code-surface: #080b11;
+  --kc-code-text: #dbe4f0;
+  --kc-canvas-dot: rgba(255, 255, 255, 0.05);
+  --kc-canvas-label: #dbe4f0;
+  --kc-canvas-pill: rgba(12, 15, 22, 0.9);
+  --kc-canvas-node-stroke: #0c0f16;
+  --kc-bg: var(--kc-surface-page);
+  --kc-panel: var(--kc-surface-panel);
+  --kc-raised: var(--kc-surface-raised);
+  --kc-text: var(--kc-text-primary);
+  --kc-text-2: var(--kc-text-secondary);
+  --kc-muted: var(--kc-text-secondary);
+  --kc-line: var(--kc-border-separator);
+  --kc-fill: rgba(255, 255, 255, 0.06);
+}
+
+[data-kc-shell="signal-console"][data-kc-theme="light"] {
+  color-scheme: light;
+  --kc-surface-page: #f4f6f9;
+  --kc-surface-panel: #ffffff;
+  --kc-surface-floating: #ffffff;
+  --kc-surface-raised: #e9edf3;
+  --kc-text-primary: #1e293b;
+  --kc-text-secondary: #475569;
+  --kc-text-interactive: #284fa5;
+  --kc-text-knowledge: #0f766e;
+  --kc-text-positive: #065f46;
+  --kc-text-review: #92400e;
+  --kc-text-risk: #b91c1c;
+  --kc-border-control: #64748b;
+  --kc-border-separator: rgba(15, 23, 42, 0.16);
+  --kc-focus: #006c68;
+  --kc-code-surface: #e9edf3;
+  --kc-code-text: #1e293b;
+  --kc-canvas-dot: rgba(15, 23, 42, 0.08);
+  --kc-canvas-label: #1e293b;
+  --kc-canvas-pill: #ffffff;
+  --kc-canvas-node-stroke: #ffffff;
+  --kc-bg: var(--kc-surface-page);
+  --kc-panel: var(--kc-surface-panel);
+  --kc-raised: var(--kc-surface-raised);
+  --kc-text: var(--kc-text-primary);
+  --kc-text-2: var(--kc-text-secondary);
+  --kc-muted: var(--kc-text-secondary);
+  --kc-line: var(--kc-border-separator);
+  --kc-fill: rgba(15, 23, 42, 0.05);
+}

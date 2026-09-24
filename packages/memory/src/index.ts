@@ -39,6 +39,7 @@ export * from './grounding.js';
 export * from './locator.js';
 export * from './evaluator.js';
 export * from './ledger.js';
+export * from './evidence-inspection.js';
 export * from './generation-cache.js';
 export * from './recall.js';
 export * from './fts-index.js';

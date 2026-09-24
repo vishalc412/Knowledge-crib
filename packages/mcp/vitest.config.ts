@@ -11,6 +11,14 @@ export default defineConfig({
   // NOTE: these MUST live under `test:` — Vitest reads its options from that key, and a top-level
   // `testTimeout` is silently swallowed by Vite as an unknown root option.
   test: {
+    // Files run one at a time. Measured 2026-09-24 on one machine at one load: the parallel run
+    // exited 1 three times out of three on the worker-IPC timeout above (490/490 passing each time),
+    // and the serial run exited 0, at 86s against ~77s. It is also what stopped both Windows CI
+    // cells. The precise mechanism is NOT established: no test blocks its worker anywhere near the
+    // 60s RPC window (the longest is ~31s), and the suspected shared lock was ruled out
+    // (graph-eval isolates its memory home). What is measured is that parallel files trigger it
+    // and serial files do not, at a ~10s cost. Revisit if a cause is found.
+    fileParallelism: false,
     testTimeout: 30_000,
     // Several suites `beforeEach` a full indexRepo + index build, so the hook budget has to move with
     // the test budget or the hook times out first and reads as an unrelated failure.

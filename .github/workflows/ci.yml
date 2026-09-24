@@ -6,6 +6,9 @@ on:
     branches:
       - main
       - master
+      # GitHub branch filters are case-sensitive and this repository's default branch is `Master`.
+      # With only the lowercase names this trigger never fired on a merge (evidence register §4.4).
+      - Master
   workflow_dispatch:
 
 permissions:
@@ -106,6 +109,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 40
     needs: release-gate
+    # Ordered after the gate, but NOT gated on it passing. A bare `needs` skipped all six cells on
+    # any gate failure, so while the gate stood red (2026-09-09 → 2026-09-23) the matrix ran zero
+    # cells — and its last run was reporting a live Windows failure (evidence register §4.5). A
+    # failed gate is not a reason to stop measuring the other platforms.
+    if: ${{ !cancelled() }}
     strategy:
       fail-fast: false
       matrix:

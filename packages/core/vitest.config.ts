@@ -13,8 +13,13 @@ export default defineConfig({
   server: {
     fs: {
       // realpath: on macOS tmpdir() is /var/... but ids resolve to /private/var/... — the
-      // allowlist must name the REAL path or the check denies the import.
-      allow: [realpathSync(tmpdir())],
+      // allowlist must name the REAL path or the check denies the import. On Windows the runner's
+      // tmpdir() is the 8.3 short form (C:\Users\RUNNER~1\...), which the JS realpath keeps, while
+      // vite resolves the module id to the long form (C:/Users/runneradmin/...) — only the NATIVE
+      // realpath expands it. Measured on the Windows CI cells 2026-09-24: every embed-install test
+      // failed "Failed to load url C:/Users/runneradmin/... Does the file exist?". So all three
+      // spellings are allowed; on macOS/Linux they collapse to one or two identical entries.
+      allow: [...new Set([tmpdir(), realpathSync(tmpdir()), realpathSync.native(tmpdir())])],
     },
     deps: {
       external: [/embedder\.mjs$/, /embedder\.cjs$/, /\/embed\//],
