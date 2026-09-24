@@ -1,12 +1,11 @@
 import { type AtomicWriteDurability, atomicWriteDurability } from '@knowledge-crib/core';
 /**
- * WP1 defects D1-f and D1-g — the durability limit must not be docs-only, and on darwin the
- * acknowledgement must not claim more than `fsync` performs.
+ * The durability limit must not be docs-only, and on darwin the acknowledgement must not claim more
+ * than `fsync` performs.
  *
- * D1-f: before WP1 the only place the durability limit existed was a row in
- * `docs/design/02-lld.md`'s failure table. A limit documented and nowhere reported is a limit the
- * operator cannot see, which is why obligation 2's exit criterion is *"persistence failures do not
- * produce successful acknowledgements"* and not merely *"the limit is written down"*.
+ * A limit documented and nowhere reported is a limit the operator cannot see, which is why the exit
+ * criterion is *"persistence failures do not produce successful acknowledgements"* and not merely
+ * *"the limit is written down"*.
  *
  * D1-g: on darwin `fsync` is a host-to-device flush, not a platter flush — `man 2 fsync` says the
  * drive "may not physically write the data to the platters for quite some time", and `F_FULLFSYNC`

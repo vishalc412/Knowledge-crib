@@ -553,7 +553,7 @@ export class FreshnessWorker {
    */
   private readonly cancelledRuns = new Set<string>();
 
-  constructor(private readonly opts: FreshnessWorkerOpts) {
+  constructor(opts: FreshnessWorkerOpts) {
     this.env = opts.env ?? process.env;
     const runner =
       opts.runTask ??

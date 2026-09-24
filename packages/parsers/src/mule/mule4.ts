@@ -241,5 +241,3 @@ export function parseMule4(xml: string): Mule4Document {
     diagnostics,
   };
 }
-
-export { processAttributes as sanitizeMuleAttributes };

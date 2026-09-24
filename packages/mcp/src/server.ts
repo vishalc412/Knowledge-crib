@@ -514,7 +514,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0', pins?: RequestPins)
         reason: z.string().optional(),
         visibility: z.enum(['private', 'workspace']).optional(),
         propositionKey: z.string().optional(),
-        // ── Gate 4 sync: read-only status is the default; push/pull reach the rejection path ──
+        // ── sync: read-only status is the default; push/pull reach the rejection path ──
         request: z.enum(['status', 'push', 'pull']).optional(),
         ifHash: z.string().optional(),
         // ── durable intake continuation ──
@@ -1080,8 +1080,8 @@ export function buildServer(verbs: Verbs, version = '0.1.0', pins?: RequestPins)
  * by its bind address — it reached it through a name that resolves to loopback. That is DNS
  * rebinding: an attacker-controlled page resolves its own domain to 127.0.0.1 and the victim's
  * browser then talks to this daemon "same-origin", with the graph's source text on the other side.
- * The audited daemon accepted `Host: audit-untrusted.example` and answered `initialize` with 200
- * (docs/audits/2026-09-05, F14). The visualization server already enforced this; the MCP daemon did
+ * The daemon once accepted `Host: audit-untrusted.example` and answered `initialize` with 200.
+ * The visualization server already enforced this; the MCP daemon did
  * not, and the two are the same class of local HTTP surface.
  */
 const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '[::1]', '::1']);

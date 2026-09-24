@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 /**
- * ADR-003 (Gate 4) — the sync PROTOCOL ENGINE. The protocol lives here; adapters stay dumb (D6) and
+ * Cross-device sync — the sync PROTOCOL ENGINE. The protocol lives here; adapters stay dumb (D6) and
  * the stores stay untouched by it (D8: the engine never writes shard files directly — every apply
  * goes through `MemoryStore.upsertEntries`, so the FTS notices and generation bumps fire by
  * construction).

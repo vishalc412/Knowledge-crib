@@ -1,6 +1,5 @@
 /**
- * WP5.1–WP5.5 (docs/launch/requirements-register.md) — the supervisor/child split of the
- * freshness worker.
+ * The supervisor/child split of the freshness worker.
  *
  * WHY A CHILD AT ALL: production revalidation runs `crib update`, whose parsing is synchronous —
  * inside the worker it blocked the event loop for as long as the repo took, the heartbeat timer

@@ -19,10 +19,9 @@
  *
  * ATOMICITY AND DURABILITY ARE DIFFERENT PROMISES, and this module used to make only the first.
  * temp→rename guarantees that a reader never sees a torn file; it says nothing about whether the
- * bytes behind the renamed name have reached stable storage. Before WP1 the write was
+ * bytes behind the renamed name have reached stable storage. The write used to be
  * `writeFileSync(tmp)` + `renameSync` and nothing else, so a completed, acknowledged mutation lived
- * only in the page cache: measured on this tree (docs/program/logs/wp1-durability-baseline-2026-09-22.log),
- * one admitted `crib memory observe` performed 12 renames and ZERO fsyncs. A power loss or kernel
+ * only in the page cache: measured on this tree, one admitted `crib memory observe` performed 12 renames and ZERO fsyncs. A power loss or kernel
  * panic after the acknowledgement could therefore lose work the store had already reported as
  * written.
  *

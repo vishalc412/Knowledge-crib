@@ -36,7 +36,7 @@ incremental anchor in the test. The fresh fixture then passed all team checks.
 The earlier full verification at `3434c19f` reached CLI, where the existing
 freshness lock test failed with `LockBusyError (pid 0)` and the post-commit p95
 test exceeded its 25 ms threshold under load. Both passed when run in isolation.
-The repository's [developer-trust evidence register](../program/evidence-register.md)
+The developer-trust evidence register (in git history under `docs/program/` at `17e3d65f`)
 records these issues as B13 and B12a, and the MCP worker timeout as B11.
 The current candidate's full run stopped at MCP, so it does **not** establish a
 green repository-wide gate. CI should be reviewed before merging.

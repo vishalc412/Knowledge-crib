@@ -1,5 +1,5 @@
 /**
- * ADR-003 (Gate 4) D5 — the derive-and-diff sweep. The bootstrap, the steady-state push heal, and
+ * Cross-device sync — the derive-and-diff sweep. The bootstrap, the steady-state push heal, and
  * the repair path after a lost/corrupt log are ONE routine: walk the syncable collections (D1/D2:
  * records — local ⇒ `active`, global ⇒ `records`, mirroring recall's record sources — plus
  * `decisions` as `decision.append` and `feedback` as `feedback.append`, because a tombstone or a

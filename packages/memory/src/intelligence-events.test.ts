@@ -69,7 +69,7 @@ describe('IntelligenceEventJournal', () => {
         fullTranscript: 'this must not be stored',
         nested: { rawCommandOutput: 'nor this', keep: 'structured fact' },
       },
-      evidenceRefs: ['file:docs/launch-readiness.md'],
+      evidenceRefs: ['file:docs/README.md'],
       occurredAt: T0,
     };
 

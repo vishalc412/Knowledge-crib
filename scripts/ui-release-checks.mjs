@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Run the automated checks the UI release gate requires and record their exit codes in
- * checks.json (default docs/audits/2026-09-23/a11y/checks.json). The file is a receipt of commands
+ * checks.json (default docs/a11y/checks.json). The file is a receipt of commands
  * actually executed at a recorded HEAD — the gate reads it; nothing here decides the outcome.
  *
  *   node scripts/ui-release-checks.mjs [--out <file>] [--only unit,browser]
@@ -29,7 +29,7 @@ function git(args) {
 
 const argv = process.argv.slice(2);
 const outFlag = argv.indexOf('--out');
-const out = resolve(outFlag >= 0 ? argv[outFlag + 1] : 'docs/audits/2026-09-23/a11y/checks.json');
+const out = resolve(outFlag >= 0 ? argv[outFlag + 1] : 'docs/a11y/checks.json');
 const onlyFlag = argv.indexOf('--only');
 const names = onlyFlag >= 0 ? argv[onlyFlag + 1].split(',') : Object.keys(CHECK_COMMANDS);
 

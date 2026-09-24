@@ -225,7 +225,7 @@ export class MemoryLockNestingError extends Error {
 }
 
 /**
- * Thrown when a private-visibility memory-2 entry is written at the TEAM store (ADR-003 D10): the
+ * Thrown when a private-visibility memory-2 entry is written at the TEAM store: the
  * team store IS the git shard, and private never enters git — for any writer (api supersede, a
  * promotion, a direct upsert) and at any gate. Local/global stores are unaffected.
  */

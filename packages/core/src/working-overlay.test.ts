@@ -188,7 +188,7 @@ describe('working overlay — resync', () => {
 
 describe('working overlay — restoreFrom', () => {
   it('restores a single committed file, skipping edges whose other endpoint is still dirty', () => {
-    const { soul, aSym, bSym, edge } = committedCanonical();
+    const { soul, aSym, edge } = committedCanonical();
     const overlay = new WorkingOverlay(soul);
     // Both files dirty: drop their overlay records to simulate a mid-refresh state.
     overlay.markDirty('src/a.ts');

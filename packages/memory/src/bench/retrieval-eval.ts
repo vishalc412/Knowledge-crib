@@ -127,7 +127,6 @@ export function runRetrievalEval(
     fts.close();
   }
 
-  const base = strategies[0]!;
   return {
     preregistration: PREREGISTRATION_DOC,
     scale: {

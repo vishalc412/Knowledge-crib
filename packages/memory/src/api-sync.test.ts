@@ -1,5 +1,5 @@
 /**
- * Gate 4 — the API surface + the D10 privacy guard, one test per contract clause:
+ * Sync — the API surface + the private-never-enters-Git guard, one test per contract clause:
  *
  *   - D10 (private never enters git): the team store's write gate refuses a private-projecting
  *     memory-2 record through EVERY path — a direct `upsertEntries`, the `supersede` successor

@@ -1,15 +1,15 @@
 # Code retrieval — §8's five categories, published with the losses
 
 **What this document is.** The per-category evidence for the five evaluation categories of
-`docs/program/wp4-implementation-spec.md` §8 (D-a's artifact), published in the bench family's
+the code-retrieval program spec (§8), published in the bench family's
 one-doc-per-run style. It reports **every** category, including the ones that lost, the one that could not
 be scored, and the one whose arm **does not exist in the instrument** — because a category table that
 reports only the categories that worked is not evidence.
 
-**Generated from.** `docs/program/logs/wp4-r3-wp4-r3-quality-step3.json` (categories exact, nl, cross-file,
-rename) and `...-step5.json` (dependency), both produced by the pre-registered R3 block
-(`docs/program/tools/wp4-r3-run.sh`) at HEAD `b4615721e6a352aa9f89edc0f9f4094d28e113a6`, branch
-`program/developer-trust`.
+**Generated from.** The R3 quality-step reports (step 3: categories exact, nl, cross-file, rename;
+step 5: dependency), both produced by the pre-registered R3 block at HEAD
+`b4615721e6a352aa9f89edc0f9f4094d28e113a6`, branch `program/developer-trust`. The raw reports and
+run script are preserved in git history under `docs/program/` at commit `17e3d65f`.
 
 **The arms, as this harness could actually open them.** Reported before any number, because three of the
 four arms being absent is the single most important fact about this table:

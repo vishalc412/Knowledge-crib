@@ -294,6 +294,5 @@ Residue is unchanged and enumerated: v1's 3 forbidden violations are `g1` only, 
 `q-decoy-window-emptiness-{c,e,p}` probes; the 3 emptiness violations per corpus are the
 corpus-authoring rows. The residue, not the harness, is what still gates GO on corpus v3.
 
-Reports: `docs/program/eval/graph-eval-v1-harnessv3.json`,
-`docs/program/eval/graph-eval-heldout-v2-harnessv3.json`.
-Log: `docs/program/logs/wp2-prefreeze-harness-v3-2026-09-22.log`.
+Reports (`graph-eval-v1-harnessv3.json`, `graph-eval-heldout-v2-harnessv3.json`) and the
+2026-09-22 pre-freeze log are preserved in git history under `docs/program/` at commit `17e3d65f`.

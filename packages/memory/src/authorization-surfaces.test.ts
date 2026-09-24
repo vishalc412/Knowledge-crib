@@ -48,7 +48,6 @@ import {
 
 const T0 = '2026-01-01T00:00:00.000Z';
 const REPO = 'r-authz-surfaces';
-const SUBJECT = 'sym:src/a.ts#A.b';
 const CALLER = 'principal:A';
 const OTHER = 'principal:B';
 /** Three distinct subjects so a foreign row is identifiable by subject alone, never by position. */

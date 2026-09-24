@@ -444,7 +444,7 @@ describe('WatchMode + RefreshCoordinator — convergence (exit gate line 375)', 
 
 describe('WatchMode + RefreshCoordinator — canonical drift + transitions', () => {
   it('an external `crib update` over a CLEAN tree still publishes a new bundle (readers rebuild)', async () => {
-    // R04 (docs/audits/2026-09-05/post-merge-reaudit.md): a canonical advance over a clean working
+    // A canonical advance over a clean working
     // tree must still reach consumers. The old code returned early on an empty dirty set; the
     // coordinator's capture includes the canonical fingerprint, so drift alone moves the hash.
     git(repo, ['add', '-A']);

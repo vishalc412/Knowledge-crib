@@ -3444,7 +3444,7 @@ export class Verbs {
   }
 
   /**
-   * Gate 4 — `memory{op:'sync'}`: the D12 MCP surface. MCP never pushes or pulls — no backend port
+   * `memory{op:'sync'}` — the MCP sync surface. MCP never pushes or pulls — no backend port
    * is injectable over stdio, and an agent session must not cause network side effects — so an
    * explicit push/pull request is REJECTED with the honest reason, and the only reachable shapes
    * are the not-configured response and the read-only status report. The sync engine runs over an
@@ -3462,7 +3462,7 @@ export class Verbs {
         status: 'rejected',
         message:
           `sync ${args.request} is not available over MCP — sync runs only via the CLI ` +
-          `('crib memory sync ${args.request}') so an agent session cannot cause network side effects (ADR-003 D12)`,
+          `('crib memory sync ${args.request}') so an agent session cannot cause network side effects`,
       });
     }
     const api = this.memoryApi();
@@ -4170,7 +4170,7 @@ export class Verbs {
       },
       counterEvidence: claimKind ? counterEvidence : [],
       now: () => new Date().toISOString(),
-      // ADR-003 D3/D4: the feedback row and (on suppression) the quarantine decision stage for
+      // the feedback row and (on suppression) the quarantine decision stage for
       // cross-device sync INSIDE the same lock hold that writes them — a contradicted-feedback
       // quarantine must survive to the next device, or it resurrects there.
       syncStage: {

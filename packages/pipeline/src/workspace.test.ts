@@ -83,6 +83,33 @@ describe('detectWorkspace', () => {
     const layout = detectWorkspace(repo);
     expect(layout?.packages.map((p) => p.rel)).toEqual(['libs/deep/core']);
   });
+  it('reads multi-line Cargo members and stops at the closing bracket', () => {
+    const crate = (rel: string) => {
+      mkdirSync(join(repo, rel), { recursive: true });
+      writeFileSync(join(repo, rel, 'Cargo.toml'), `[package]\nname = "${rel.split('/').pop()}"\n`);
+    };
+    crate('crates/a');
+    crate('crates/b');
+    crate('resolver'); // a directory named like the key that follows `members` must not match
+    writeFileSync(
+      join(repo, 'Cargo.toml'),
+      [
+        '[workspace]',
+        'members =',
+        '  [',
+        '    "crates/a", # first',
+        '    "crates/b",',
+        '  ]',
+        'resolver = "2"',
+        '',
+        '[workspace.dependencies]',
+        'serde = "1"',
+      ].join('\n'),
+    );
+    const layout = detectWorkspace(repo);
+    expect(layout?.tool).toBe('cargo');
+    expect(layout?.packages.map((p) => p.rel).sort()).toEqual(['crates/a', 'crates/b']);
+  });
 });
 
 describe('resolvePackageArg', () => {

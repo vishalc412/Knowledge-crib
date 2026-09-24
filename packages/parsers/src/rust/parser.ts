@@ -202,8 +202,6 @@ export function parseRust(src: string): RustModule {
   }
 }
 
-const CONTAINER_KINDS = new Set<RustKind>(['mod', 'trait', 'impl']);
-
 class Parser {
   private readonly t: Token[];
   private i = 0;
@@ -308,7 +306,6 @@ class Parser {
     }
     if (this.atEnd()) return null;
 
-    const kw = this.peek().value;
     if (this.isName('mod')) return this.parseMod(startLine, attributes, modifiers);
     if (this.isName('struct')) return this.parseStruct(startLine, attributes, modifiers, 'struct');
     if (this.isName('enum')) return this.parseStruct(startLine, attributes, modifiers, 'enum');

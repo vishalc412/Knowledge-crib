@@ -1,7 +1,7 @@
 /**
  * The publishable workspace package set, DISCOVERED rather than hand-listed.
  *
- * The audited defect (docs/audits/2026-09-05, F10) was a hardcoded list: `packages/memory` joined
+ * The original defect was a hardcoded list: `packages/memory` joined
  * the workspace but was never added to `pack-check`, so the gate passed green while validating
  * seven of eight tarballs. The same omission in `build-installers` shipped installer bundles
  * without memory until it was noticed by hand. A gate whose coverage is a literal cannot report on

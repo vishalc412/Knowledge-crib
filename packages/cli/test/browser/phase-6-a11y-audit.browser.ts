@@ -8,7 +8,7 @@ import { sampleTextContrast, undersizedTargets } from './contrast.js';
 // is driven through the REAL backend, in both themes, at desktop and phone widths, and checked with
 // axe-core's WCAG 2.2 A/AA rules plus this suite's composited-contrast and target-size samplers.
 // Automated checks SUPPORT the independent assessment; they never replace it (see
-// docs/audits/2026-09-23/phase-6-accessibility-gate.md). Set A11Y_REPORT=<file> to write the raw
+// docs/a11y/assessor-protocol.md). Set A11Y_REPORT=<file> to write the raw
 // findings for the issue log
 // (one JSON line per state: a failed test restarts the worker, so nothing is held in memory).
 let backend: MemoryBackend;

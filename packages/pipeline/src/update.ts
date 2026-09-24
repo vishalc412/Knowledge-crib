@@ -36,7 +36,7 @@ import { runSemanticLink } from './linker/index.js';
 import { classifyMuleDiscovery } from './mule/discover.js';
 import { runOwnership } from './ownership.js';
 import type { OwnershipStats } from './ownership.js';
-import { emptyParseStats, runParse } from './parse.js';
+import { runParse } from './parse.js';
 import type { ParseStats } from './parse.js';
 import { defaultExtractors } from './pipeline.js';
 import { runResolve } from './resolve/index.js';
@@ -121,25 +121,6 @@ export interface UpdateNoopReport {
 }
 
 export type UpdateResult = UpdateReport | UpdateNoopReport | null;
-
-const EMPTY_PARSE: ParseStats = emptyParseStats();
-const EMPTY_RESOLVE: ResolveStats = {
-  imports: 0,
-  calls: 0,
-  inherits: 0,
-  implements: 0,
-  dropped: 0,
-};
-const EMPTY_LINK: LinkStats = { describes: 0, references: 0, diagnostics: [] };
-const EMPTY_ARTIFACTS: ArtifactStats = {
-  artifacts: 0,
-  governs: 0,
-  requires: 0,
-  invokes: 0,
-  mcpServers: 0,
-  localOverlay: 0,
-  diagnostics: [],
-};
 
 /** Scoped re-extract since the manifest's VCS anchor. `null` ⇒ caller does a full `indexRepo`. */
 export async function updateRepo(

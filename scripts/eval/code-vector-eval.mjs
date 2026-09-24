@@ -6,7 +6,7 @@
  * structural prior in `index/rerank.ts`) shipped unreachable: no production call site passed an
  * embedder, and the metadata that authorizes reading vectors was in-memory only, so every reopen fell
  * back to BM25 over a fully populated `vectors` table. Making it reachable is not the same as making
- * it better, and the audit that found it (docs/audits/2026-09-20) recorded a NEGATIVE result: with the
+ * it better, and the audit that found it recorded a NEGATIVE result: with the
  * channel confirmed live, three paraphrase probes were no better, because the embedded text was
  * surface fields only. This harness is what turns that from an anecdote into a number.
  *
@@ -288,8 +288,8 @@ function scoreReranked(store, reranker) {
 }
 
 /**
- * WHICH of the degradation cases withheld the vector channel — the §5.3 cases of
- * `docs/program/wp4-implementation-spec.md`, named by the state this script can observe.
+ * WHICH of the degradation cases withheld the vector channel, named by the state this script can
+ * observe.
  *
  * Classified from facts this script already holds rather than by matching prose out of the note: a
  * regex over the store's message would silently mislabel the moment that message is reworded, and a

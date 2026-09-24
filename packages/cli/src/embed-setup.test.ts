@@ -1,7 +1,7 @@
 /**
  * `crib embed setup` — the supported semantic installation path.
  *
- * F05 (docs/audits/2026-09-05) found the on-device tier reachable only through a README ritual whose
+ * An audit found the on-device tier reachable only through a README ritual whose
  * final step named a path inside the git checkout, which the published package does not ship — so an
  * npm install could not follow the documented instructions at all and silently served the lexical
  * fallback. The deeper barrier was the toolchain: reaching the tier required `pip install

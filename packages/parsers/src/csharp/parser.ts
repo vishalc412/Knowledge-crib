@@ -268,7 +268,6 @@ class Parser {
       break;
     }
     if (this.atEnd()) return null;
-    const kw = this.peek().value;
     if (this.isName('namespace')) return this.parseNamespace(startLine, attributes, modifiers);
     if (this.isName('class')) return this.parseType('class', startLine, attributes, modifiers);
     if (this.isName('interface'))

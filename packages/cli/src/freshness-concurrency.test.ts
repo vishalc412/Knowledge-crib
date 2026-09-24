@@ -1,5 +1,5 @@
 /**
- * F02 (docs/audits/2026-09-05) — the freshness queue must not lose ACKNOWLEDGED work.
+ * The freshness queue must not lose ACKNOWLEDGED work.
  *
  * The audit forked 8 post-commit writers against one registry and found that most calls returned
  * successfully while their queue entry had vanished: `enqueueFreshness` performed an unlocked

@@ -582,7 +582,8 @@ export function installMcp(repoRoot: string, opts: McpInstallOptions): McpInstal
         TOML_END,
       ].join('\n');
       const existing = readOrEmpty(target.configPath);
-      const updated = spliceManaged(existing, block, TOML_BEGIN, TOML_END, !existing.length);
+      // `fresh: false` — a shebang belongs on a shell hook, never in TOML.
+      const updated = spliceManaged(existing, block, TOML_BEGIN, TOML_END, false);
       const written = updated !== existing;
       if (written) {
         mkdirSync(dirname(target.configPath), { recursive: true });

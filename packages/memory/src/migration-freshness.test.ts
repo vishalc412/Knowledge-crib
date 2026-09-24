@@ -1,5 +1,5 @@
 /**
- * R02 (docs/audits/2026-09-05/post-merge-reaudit.md) — evidence validity is a property of the
+ * Evidence validity is a property of the
  * world, never of the schema a claim happens to be stored in.
  *
  * The audit stored a trusted v1 record whose `source-quote` evidence pointed at a symbol that no
