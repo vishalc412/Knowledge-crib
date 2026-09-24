@@ -101,6 +101,47 @@ function loadModel(): Model {
   return context.KCGraphModel as Model;
 }
 
+describe('graph indexes', () => {
+  it('keeps membership and architectural neighbours unique without duplicate scans', () => {
+    const model = loadModel();
+    const nodes = ['a', 'b', 'c'].map((id) => ({ id, kind: 'function', cluster: 'k' }));
+    const edges: EdgeLike[] = [
+      { src: 'a', dst: 'b', rel: 'calls' },
+      { src: 'a', dst: 'b', rel: 'imports' },
+      { src: 'b', dst: 'a', rel: 'calls' },
+      { src: 'a', dst: 'c', rel: 'references' },
+    ];
+    const indexes = model.buildIndexes(nodes, edges);
+    expect(indexes.membersByCluster.k).toEqual(['a', 'b', 'c']);
+    expect(indexes.archAdj.a).toEqual(['b']);
+    expect(indexes.archAdj.b).toEqual(['a']);
+    expect(indexes.archAdj.c).toEqual([]);
+    expect(indexes.incidentByNode.a).toEqual([0, 1, 2, 3]);
+  });
+
+  it('indexes a repository-sized cluster in linear time', () => {
+    // A real repository puts most of ~95k statement-level nodes in one fallback cluster. A
+    // quadratic membership check took seconds there and blocked the first module drill-in.
+    const model = loadModel();
+    const nodes = Array.from({ length: 100_000 }, (_, i) => ({
+      id: `n${i}`,
+      kind: 'statement',
+      cluster: 'default',
+    }));
+    const hub = Array.from({ length: 20_000 }, (_, i) => ({
+      src: 'n0',
+      dst: `n${i + 1}`,
+      rel: 'calls',
+    }));
+    const started = performance.now();
+    const indexes = model.buildIndexes(nodes, hub);
+    const elapsed = performance.now() - started;
+    expect(indexes.membersByCluster.default).toHaveLength(100_000);
+    expect(indexes.archAdj.n0).toHaveLength(20_000);
+    expect(elapsed).toBeLessThan(1500);
+  });
+});
+
 describe('selected-node focus layout', () => {
   it('lays out a stable radial backbone but retains every real visible architectural edge', () => {
     const root = 'root';

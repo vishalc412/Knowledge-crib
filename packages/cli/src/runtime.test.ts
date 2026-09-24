@@ -30,6 +30,14 @@ beforeEach(() => {
 });
 afterEach(() => rmSync(repo, { recursive: true, force: true }));
 
+/** A manifest as written after a code-graph change: the extracted generation has moved. */
+function advanceExtracted<T extends { generation?: { extracted: number; semantic: number } }>(
+  manifest: T,
+): T {
+  const generation = manifest.generation ?? { extracted: 0, semantic: 0 };
+  return { ...manifest, generation: { ...generation, extracted: generation.extracted + 1 } };
+}
+
 describe('CLI runtime — index → open → query', () => {
   it('isIndexed is false before, true after indexing', async () => {
     expect(isIndexed(repo)).toBe(false);
@@ -73,11 +81,32 @@ describe('CLI runtime — index → open → query', () => {
     index.close();
 
     const manifestPath = join(repo, '.crib', 'graph', 'manifest.json');
-    writeFileSync(manifestPath, `${JSON.stringify(rt.soul.getManifest())}\n`);
+    writeFileSync(manifestPath, `${JSON.stringify(advanceExtracted(rt.soul.getManifest()))}\n`);
     const future = new Date(Date.now() + 5000);
     utimesSync(manifestPath, future, future);
 
     expect(() => openIndexOnly(rt)).toThrow(/derived index missing or stale/);
+  });
+
+  it('keeps the code index readable after a semantic-only manifest write', async () => {
+    const seed = new SoulStore(join(repo, '.crib'), { manifest: newManifest({ root: '.' }) });
+    seed.load();
+    await indexRepo(seed, repo);
+
+    const rt = openSoul(resolveProjectRoot({ explicitRoot: repo }));
+    buildIndex(rt).close();
+
+    // An enrichment save bumps generation.semantic and rewrites the manifest. The code graph the
+    // derived index projects is unchanged, so read commands must keep working.
+    rt.soul.bumpSemanticGeneration();
+    const manifestPath = join(repo, '.crib', 'graph', 'manifest.json');
+    const future = new Date(Date.now() + 5000);
+    utimesSync(manifestPath, future, future);
+
+    const index = openIndexOnly(rt);
+    const verbs = new Verbs({ soul: rt.soul, index, repoRoot: repo });
+    expect((verbs.query({ q: 'login' }) as { hits: unknown[] }).hits.length).toBeGreaterThan(0);
+    index.close();
   });
 
   it('openIndexForServe serves a stale-but-present index with a warning instead of throwing', async () => {
@@ -89,9 +118,9 @@ describe('CLI runtime — index → open → query', () => {
     const index = buildIndex(rt);
     index.close();
 
-    // Advance the canonical manifest mtime past the derived sqlite → trips the staleness guard.
+    // Advance the canonical manifest (code generation + mtime) past the derived sqlite → trips the staleness guard.
     const manifestPath = join(repo, '.crib', 'graph', 'manifest.json');
-    writeFileSync(manifestPath, `${JSON.stringify(rt.soul.getManifest())}\n`);
+    writeFileSync(manifestPath, `${JSON.stringify(advanceExtracted(rt.soul.getManifest()))}\n`);
     const future = new Date(Date.now() + 5000);
     utimesSync(manifestPath, future, future);
 

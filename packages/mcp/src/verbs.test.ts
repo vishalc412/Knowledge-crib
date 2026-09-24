@@ -1120,6 +1120,65 @@ describe('crib-enrich scope picker — scopes / scope / deterministic batchId / 
     expect(cliExtra.symbols).toBe(1);
   });
 
+  it('enrich_status({scopes:true}) uses the viz module boundaries and counts only gate-eligible symbols as pending', () => {
+    // A Gradle project whose browser code is a nested npm workspace. The viz (functional map) owns
+    // Java and TypeScript under one FTCCloud module; the picker must agree, and must say how many of
+    // those symbols the importance gate actually queues, so the enriched view never reads as a loss.
+    const root = mkdtempSync(join(tmpdir(), 'crib-scope-poly-'));
+    const soul = new SoulStore(join(root, '.crib'), {
+      manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }),
+    });
+    soul.load();
+    soul.getManifest().meta = {
+      workspace: {
+        tool: 'npm',
+        packages: [
+          { name: 'ftc-web', rel: 'FTCCloud/web' },
+          { name: 'core', rel: 'packages/core' },
+        ],
+      },
+    };
+    const java = Array.from({ length: 70 }, (_, i) =>
+      sym(`FTCCloud/src/main/java/J${i}.java`, `J${i}.run`, 1, { lang: 'java' }),
+    );
+    const web = Array.from({ length: 20 }, (_, i) =>
+      sym(`FTCCloud/web/src/w${i}.ts`, `W${i}.run`, 1),
+    );
+    const core = Array.from({ length: 20 }, (_, i) =>
+      sym(`packages/core/src/c${i}.ts`, `C${i}.run`, 1),
+    );
+    const hub = sym('packages/core/src/hub.ts', 'Hub.run', 1);
+    soul.putNodes([fileNode('FTCCloud/build.gradle.kts'), ...java, ...web, ...core, hub]);
+    // Only the first 60 Java symbols are called, so only they clear the importance gate.
+    soul.putEdges(java.slice(0, 60).map((j) => edge(hub.id, j.id, 'calls')));
+    soul.commit('2026-01-01T00:00:00.000Z');
+    const index = new SqliteIndexStore();
+    index.buildFromSoul(soul, root);
+    try {
+      const verbs = new Verbs({ soul, index, repoRoot: root });
+      const st = verbs.enrichStatus({ scopes: true }) as unknown as {
+        scopes: Array<{
+          pathPrefix: string;
+          pending: number;
+          symbols: number;
+          eligible: number;
+          enriched: number;
+        }>;
+      };
+      const prefixes = st.scopes.map((s) => s.pathPrefix);
+      expect(prefixes).toContain('FTCCloud');
+      expect(prefixes).not.toContain('FTCCloud/web');
+      const ftc = st.scopes.find((s) => s.pathPrefix === 'FTCCloud')!;
+      expect(ftc.symbols).toBe(90);
+      expect(ftc.eligible).toBe(60);
+      expect(ftc.pending).toBe(60);
+      expect(ftc.enriched).toBe(0);
+    } finally {
+      index.close();
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   it('enrich_next batchId is deterministic — same pending set yields the same id across calls', () => {
     const b1 = v3.enrichNext({ layer: 'symbol', limit: 2 }) as unknown as { batchId: string };
     const b2 = v3.enrichNext({ layer: 'symbol', limit: 2 }) as unknown as { batchId: string };

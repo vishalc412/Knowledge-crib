@@ -134,6 +134,7 @@ test('node-type filters change List totals and survive presentation switches', a
 test('a failed graph fetch has a Retry that restores real results', async ({ page }) => {
   await page.route('**/graph.json', (route) => route.fulfill({ status: 503, body: 'unavailable' }));
   await page.goto(backend.url);
+  await page.locator('[data-kc-command="focus"]').click();
   await expect(page.getByText('Graph could not load', { exact: true })).toBeVisible();
   await page.unroute('**/graph.json');
   await page.getByRole('button', { name: 'Retry graph' }).click();

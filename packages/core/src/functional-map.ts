@@ -49,7 +49,7 @@ export interface FunctionalModule {
   purpose?: FunctionalPurpose;
   /** LLM enrichment coverage over the module's symbols+files+clusters. Present when an overlay was
    *  available (always, internally) — the overview surfaces it; callers may ignore. */
-  coverage?: { fresh: number; pending: number; pct: number };
+  coverage?: { fresh: number; pending: number; pct: number; freshSymbols: number };
 }
 
 export interface FunctionalMap {
@@ -90,7 +90,7 @@ export function buildFunctionalMap(
 
   // Segment every node with a `file` into exactly one module path prefix.
   const prefixes =
-    source === 'workspace' ? workspacePrefixes(packages) : directoryPrefixes(symbols);
+    source === 'workspace' ? workspacePrefixes(packages, files) : directoryPrefixes(symbols);
 
   // Bucket symbols by their own `file` field (a soul may have symbols without explicit `file`
   // nodes; bucketing must not depend on file nodes existing). Root catch-all = ''.
@@ -124,11 +124,7 @@ export function buildFunctionalMap(
 
   const modules: Array<FunctionalModule & { _summedImportance: number }> = [];
   for (const pathPrefix of [...prefixSet].sort()) {
-    const inModule = (p?: string): boolean =>
-      !!p &&
-      (pathPrefix === ''
-        ? !inAnyPrefix(p, prefixes)
-        : p === pathPrefix || p.startsWith(`${pathPrefix}/`));
+    const inModule = (p?: string): boolean => !!p && prefixForFile(p, prefixes) === pathPrefix;
 
     const moduleSymbols = symbols.filter((s) => symbolToPrefix.get(s.id) === pathPrefix);
     const moduleFiles = files.filter((f) => f.file && inModule(f.file));
@@ -203,6 +199,7 @@ export function buildFunctionalMap(
       const e = overlay.entries.get(s.id);
       if (e && !e.stale) fresh++;
     }
+    const freshSymbols = fresh;
     for (const f of moduleFiles) {
       const e = overlay.entries.get(f.id);
       if (e && !e.stale) fresh++;
@@ -215,6 +212,7 @@ export function buildFunctionalMap(
       fresh,
       pending: Math.max(0, totalTargets - fresh),
       pct: totalTargets > 0 ? Math.round((fresh / totalTargets) * 100) : 0,
+      freshSymbols,
     };
 
     modules.push({
@@ -263,8 +261,29 @@ function readWorkspacePackages(soul: SoulStore): WorkspacePackage[] {
 
 function workspacePrefixes(
   packages: WorkspacePackage[],
+  files: Node[],
 ): Array<{ pathPrefix: string; name: string }> {
-  return packages.map((p) => ({ pathPrefix: p.rel, name: p.name }));
+  // A top-level Gradle project can contain one nested npm workspace for its browser code. That
+  // workspace is an extraction boundary, but it is not the whole functional module: Java siblings
+  // belong to the same project. Keep distinct nested workspaces when there is more than one.
+  const gradleRoots = new Set<string>();
+  for (const file of files) {
+    const match = file.file?.match(/^([^/]+)\/build\.gradle(?:\.kts)?$/);
+    if (match?.[1]) gradleRoots.add(match[1]);
+  }
+  const promoted = new Set<string>();
+  for (const root of gradleRoots) {
+    const nested = packages.filter((p) => p.rel.startsWith(`${root}/`));
+    if (nested.length === 1) promoted.add(nested[0]!.rel);
+  }
+  const prefixes = new Map<string, { pathPrefix: string; name: string }>();
+  for (const p of packages) {
+    if (!promoted.has(p.rel)) prefixes.set(p.rel, { pathPrefix: p.rel, name: p.name });
+  }
+  for (const root of gradleRoots) {
+    if (!prefixes.has(root)) prefixes.set(root, { pathPrefix: root, name: root });
+  }
+  return [...prefixes.values()];
 }
 
 /** Directory fallback: first path component, descending one level when the largest bucket holds
@@ -306,10 +325,6 @@ function prefixForFile(file: string, prefixes: Array<{ pathPrefix: string }>): s
     }
   }
   return best ?? '';
-}
-
-function inAnyPrefix(file: string, prefixes: Array<{ pathPrefix: string }>): boolean {
-  return prefixes.some((p) => file === p.pathPrefix || file.startsWith(`${p.pathPrefix}/`));
 }
 
 function moduleName(

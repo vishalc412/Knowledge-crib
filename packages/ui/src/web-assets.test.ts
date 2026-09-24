@@ -55,7 +55,7 @@ describe('viz web asset: memory ledger panel (G5.4)', () => {
     expect(html).toContain('/memory.json');
     expect(html).toContain('/memory/record.json');
     expect(html).toContain('/memory/home.json');
-    expect(html).toContain('Resumable work');
+    expect(html).toContain('Work history');
     expect(html).toContain('data-kc-mem-view-heading');
     expect(html).toContain('Needs review');
     expect(html).toContain('data-kc-health="{{ signal.key }}"');
@@ -78,7 +78,7 @@ describe('viz web asset: memory ledger panel (G5.4)', () => {
     expect(html).toContain('data-kc-memory-home-action');
     expect(html).toContain('openMemoryHomeAction');
     expect(html).toContain('Review pending outcomes');
-    expect(html).toContain('Continue, finish or cancel saved work');
+    expect(html).toContain('Continue active work or inspect finished work');
   });
 
   it('ships session maintenance: close work, re-check and dismiss pending captures', () => {
@@ -94,9 +94,9 @@ describe('viz web asset: memory ledger panel (G5.4)', () => {
     expect(html).toContain('data-kc-mem-dismiss');
     expect(html).toContain('data-kc-mem-intake-done');
     expect(html).toContain('data-kc-mem-intake-cancel');
-    // stale work is labelled, finished work is counted apart instead of crowding the list
+    // stale work is labelled; finished work has its own inspectable section
     expect(html).toContain("'stale · idle '");
-    expect(html).toContain('kept in history.');
+    expect(html).toContain('mem.resumeView.closedChoices');
     // the old next step named a command needing an LLM provider nobody configured
     expect(code).not.toContain('distill --provider');
   });
@@ -104,6 +104,14 @@ describe('viz web asset: memory ledger panel (G5.4)', () => {
   it('opens on the architecture Overview by default, whatever the graph size', () => {
     expect(html).toContain("mode:this.overview.length?'overview':'focus'");
     expect(html).not.toContain("mode:this.largeGraph?'overview':'focus'");
+  });
+
+  it('keeps search accessible without a visible label and names Memory at narrow widths', () => {
+    expect(html).toMatch(
+      /<label for="kc-graph-search" class="kc-visually-hidden">Search graph<\/label>/,
+    );
+    expect(html).not.toContain('.kc-memory-label { display: none !important; }');
+    expect(html).toContain("statement:'Statement'");
   });
 
   it('ships the supplied design system’s grid workspace and inclusive motion rules', () => {
@@ -158,7 +166,7 @@ describe('viz web asset: memory ledger panel (G5.4)', () => {
     expect(html).toContain("const initialisms={cli:'CLI',mcp:'MCP',ui:'UI'};");
     expect(html).toContain('label:this.formatRailLabel(m.label||m.id)');
     expect(html).toContain('block.isModule?this.formatRailLabel(block.label||block.id)');
-    expect(html).toContain('railNodeCount:this.nodes.length.toLocaleString()');
+    expect(html).toContain('railNodeCount:(this.graphStats?.codeNodes');
   });
 
   it('keeps the primary command path contiguous in the reference header', () => {

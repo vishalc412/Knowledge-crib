@@ -122,17 +122,60 @@ export interface VizModule {
   }>;
   clusterIds: string[];
   color: string;
+  /** Symbols with a fresh LLM analysis. Always a subset of `counts.symbols`: enrichment annotates
+   *  extracted symbols and never removes them. */
+  enrichedSymbols: number;
 }
 
 export interface VizOverview {
   schemaVersion: string;
   source: 'workspace' | 'directory';
+  stats: {
+    codeNodes: number;
+    codeEdges: number;
+    semanticNodes: number;
+    semanticEdges: number;
+    clusters: number;
+  };
   modules: VizModule[];
+}
+
+/** One cluster card inside a module drill-in (the overview's second level). */
+export interface VizModuleViewCluster {
+  id: string;
+  label: string;
+  color: string;
+  count: number;
+  degree: number;
+  importance: number;
+  kinds: Record<string, number>;
+  topMembers: Array<{ id: string; kind: string; label: string }>;
+  /** LLM-authored purpose for the cluster, when an enrichment saved one. */
+  purpose?: string;
+}
+
+/** Everything the overview needs to open one module without downloading `/graph.json`. */
+export interface VizModuleView {
+  moduleId: string;
+  totalClusters: number;
+  clusters: VizModuleViewCluster[];
+  edges: Array<{ src: string; dst: string; count: number; rel: string }>;
 }
 
 export interface VizGraph {
   schemaVersion: string;
-  stats: { nodes: number; edges: number; clusters: number; primaryNodes: number };
+  stats: {
+    nodes: number;
+    edges: number;
+    clusters: number;
+    primaryNodes: number;
+    codeNodes: number;
+    semanticNodes: number;
+    memoryNodes: number;
+    codeEdges: number;
+    semanticEdges: number;
+    memoryEdges: number;
+  };
   clusters: VizCluster[];
   nodes: Array<{ data: VizNodeData }>;
   edges: Array<{ data: VizEdgeData }>;
@@ -173,11 +216,15 @@ function makeSummary(node: Node, kind: VizNodeKind): string {
     return node.table ? `Column ${node.name ?? ''} in ${node.table}` : `Column ${node.name ?? ''}`;
   }
   if (kind === 'statement') {
-    return node.sqlKind
-      ? `${node.sqlKind} statement`
-      : node.expr
-        ? `SQL: ${node.expr}`
-        : 'SQL statement';
+    if (node.sqlKind) return `${node.sqlKind} statement`;
+    // Statement nodes come from every parser; only SQL-family sources are SQL. A Java or
+    // TypeScript statement labelled "SQL" misleads the reader about what the node is.
+    const sql = /sql/i.test(node.lang ?? '');
+    return node.expr
+      ? `${sql ? 'SQL' : 'Statement'}: ${node.expr}`
+      : sql
+        ? 'SQL statement'
+        : 'Statement';
   }
   if (kind === 'condition') {
     return node.expr
@@ -345,6 +392,8 @@ export function buildVizGraph(
     return { data };
   });
 
+  const codeNodes = nodes.length;
+  const codeEdges = edges.length;
   // Mandatory composite view: append only fresh, grounded semantic records. Heavy analysis and
   // evidence blobs remain in canonical artifacts; viz receives lightweight graph metadata.
   const semantic = new GraphStore(soul).semantic();
@@ -382,6 +431,8 @@ export function buildVizGraph(
       },
     });
   }
+  const semanticNodes = nodes.length - codeNodes;
+  const semanticEdges = edges.length - codeEdges;
 
   // W3 — append the virtual memory composite layer (origin 'memory'). Memory nodes are VIRTUAL
   // (`mem:` ids, kind 'memory') — they are NOT soul symbols, so they skip the cluster/importance
@@ -429,7 +480,18 @@ export function buildVizGraph(
 
   return {
     schemaVersion: soul.getManifest().schemaVersion,
-    stats: { nodes: nodes.length, edges: edges.length, clusters: clusters.length, primaryNodes },
+    stats: {
+      nodes: nodes.length,
+      edges: edges.length,
+      clusters: clusters.length,
+      primaryNodes,
+      codeNodes,
+      semanticNodes,
+      memoryNodes: nodes.length - codeNodes - semanticNodes,
+      codeEdges,
+      semanticEdges,
+      memoryEdges: edges.length - codeEdges - semanticEdges,
+    },
     clusters,
     nodes,
     edges,
@@ -451,6 +513,7 @@ export function vizAssetsDir(): string {
  */
 export function buildVizOverview(soul: SoulStore): VizOverview {
   const map = buildFunctionalMap(soul);
+  const semantic = new GraphStore(soul).semantic();
   const modules: VizModule[] = map.modules.map((m, i) => ({
     id: m.id,
     name: m.name,
@@ -460,10 +523,141 @@ export function buildVizOverview(soul: SoulStore): VizOverview {
     topSymbols: m.topSymbols,
     clusterIds: m.clusterIds,
     color: CLUSTER_PALETTE[i % CLUSTER_PALETTE.length] ?? '#64748b',
+    enrichedSymbols: m.coverage?.freshSymbols ?? 0,
   }));
   return {
     schemaVersion: soul.getManifest().schemaVersion,
     source: map.source,
+    stats: {
+      codeNodes: [...soul.iterate()].filter((node) => node.kind !== 'cluster').length,
+      codeEdges: [...soul.iterateEdges()].length,
+      semanticNodes: semantic.nodes.length,
+      semanticEdges: semantic.edges.length,
+      clusters: [...soul.iterate('cluster')].length,
+    },
     modules,
+  };
+}
+
+/** Card and edge caps shared with the browser's large-graph overview (`buildClusterOverview`). */
+const MODULE_VIEW_MAX_CLUSTERS = 26;
+const MODULE_VIEW_MAX_EDGES = 120;
+/** Mirrors the browser's `DEPENDENCY_RELS`: an aggregated edge reports a dependency rel when one exists. */
+const MODULE_VIEW_DEPENDENCY_RELS = new Set([
+  'calls',
+  'imports',
+  'reads',
+  'writes',
+  'executes',
+  'implements',
+  'inherits',
+]);
+
+/**
+ * Per-module drill-in projections over an already-built viz graph. Opening a module used to
+ * require the browser to download, parse and index the whole graph (100+ MB on a real repository)
+ * before the module's cluster cards could render. The server already holds that graph, so it
+ * derives the cards once per module and serves a few kilobytes instead.
+ *
+ * The arithmetic matches the browser's own level-1 overview: members by `clusterId`, undirected
+ * degree over edges whose endpoints are both graph nodes, summed server importance for ranking,
+ * the three most important members per card, and cross-cluster edge counts among shown cards.
+ */
+export function createVizModuleViews(
+  graph: VizGraph,
+  overview: VizOverview,
+): (moduleId: string) => VizModuleView | undefined {
+  const memo = new Map<string, VizModuleView>();
+  let shared:
+    | {
+        byId: Map<string, VizNodeData>;
+        degree: Map<string, number>;
+        members: Map<string, VizNodeData[]>;
+      }
+    | undefined;
+  const index = () => {
+    if (shared) return shared;
+    const byId = new Map<string, VizNodeData>();
+    const members = new Map<string, VizNodeData[]>();
+    for (const { data } of graph.nodes) {
+      byId.set(data.id, data);
+      if (!data.clusterId) continue;
+      const list = members.get(data.clusterId);
+      if (list) list.push(data);
+      else members.set(data.clusterId, [data]);
+    }
+    const degree = new Map<string, number>();
+    for (const { data } of graph.edges) {
+      if (!byId.has(data.source) || !byId.has(data.target)) continue;
+      degree.set(data.source, (degree.get(data.source) ?? 0) + 1);
+      degree.set(data.target, (degree.get(data.target) ?? 0) + 1);
+    }
+    shared = { byId, degree, members };
+    return shared;
+  };
+
+  return (moduleId) => {
+    const cached = memo.get(moduleId);
+    if (cached) return cached;
+    const module = overview.modules.find((m) => m.id === moduleId);
+    if (!module) return undefined;
+    const { byId, degree, members } = index();
+    const clusterById = new Map(graph.clusters.map((c) => [c.id, c]));
+
+    const ranked: VizModuleViewCluster[] = [];
+    for (const clusterId of module.clusterIds) {
+      const cluster = clusterById.get(clusterId);
+      const inCluster = members.get(clusterId) ?? [];
+      if (!cluster || inCluster.length === 0) continue;
+      const kinds: Record<string, number> = {};
+      let importance = 0;
+      let clusterDegree = 0;
+      for (const node of inCluster) {
+        kinds[node.kind] = (kinds[node.kind] ?? 0) + 1;
+        importance += node.importance;
+        clusterDegree += degree.get(node.id) ?? 0;
+      }
+      const topMembers = [...inCluster]
+        .sort((a, b) => b.importance - a.importance)
+        .slice(0, 3)
+        .map((node) => ({
+          id: node.id,
+          kind: node.kind,
+          label: node.qualified || node.label || node.id,
+        }));
+      ranked.push({
+        id: cluster.id,
+        label: cluster.label,
+        color: cluster.color,
+        count: inCluster.length,
+        degree: clusterDegree,
+        importance,
+        kinds,
+        topMembers,
+        ...(cluster.purpose ? { purpose: cluster.purpose } : {}),
+      });
+    }
+    ranked.sort((a, b) => b.importance - a.importance);
+    const clusters = ranked.slice(0, MODULE_VIEW_MAX_CLUSTERS);
+
+    const shown = new Set(clusters.map((c) => c.id));
+    const aggregated = new Map<string, { src: string; dst: string; count: number; rel: string }>();
+    for (const { data } of graph.edges) {
+      const a = byId.get(data.source)?.clusterId;
+      const b = byId.get(data.target)?.clusterId;
+      if (!a || !b || a === b || !shown.has(a) || !shown.has(b)) continue;
+      const key = a < b ? `${a}|${b}` : `${b}|${a}`;
+      const current = aggregated.get(key) ?? { src: a, dst: b, count: 0, rel: data.rel };
+      current.count++;
+      if (MODULE_VIEW_DEPENDENCY_RELS.has(data.rel)) current.rel = data.rel;
+      aggregated.set(key, current);
+    }
+    const edges = [...aggregated.values()]
+      .sort((a, b) => b.count - a.count)
+      .slice(0, MODULE_VIEW_MAX_EDGES);
+
+    const view: VizModuleView = { moduleId, totalClusters: ranked.length, clusters, edges };
+    memo.set(moduleId, view);
+    return view;
   };
 }

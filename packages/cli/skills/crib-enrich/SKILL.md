@@ -38,12 +38,12 @@ Call `mcp__knowledge-crib__enrich (op:'status')` with `{ scopes: true }` and NO 
 ```
 This repo has <totalPending> pending LLM targets across 4 layers (symbol: <s> pending, file: <f> pending, cluster: <c> pending, system: 1 total), exceeding the recommended threshold of <threshold>. Batched by token budget that is ~<ceil(totalPending/16)> batches — enriching everything unattended is not realistic. Which module should I enrich first?
 
-Top-5 modules by pending symbols (the parenthesized counts are TOTAL symbols/files/clusters in that prefix; `pending` is pending symbols only):
-  1. <scopes[0].pathPrefix>   — <scopes[0].pending> pending  (<scopes[0].symbols> symbols, <scopes[0].files> files, <scopes[0].clusters> clusters)
-  2. <scopes[1].pathPrefix>   — <scopes[1].pending> pending  (...)
-  3. <scopes[2].pathPrefix>   — <scopes[2].pending> pending  (...)
-  4. <scopes[3].pathPrefix>   — <scopes[3].pending> pending  (...)
-  5. <scopes[4].pathPrefix>   — <scopes[4].pending> pending  (...)
+Top-5 modules by pending symbols. Modules match the graph viewer's modules. Every extracted symbol stays in the graph; enrichment adds analysis to the important subset (`eligible`), it never removes nodes:
+  1. <scopes[0].pathPrefix>   — <scopes[0].pending> pending of <scopes[0].eligible> eligible · <scopes[0].enriched> enriched  (<scopes[0].symbols> symbols, <scopes[0].files> files, <scopes[0].clusters> clusters)
+  2. <scopes[1].pathPrefix>   — <scopes[1].pending> pending of <scopes[1].eligible> eligible · <scopes[1].enriched> enriched  (...)
+  3. <scopes[2].pathPrefix>   — <scopes[2].pending> pending of <scopes[2].eligible> eligible · <scopes[2].enriched> enriched  (...)
+  4. <scopes[3].pathPrefix>   — <scopes[3].pending> pending of <scopes[3].eligible> eligible · <scopes[3].enriched> enriched  (...)
+  5. <scopes[4].pathPrefix>   — <scopes[4].pending> pending of <scopes[4].eligible> eligible · <scopes[4].enriched> enriched  (...)
 
 Options:
   • Type a number (1–5) to scope to that module.

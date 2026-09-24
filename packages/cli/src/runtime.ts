@@ -37,6 +37,7 @@ import {
   type Stats,
   existsSync,
   mkdirSync,
+  readFileSync,
   readdirSync,
   renameSync,
   rmSync,
@@ -388,14 +389,37 @@ export function openIndexOnly(
   const manifestPath = existsSync(canonicalManifest)
     ? canonicalManifest
     : join(rt.cribDir, MANIFEST_FILE);
-  if (
-    !opts.allowStale &&
-    existsSync(manifestPath) &&
-    statSync(path).mtimeMs + 1 < statSync(manifestPath).mtimeMs
-  ) {
+  const index = openIndex(manifest.stores.index.backend, { path, embedder });
+  if (!opts.allowStale && indexBehindSoul(index, path, manifestPath)) {
+    index.close();
     throw new Error('derived index missing or stale — run `crib index .`');
   }
-  return openIndex(manifest.stores.index.backend, { path, embedder });
+  return index;
+}
+
+/**
+ * Whether the derived index projects an older code graph than the soul. The manifest's mtime is
+ * only a hint: an enrichment save rewrites the same manifest while bumping `generation.semantic`
+ * alone. When both the manifest and the index carry the code generation, that comparison decides;
+ * an index built before the generation was recorded keeps the conservative mtime answer.
+ */
+function indexBehindSoul(index: IndexStore, path: string, manifestPath: string): boolean {
+  if (!existsSync(manifestPath)) return false;
+  if (statSync(path).mtimeMs + 1 >= statSync(manifestPath).mtimeMs) return false;
+  // The on-disk manifest, not this process's copy: a long-lived reader's soul can predate the
+  // write that moved the mtime, and that write is what is being judged.
+  let extracted: number | undefined;
+  try {
+    const onDisk = JSON.parse(readFileSync(manifestPath, 'utf8')) as {
+      generation?: { extracted?: number };
+    };
+    extracted = onDisk.generation?.extracted;
+  } catch {
+    return true; // unreadable mid-write: fall back to the conservative mtime answer
+  }
+  const recorded = index.codeGeneration?.();
+  if (extracted === undefined || recorded === undefined) return true;
+  return recorded !== extracted;
 }
 
 /**
@@ -426,12 +450,13 @@ export function openIndexForServe(rt: Runtime, embedder?: Embedder | null): Inde
   const manifestPath = existsSync(canonicalManifest)
     ? canonicalManifest
     : join(rt.cribDir, MANIFEST_FILE);
-  if (existsSync(manifestPath) && statSync(path).mtimeMs + 1 < statSync(manifestPath).mtimeMs) {
+  const index = openIndex(manifest.stores.index.backend, { path, embedder });
+  if (indexBehindSoul(index, path, manifestPath)) {
     process.stderr.write(
       'warning: derived index stale (soul advanced) — serving existing index; run `crib index .` to refresh\n',
     );
   }
-  return openIndex(manifest.stores.index.backend, { path, embedder });
+  return index;
 }
 
 /**
