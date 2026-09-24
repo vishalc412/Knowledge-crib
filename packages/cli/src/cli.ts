@@ -2425,7 +2425,13 @@ async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
     const pins = coordinator
       ? { retain: () => coordinator.retain(), release: () => coordinator.release() }
       : undefined;
-    const daemon = await serveHttp(verbs, { ...(port ? { port } : {}), ...(pins ? { pins } : {}) });
+    const daemon = await serveHttp(verbs, {
+      version: readProductVersion(
+        resolve(dirname(fileURLToPath(import.meta.url)), '..', 'package.json'),
+      ),
+      ...(port ? { port } : {}),
+      ...(pins ? { pins } : {}),
+    });
     process.stderr.write(
       `knowledge-crib MCP daemon on http://127.0.0.1:${daemon.port} — ${stats.nodes} nodes, ${stats.edges} edges ready (shared by every connected agent)\n`,
     );
@@ -2451,7 +2457,7 @@ async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
     // WP4.5 — same pin wiring as the HTTP daemon: stdio requests drain before a bundle swap lands.
     await serveStdio(
       verbs,
-      undefined,
+      readProductVersion(resolve(dirname(fileURLToPath(import.meta.url)), '..', 'package.json')),
       coordinator
         ? { retain: () => coordinator.retain(), release: () => coordinator.release() }
         : undefined,

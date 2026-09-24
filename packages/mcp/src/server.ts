@@ -194,8 +194,58 @@ function installPinRouter(server: McpServer, pins: RequestPins): void {
 const GAPS_PAGE_DEFAULT = 25;
 /** Rows per graph list that `detect_changes` returns unless the caller pages. */
 const DETECT_CHANGES_PAGE_DEFAULT = 100;
+/** The protocol every client should follow, sent in the handshake so it does not depend on an IDE
+ *  honouring a repository instruction file. Kept short: clients prepend it to the model's context. */
+const PROTOCOL_INSTRUCTIONS = [
+  "knowledge-crib is this repository's code graph and shared memory, used by every agent in every IDE.",
+  '1. At the start of a session call `memory` with op:"handoff" and read `continuation` (with `carryOver`), `lastSession` and `pendingCaptures`: they are what the previous session left, whichever IDE or agent ran it. Never tell the user there is no prior context without checking them.',
+  '2. Before relying on a project fact, call `brief` with `q` set to the task.',
+  '3. For structure (where is X, who calls Y, what breaks if Z changes) use `query`, `context` and `impact` before grep or reading files.',
+  '4. Record a reusable learning (a decision, pitfall, convention or verified procedure) with `memory_observe`, with evidence from the repository.',
+  'An empty, truncated or note-qualified result is a limit of the index, never proof that nothing exists.',
+].join('\n');
+
+const INSTRUCTIONS_MAX_CHARS = 2_400;
+
+/**
+ * Handshake instructions: the protocol plus a live snapshot of what the previous session left.
+ * Instructions are read once, at connect time, which is exactly when a new session starts; a
+ * failure to read memory must never keep the server from starting, so it degrades to the protocol.
+ */
+export function serverInstructions(verbs: Verbs): string {
+  const live: string[] = [];
+  try {
+    const handoff = verbs.memoryHandoff({ limit: 5 }) as {
+      continuation?: {
+        question?: string;
+        carryOver?: string[];
+        options?: Array<{ label?: string }>;
+      };
+    };
+    const c = handoff.continuation;
+    if (c?.question) live.push(c.question);
+    for (const line of c?.carryOver ?? []) live.push(`- ${line}`);
+    for (const option of (c?.options ?? []).slice(0, 4)) {
+      if (option.label && option.label !== 'Start fresh — begin new work')
+        live.push(`- ${option.label}`);
+    }
+  } catch {
+    // memory unreadable at startup: the protocol alone still tells the agent to call handoff
+  }
+  const text =
+    live.length > 0
+      ? `${PROTOCOL_INSTRUCTIONS}\n\nState of this repository when this session started:\n${live.join('\n')}`
+      : PROTOCOL_INSTRUCTIONS;
+  return text.length > INSTRUCTIONS_MAX_CHARS
+    ? `${text.slice(0, INSTRUCTIONS_MAX_CHARS - 1)}…`
+    : text;
+}
+
 export function buildServer(verbs: Verbs, version = '0.1.0', pins?: RequestPins): McpServer {
-  const server = new McpServer({ name: 'knowledge-crib', version });
+  const server = new McpServer(
+    { name: 'knowledge-crib', version },
+    { instructions: serverInstructions(verbs) },
+  );
 
   // WP2.5 runtime evidence: the moment the client completes initialization, record its handshake
   // identity (clientInfo name + version) in the journal. No configuration file can prove a client
@@ -1215,7 +1265,7 @@ export async function serveHttp(
   verbs: Verbs,
   opts: { port?: number; host?: string; version?: string; pins?: RequestPins } = {},
 ): Promise<{ port: number; close: () => Promise<void> }> {
-  const version = opts.version ?? '0.0.0';
+  const version = opts.version ?? '0.1.0';
   const host = opts.host ?? '127.0.0.1';
   assertLoopbackBind(host);
   const httpServer = createServer((req, res) => {
@@ -1329,7 +1379,7 @@ export async function serveHttp(
 
 export async function serveStdio(
   verbs: Verbs,
-  version = '0.0.0',
+  version = '0.1.0',
   pins?: RequestPins,
 ): Promise<void> {
   const server = buildServer(verbs, version, pins);
