@@ -1,0 +1,230 @@
+{
+  "bin": "developer-trust",
+  "subject": "The developer-trust program (WP0-WP6): measurements, corrections, and open residue",
+  "created": "2026-09-24",
+  "codeHead": "060898dec1190b1b18b74cd7bf7a204f13e5114c",
+  "anchorsVerifiedAt": "2026-09-24",
+  "register": {
+    "path": "docs/program/evidence-register.md",
+    "lines": 2329,
+    "sections": {
+      "9.3 named blockers": "2113-2136",
+      "9.4 test-suite re-baseline": "2137-2239",
+      "9.5 options": "2240-2329"
+    },
+    "blockerRowLines": {
+      "B1": 2119,
+      "B2": 2120,
+      "B3": 2121,
+      "B4": 2122,
+      "B5": 2123,
+      "B6": 2124,
+      "B7": 2125,
+      "B8": 2126,
+      "B9": 2127,
+      "B10": 2128,
+      "B11": 2129,
+      "B12": 2130,
+      "B13": 2131,
+      "B14": 2132,
+      "B15": 2133,
+      "B16": 2134,
+      "B17": 2135
+    }
+  },
+  "files": [
+    {
+      "path": "README.md",
+      "purpose": "Human index: what this bin is, the one-line state of the program, and what it does not claim"
+    },
+    {
+      "path": "index.json",
+      "purpose": "This manifest: every file with a one-line purpose, plus the register's blocker-row line numbers"
+    },
+    {
+      "path": "b5-update-visibility.md",
+      "purpose": "The watch-update visibility instrument: constants, flags, every measurement, the negative control, and the 2 s-vs-5 s threshold conflict that is the remaining verdict"
+    },
+    {
+      "path": "gates-and-ci.md",
+      "purpose": "The npm run verify chain, three runs and four red items, the hosted rerank:check red, the verify-matrix skip, the dead on.push, and the final suite re-baseline"
+    },
+    {
+      "path": "corrections-log.md",
+      "purpose": "Errors the program got wrong and caught, the procedure that caught each, and live anchor-rot evidence"
+    },
+    {
+      "path": "environment-findings.md",
+      "purpose": "Machine and tooling state: the broken global crib shim, the local store layout, and why a bin is a convention rather than a crib primitive"
+    },
+    {
+      "path": "open-blockers.md",
+      "purpose": "The full open residue, split into decision-shaped, implementation-shaped, and externally blocked"
+    },
+    {
+      "path": "repair-round-log.md",
+      "purpose": "The repair rounds run against the enhancement layer and these bins: the closing round's measured counts, the fixes it applied, what it declined and why, and the open decisions it does not take"
+    },
+    {
+      "path": "measure-drift.mjs",
+      "purpose": "The generator for anchorDriftAtHead and codeHeadNote: re-run it to re-measure every path:line anchor in this bin against the declared stamp and HEAD"
+    }
+  ],
+  "notClaims": [
+    "No gate is claimed green. npm run verify has not gone green.",
+    "The program is not claimed complete: WP3-H7 is unstarted and WP6 is externally blocked — register `docs/program/evidence-register.md:2029` (WP6 certification, \"**not attemptable** ... externally blocked\") and row **B8** at `:2126` (\"**WP6 externally blocked** — needs real native certification hosts\"); this bin's own README says the same at `.crib/bins/developer-trust/README.md:50–51` (\"WP3-H7 is unstarted and WP6 is externally blocked (register row **B8**, `docs/program/evidence-register.md:2126`)\"), and the bin convention's example row at `.crib/bins/README.md:32` states it as \"WP6 is externally blocked on B8\".",
+    "No measurement here is converted into a verdict about product quality.",
+    "No ledger verdict is restated or adjudicated here; records are pointed at, not summarized."
+  ],
+  "relatedMemory": [
+    "mem:e0b02057965e13e891bafac063fb0a84444b6c02313af0069d674955348709eb"
+  ],
+  "codeHeadNote": "This stamp is the revision the bin was DECLARED against, and the measurement below is what it does not cover. The anchors in this bin were read from the live working tree at aef4a4d0b077ea16bde418df7b81d7640460d2a8, not from 060898de: anchorDriftAtHead checks every path:line token in every .md and .json file here against both revisions, and 67 of 86 tokens name a tracked repo file while the other 19 name .crib/ artifacts that no revision holds. Every one of those 67 resolves at aef4a4d0, and 5 of them hold different text at the stamp named above — they are listed at anchorDriftAtHead.movedAnchors with the row each names. Where the stamp and the bin disagree the measurement decides, and the bin is not always the side that matches the code: environment-findings.md:79 quotes the code its line holds, but the freshness-status line open-blockers.md:100 names has moved twice since the stamp - that text is at packages/cli/src/cli.ts:3929 at 060898de, :3933 at 3434c19f, and :3939 at aef4a4d0 - so that file now carries all three revisions rather than the single number it was written against, and every anchor whose text moved is listed by revision at anchorDriftAtHead.movedAnchors. A bare basename is resolved only when the citing file itself disambiguates it, by naming exactly one of the tracked files that bear that name: the bins introduce packages/ui/web/index.html once and then cite index.html bare, and docs/site/index.html is a different tracked file with 108 lines, so a first-match resolver silently attached this bin's citations to a file it never named. anchorDriftAtHead.bareBasenameResolutions records each such choice; anchorDriftAtHead.ambiguousBasenames records the bare tokens nothing disambiguated, which are excluded from every count here rather than guessed. Re-stamping is the bin owner's decision and was not taken here: this field records the disagreement instead of resolving it. One bound on the measurement: the files in this bin are staged but not committed, so they exist in no revision and the comparison above is between 060898de and aef4a4d0 alone. That the cited files are clean is not assumed — `git diff HEAD --name-only` outside .crib/ names .gitignore, and 0 of those paths is named by an anchor in this bin — so the working tree differing from aef4a4d0 affects no anchor here. A second bound: this measurement compares the text a line holds at two revisions, so it detects an anchor that MOVED and cannot detect one that resolves to the wrong thing at BOTH — a stale number landing on unrelated code is reported stable. Only reading the row the anchor names catches that class, which is what rule 3 of .crib/bins/README.md requires of every anchor here. A third bound, on coverage rather than on method: 230 bare `:NNNN` tokens appear in this bin's .md files with no filename attached, and none of them is enumerated: the 1 bare token anchorDriftAtHead.bareLineTokens documents (packages/mcp/src/verbs.ts:3034) is also spelled in full elsewhere in this bin, so the token regex reaches it unaided and it enters no count as a bare token, so every count above is a floor over that class.",
+  "anchorDriftAtHead": {
+    "measuredAt": "2026-09-24",
+    "head": "aef4a4d0b077ea16bde418df7b81d7640460d2a8",
+    "stamp": "060898dec1190b1b18b74cd7bf7a204f13e5114c",
+    "method": "Every path:line token (and every bare basename:line token) in every .md and .json file in this bin was read as trim()ed text from `git show <stamp>:<path>` and from `git show HEAD:<path>` and compared. A token counts as MOVED when the line exists at both revisions and holds different text, as notInStamp when the stamp tree has no such line or file, and as notAtHead when HEAD has no such line. A bare basename is resolved only when the citing file names exactly one of the tracked files bearing it; a bare basename nothing disambiguates is recorded under ambiguousBasenames and excluded from every count here, because the measurement cannot say which file it meant. Of the 86 distinct citations, 86 came from the token regex and 0 from reading the row it names (see distinctCitationsResolvedByReading); distinctCitations is their sum, not the regex alone, and distinctCitationsByTokenRegex carries the regex-only figure. A THIRD token shape this measurement does NOT enumerate: a bare `:NNNN` with no filename at all, of which this run counted 230 in the bin's .md files read exactly as they sit on disk. index.json is excluded from that count on purpose: its pretty-printed JSON holds tokens like `\"lines\": 2329` the tokenizer cannot match, so counting a compact re-serialization of it would add structural values that are not citations and drop prose ones - an earlier run of this generator reported 247 that way, for a bin holding 230. Counting the class is sound where enumerating it is not. They are not enumerated because the file one belongs to cannot be recovered from proximity - repair-round-log.md's `:100` follows `packages/cli/src/cli.ts:3933` on the immediately preceding line and yet denotes `open-blockers.md:100` - so a rule would attribute them wrongly rather than resolve them. `bareLineTokens` documents the 1 token resolved by reading the row it names instead of by a rule: 0 of 1 entered the counts above as a distinct citation, and this run leaves 230 of that class covered by no count here.",
+    "distinctCitations": 86,
+    "distinctCitationsByTokenRegex": 86,
+    "distinctCitationsResolvedByReading": 0,
+    "stable": 62,
+    "moved": 5,
+    "notInStamp": 19,
+    "notAtHead": 0,
+    "resolvesAtHead": 67,
+    "reading": "Zero of the 67 tracked-file anchors fail at aef4a4d0; 5 fail at the declared stamp. The stamp therefore does not describe the revision this bin was verified against. 19 tokens name .crib/ artifacts (this bin itself and .crib/bins/README.md among them), which are uncommitted and so present in no revision; nothing is claimed about their content across revisions. 2 further bare tokens are excluded as unresolvable: package.json in b5-update-visibility.md, package.json in gates-and-ci.md. And none of the 230 bare `:NNNN` tokens in the bin's .md files is counted here at all, so every count below is a floor over that class.",
+    "bareLineTokens": {
+      "scope": "the bin's .md files, read as they sit on disk; index.json is excluded because it is generated (see method)",
+      "totalInMdFiles": 230,
+      "documentedHere": 1,
+      "ofWhichAddedAsDistinctCitation": 0,
+      "notCoveredByAnyCount": 230,
+      "included": [
+        {
+          "path": "packages/mcp/src/verbs.ts",
+          "line": 3034,
+          "citedBy": [
+            "environment-findings.md"
+          ],
+          "resolvedBy": "environment-findings.md:80 cites it as a bare `:3034`, on the line after that file introduces packages/mcp/src/verbs.ts:3047",
+          "addedAsDistinctCitation": false,
+          "namesAtStamp": "      fts.close();",
+          "namesAtHead": "      const limit = capInt(args.limit, 5, 20);"
+        }
+      ],
+      "whyNotEnumerated": "The file a bare `:NNNN` token belongs to is not recoverable from proximity. repair-round-log.md's `:100` follows `packages/cli/src/cli.ts:3933` on the immediately preceding line and denotes open-blockers.md:100; b5-update-visibility.md cites `:67`..`:73` many lines below the table header row that names docs/bench/perf-gates.md. A proximity rule would therefore attribute tokens wrongly rather than resolve them, so the class is excluded and counted instead of guessed."
+    },
+    "notInStampAnchors": [
+      ".crib/memory/enhancement/7238293f1b3a3383a92b92f79fe5fb752b07d15575debfb5ca340608953a8e3f.md:67",
+      ".crib/bins/README.md:46",
+      ".crib/bins/developer-trust/README.md:50",
+      ".crib/bins/README.md:32",
+      ".crib/bins/developer-trust/open-blockers.md:101",
+      ".crib/bins/developer-trust/open-blockers.md:100",
+      ".crib/bins/developer-trust/gates-and-ci.md:89",
+      ".crib/bins/developer-trust/gates-and-ci.md:68",
+      ".crib/bins/developer-trust/environment-findings.md:136",
+      ".crib/bins/developer-trust/b5-update-visibility.md:18",
+      ".crib/bins/developer-trust/open-blockers.md:192",
+      ".crib/bins/developer-trust/environment-findings.md:68",
+      ".crib/bins/developer-trust/gates-and-ci.md:121",
+      ".crib/bins/developer-trust/corrections-log.md:177",
+      ".crib/bins/developer-trust/corrections-log.md:218",
+      ".crib/bins/developer-trust/corrections-log.md:209",
+      ".crib/bins/developer-trust/environment-findings.md:79",
+      ".crib/bins/developer-trust/gates-and-ci.md:86",
+      ".crib/bins/developer-trust/environment-findings.md:80"
+    ],
+    "bareBasenameResolutions": [
+      {
+        "file": "corrections-log.md",
+        "basename": "index.html",
+        "resolved": "packages/ui/web/index.html",
+        "candidates": [
+          "docs/site/index.html",
+          "packages/ui/web/index.html"
+        ]
+      }
+    ],
+    "ambiguousBasenames": [
+      {
+        "file": "b5-update-visibility.md",
+        "basename": "package.json",
+        "candidates": [
+          "package.json",
+          "packages/cli/package.json",
+          "packages/core/package.json",
+          "packages/mcp/package.json",
+          "packages/memory/package.json",
+          "packages/parsers/package.json",
+          "packages/pipeline/package.json",
+          "packages/soul-schema/package.json",
+          "packages/ui/package.json"
+        ]
+      },
+      {
+        "file": "gates-and-ci.md",
+        "basename": "package.json",
+        "candidates": [
+          "package.json",
+          "packages/cli/package.json",
+          "packages/core/package.json",
+          "packages/mcp/package.json",
+          "packages/memory/package.json",
+          "packages/parsers/package.json",
+          "packages/pipeline/package.json",
+          "packages/soul-schema/package.json",
+          "packages/ui/package.json"
+        ]
+      }
+    ],
+    "movedAnchors": [
+      {
+        "path": "packages/cli/src/cli.ts",
+        "line": 3929,
+        "citedBy": [
+          "repair-round-log.md"
+        ],
+        "namesAtStamp": "`freshness mode: ${modeLabel}\\n  worker: ${status.workerRunning ? `running (pid ${status.workerPid ?? '?'})` : 'not running'}\\n  pending: ${status.pending}${status.dead > 0 ? `, dead-lettered: ${status.dead}` : ''}\\n  in-flight: ${status.inFlight ? status.inFlight.id : 'none'}\\n  last-known-good: ${status.lastKnownGood ? `${status.lastKnownGood.generation.slice(0, 16)}… @ ${status.lastKnownGood.head.slice(0, 12)}` : 'never published'}\\n  behind HEAD: ${status.behindHead ? 'yes — run `crib freshness worker` (or `crib update`)' : 'no'}\\n`,",
+        "namesAtHead": "cliPath: join(dirname(fileURLToPath(import.meta.url)), 'bin.js'),"
+      },
+      {
+        "path": "packages/cli/src/cli.ts",
+        "line": 3933,
+        "citedBy": [
+          "repair-round-log.md"
+        ],
+        "namesAtStamp": "if (FRESHNESS_MODES.includes(sub as FreshnessMode)) {",
+        "namesAtHead": "if (sub === undefined || sub === 'status') {"
+      },
+      {
+        "path": "packages/cli/src/cli.ts",
+        "line": 3939,
+        "citedBy": [
+          "open-blockers.md"
+        ],
+        "namesAtStamp": "}",
+        "namesAtHead": "`freshness mode: ${modeLabel}\\n  worker: ${status.workerRunning ? `running (pid ${status.workerPid ?? '?'})` : 'not running'}\\n  pending: ${status.pending}${status.dead > 0 ? `, dead-lettered: ${status.dead}` : ''}\\n  in-flight: ${status.inFlight ? status.inFlight.id : 'none'}\\n  last-known-good: ${status.lastKnownGood ? `${status.lastKnownGood.generation.slice(0, 16)}… @ ${status.lastKnownGood.head.slice(0, 12)}` : 'never published'}\\n  behind HEAD: ${status.behindHead ? 'yes — run `crib freshness worker` (or `crib update`)' : 'no'}\\n`,"
+      },
+      {
+        "path": "packages/mcp/src/verbs.ts",
+        "line": 3034,
+        "citedBy": [
+          "repair-round-log.md"
+        ],
+        "namesAtStamp": "fts.close();",
+        "namesAtHead": "const limit = capInt(args.limit, 5, 20);"
+      },
+      {
+        "path": "packages/mcp/src/verbs.ts",
+        "line": 3047,
+        "citedBy": [
+          "environment-findings.md"
+        ],
+        "namesAtStamp": "*/",
+        "namesAtHead": "const maxTokens = args.maxTokens === undefined ? 2000 : capMaxTokens(args.maxTokens);"
+      }
+    ]
+  }
+}

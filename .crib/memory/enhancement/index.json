@@ -1,0 +1,365 @@
+{
+  "layer": "memory-enhancement",
+  "contract": "README.md",
+  "created": "2026-09-24",
+  "codeHead": "cdc04bfcf3f11387037a945cf141aaa9a75bd1de",
+  "codeHeadNote": "Every anchor in every file here was read and checked at cdc04bfc, and the stamps were deliberately left at that revision because it is the one the anchors were verified against. A previous version of this note named 060898dec1190b1b18b74cd7bf7a204f13e5114c as HEAD and called that commit a docs log that changed no cited code line; that was wrong on both counts and is deleted. A later version read \"HEAD is 6a85eabf86e1d0b76a8baa86ff1f630632694636 ... two commits above the stamp\" and bounded its claim to that commit; that wording is deleted here, not because it was false when written but because HEAD has moved past it. HEAD is now 3434c19fc0005bd9c0a398a936a45e41ab7bbbad (\"feat(memory): archive implemented plans with Git evidence\"), three commits above the stamp: 060898de adds one file, docs/superpowers/specs/2026-09-24-implemented-plan-memory-design.md (33 insertions), which is not a file under docs/program/logs/; 6a85eabf adds 201 insertions across 8 files — including packages/memory/src/store.ts (9), types.ts (24), schemas.ts (3) and validate.ts (9) — and touches neither api.ts nor cli.ts; and 3434c19f, the only commit above the stamp that touches either, adds 216 lines to packages/memory/src/api.ts and 233 lines to packages/cli/src/cli.ts, the two files cited most here. anchorDriftAtHead is the measured result of that shift and supersedes any prose claim about it: at cdc04bfc the two anchors named above read `private sourceOf(store: MemoryStore): MemorySource | undefined {` at packages/memory/src/api.ts:4249 and `this.orderedStores().find((s) => s.store === store)?.source` at :4250, and at 3434c19f the same two rows are at :4465 and :4466.",
+  "anchorDriftAtHead": {
+    "measuredAt": "2026-09-24",
+    "head": "3434c19fc0005bd9c0a398a936a45e41ab7bbbad",
+    "stamp": "cdc04bfcf3f11387037a945cf141aaa9a75bd1de",
+    "method": "Every path:line token (and every bare basename:line token, resolved against the tracked-file index) in the enhanced files was read as trim()ed text from `git show <stamp>:<path>` and from `git show HEAD:<path>` and compared. A citation counts as MOVED when the line exists at both revisions and holds different text. Tokens naming .crib/ artifacts are counted as notInStamp: the .crib layer is uncommitted, so no revision of it exists to compare and none is claimed. Two bounds found while checking the above, recorded here because a measurement that hides its own limits reads as a clean bill of health. First, one file in this layer is NOT covered by it: pending-captures.md writes its anchors as bare `:NNNN` after a single full-path introduction, which the path:line tokenizer here cannot see. That gap is why the eight `packages/cli/src/cli.ts` anchors in its \"How to drain them\" section survived pointing at unrelated lines — the dispatch `case 'distill':` is at :6940, not the :6747 it read, and the usage string at :7060, not :6762; they were corrected by direct measurement at 3434c19f on 2026-09-24. Second, this measurement compares the text a line holds at two revisions, so it detects an anchor that MOVED and cannot detect one that resolves to the wrong thing at BOTH — a stale number landing on unrelated code is counted stable. Only reading the row the anchor names catches that class.",
+    "distinctCitations": 104,
+    "stable": 76,
+    "moved": 25,
+    "notInStamp": 3,
+    "notAtHead": 0,
+    "reading": "Every moved anchor resolves to the symbol the file names AT THE STAMP — that is what the stamp is for, and none of the 25 is a defect against this layer's contract. This field exists so the drift is disclosed rather than discovered: a reader who opens one of these anchors in the working tree at 3434c19f lands on unrelated code, and the row named at the stamp is what to search for.",
+    "movedAnchors": [
+      {
+        "path": "packages/cli/src/cli.ts",
+        "line": 2185,
+        "citedBy": [
+          "be63cc19",
+          "e0b02057"
+        ],
+        "namesAtStamp": "async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {"
+      },
+      {
+        "path": "packages/cli/src/cli.ts",
+        "line": 2244,
+        "citedBy": [
+          "e0b02057"
+        ],
+        "namesAtStamp": "let coordinator: RefreshCoordinator | undefined;"
+      },
+      {
+        "path": "packages/cli/src/cli.ts",
+        "line": 2254,
+        "citedBy": [
+          "be63cc19",
+          "e0b02057"
+        ],
+        "namesAtStamp": "coordinator = new RefreshCoordinator(rt.soul, resolved.repoRoot, {"
+      },
+      {
+        "path": "packages/cli/src/cli.ts",
+        "line": 2328,
+        "citedBy": [
+          "e0b02057"
+        ],
+        "namesAtStamp": "// WP1 item 8 — WHAT A MEMORY VERDICT IS CURRENT AGAINST, for the life of this server. Both slots"
+      },
+      {
+        "path": "packages/cli/src/cli.ts",
+        "line": 2335,
+        "citedBy": [
+          "e0b02057"
+        ],
+        "namesAtStamp": "memory.evalCtx.pin = {"
+      },
+      {
+        "path": "packages/cli/src/cli.ts",
+        "line": 2336,
+        "citedBy": [
+          "e0b02057"
+        ],
+        "namesAtStamp": "// `NO_DEPENDENCY` until a bundle is adopted: a read before adoption resolves against the"
+      },
+      {
+        "path": "packages/cli/src/cli.ts",
+        "line": 2341,
+        "citedBy": [
+          "e0b02057"
+        ],
+        "namesAtStamp": "reader: () => coordinator?.currentReaderGeneration ?? NO_DEPENDENCY,"
+      },
+      {
+        "path": "packages/cli/src/cli.ts",
+        "line": 2344,
+        "citedBy": [
+          "e0b02057"
+        ],
+        "namesAtStamp": "ledger: () => memoryGraphSourcePosition(memory),"
+      },
+      {
+        "path": "packages/cli/src/cli.ts",
+        "line": 2405,
+        "citedBy": [
+          "be63cc19"
+        ],
+        "namesAtStamp": "// WP4.5 — in watch mode every HTTP request pins the serving bundle: a published bundle swaps in"
+      },
+      {
+        "path": "packages/cli/src/cli.ts",
+        "line": 3887,
+        "citedBy": [
+          "83b3f329"
+        ],
+        "namesAtStamp": "*   hook                the post-commit hook body: enqueue in `auto`, no-op otherwise — ALWAYS"
+      },
+      {
+        "path": "packages/cli/src/cli.ts",
+        "line": 3929,
+        "citedBy": [
+          "83b3f329"
+        ],
+        "namesAtStamp": "`freshness mode: ${modeLabel}\\n  worker: ${status.workerRunning ? `running (pid ${status.workerPid ?? '?'})` : 'not running'}\\n  pending: ${status.pending}${status.dead > 0 ? `, dead-lettered: ${status.dead}` : ''}\\n  in-flight: ${status.inFlight ? status.inFlight.id : 'none'}\\n  last-known-good: ${status.lastKnownGood ? `${status.lastKnownGood.generation.slice(0, 16)}… @ ${status.lastKnownGood.head.slice(0, 12)}` : 'never published'}\\n  behind HEAD: ${status.behindHead ? 'yes — run `crib freshness worker` (or `crib update`)' : 'no'}\\n`,"
+      },
+      {
+        "path": "packages/cli/src/cli.ts",
+        "line": 4291,
+        "citedBy": [
+          "e0b02057"
+        ],
+        "namesAtStamp": "async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {"
+      },
+      {
+        "path": "packages/cli/src/cli.ts",
+        "line": 5832,
+        "citedBy": [
+          "e0b02057"
+        ],
+        "namesAtStamp": "function createMemoryDeps(soul: SoulStore, repoRoot: string, cribDir: string) {"
+      },
+      {
+        "path": "packages/cli/src/cli.ts",
+        "line": 5838,
+        "citedBy": [
+          "e0b02057"
+        ],
+        "namesAtStamp": "// `pin` to it after construction — WP1 item 8 (see cmdServe)."
+      },
+      {
+        "path": "packages/mcp/src/verbs.ts",
+        "line": 4520,
+        "citedBy": [
+          "e0b02057"
+        ],
+        "namesAtStamp": "...(mem.evalCtx !== undefined ? { evalCtx: mem.evalCtx } : {}),"
+      },
+      {
+        "path": "packages/memory/src/api.ts",
+        "line": 1410,
+        "citedBy": [
+          "e0b02057"
+        ],
+        "namesAtStamp": "export function bindEvaluationPass("
+      },
+      {
+        "path": "packages/memory/src/api.ts",
+        "line": 2755,
+        "citedBy": [
+          "e0b02057"
+        ],
+        "namesAtStamp": "const bound = bindEvaluationPass(baseCtx, gathered, {"
+      },
+      {
+        "path": "packages/memory/src/api.ts",
+        "line": 4091,
+        "citedBy": [
+          "bab1095d"
+        ],
+        "namesAtStamp": "private locate(id: string):"
+      },
+      {
+        "path": "packages/memory/src/api.ts",
+        "line": 4102,
+        "citedBy": [
+          "bab1095d"
+        ],
+        "namesAtStamp": "if (direct && isRecordEntry(direct) && this.acceptsRecord(direct, source)) {"
+      },
+      {
+        "path": "packages/memory/src/api.ts",
+        "line": 4133,
+        "citedBy": [
+          "bab1095d"
+        ],
+        "namesAtStamp": "private holdsDirect(store: MemoryStore, id: string, collection: MemoryCollection): boolean {"
+      },
+      {
+        "path": "packages/memory/src/api.ts",
+        "line": 4181,
+        "citedBy": [
+          "bab1095d"
+        ],
+        "namesAtStamp": "if (!isRecordEntry(entry) || !this.acceptsRecord(entry, source)) continue;"
+      },
+      {
+        "path": "packages/memory/src/api.ts",
+        "line": 4231,
+        "citedBy": [
+          "bab1095d"
+        ],
+        "namesAtStamp": "private acceptsRecord(record: ReadableMemoryRecord, source: MemorySource | undefined): boolean {"
+      },
+      {
+        "path": "packages/memory/src/api.ts",
+        "line": 4232,
+        "citedBy": [
+          "bab1095d"
+        ],
+        "namesAtStamp": "if (isMemoryRecordVersioned(record)) {"
+      },
+      {
+        "path": "packages/memory/src/api.ts",
+        "line": 4235,
+        "citedBy": [
+          "bab1095d"
+        ],
+        "namesAtStamp": "if (source === 'team') return true;"
+      },
+      {
+        "path": "packages/memory/src/api.ts",
+        "line": 4250,
+        "citedBy": [
+          "bab1095d"
+        ],
+        "namesAtStamp": "return this.orderedStores().find((s) => s.store === store)?.source;"
+      }
+    ]
+  },
+  "ledgerSnapshotAtReading": {
+    "readAt": "2026-09-24",
+    "source": {
+      "local": 15
+    },
+    "total": 15,
+    "eligible": 13,
+    "pendingCaptures": 19,
+    "trust": {
+      "local": 14,
+      "candidate": 1
+    },
+    "evidence": {
+      "valid": 13,
+      "degraded": 1,
+      "invalid": 1
+    },
+    "applicability": {
+      "current": 15
+    },
+    "lifecycle": {
+      "active": 14,
+      "superseded": 1
+    },
+    "teamRecords": 0,
+    "teamStoreNote": "The team store root is <cribDir>/memory/team (packages/memory/src/paths.ts:46) and .crib/memory/team/ does not exist, so there are no team records to enhance."
+  },
+  "enhanced": [
+    {
+      "recordId": "mem:2d8a7d96c3a5cecc89ecb3daf018098385b74426159cfc385d35c45f75771482",
+      "file": "2d8a7d96c3a5cecc89ecb3daf018098385b74426159cfc385d35c45f75771482.md",
+      "subject": "CI push trigger is dead: branch filters name lowercase master while the default branch is Master",
+      "evidence": "valid"
+    },
+    {
+      "recordId": "mem:45338390dc871fa25e67ff621bcdc308d227106151035b21792ad87f2b31dea1",
+      "file": "45338390dc871fa25e67ff621bcdc308d227106151035b21792ad87f2b31dea1.md",
+      "subject": "SoulStore/dossier write path: durable writes are a small minority of all renames (measured)",
+      "evidence": "valid"
+    },
+    {
+      "recordId": "mem:45591b62535fa429c9f9fb63b621d0a41f5aaa44ca5054566d564aee7c27e24e",
+      "file": "45591b62535fa429c9f9fb63b621d0a41f5aaa44ca5054566d564aee7c27e24e.md",
+      "subject": "cli e2e suites run the built dist/cli.js and the package test script never builds",
+      "evidence": "valid"
+    },
+    {
+      "recordId": "mem:7238293f1b3a3383a92b92f79fe5fb752b07d15575debfb5ca340608953a8e3f",
+      "file": "7238293f1b3a3383a92b92f79fe5fb752b07d15575debfb5ca340608953a8e3f.md",
+      "subject": "code-vector-eval.mjs can print a lexical-vs-hybrid report with the hybrid arm silently absent, and exits 0",
+      "evidence": "valid"
+    },
+    {
+      "recordId": "mem:83b3f3292f436a11164cbd8effdd67be71fe434789635e90a62f561fb53b9ccf",
+      "file": "83b3f3292f436a11164cbd8effdd67be71fe434789635e90a62f561fb53b9ccf.md",
+      "subject": "freshness.behindHead requires a PUBLISHED generation — index/update never publish",
+      "evidence": "degraded",
+      "note": "the one degraded-evidence record in the ledger; the file's 'Verification state, in prose' section is where the degradation is described"
+    },
+    {
+      "recordId": "mem:8b5ccf684b97ea265360672ecb485d2546a8deb7bffef33a312220bf6a7f312f",
+      "file": "8b5ccf684b97ea265360672ecb485d2546a8deb7bffef33a312220bf6a7f312f.md",
+      "subject": "The WP3 hygiene gates sit at three different points in the release pipeline, chosen by each gate's failure mode",
+      "evidence": "valid"
+    },
+    {
+      "recordId": "mem:90e2226cb1a24292b076e823357e202a69f60346a308d1b8a4b171d530817e21",
+      "file": "90e2226cb1a24292b076e823357e202a69f60346a308d1b8a4b171d530817e21.md",
+      "subject": "A batched-vs-per-text byte comparison cannot detect a vector mis-mapping; an outside-the-store marker oracle can",
+      "evidence": "valid"
+    },
+    {
+      "recordId": "mem:bab1095d1a6bf60d4687c5e2afd432b219eb8a6016112c88bb923c9476b99290",
+      "file": "bab1095d1a6bf60d4687c5e2afd432b219eb8a6016112c88bb923c9476b99290.md",
+      "subject": "Two principal-boundary implementations in the memory package; only gatherRecall's honoured KCRIB_STRICT_PRINCIPAL (unified 2026-09-23)",
+      "evidence": "valid"
+    },
+    {
+      "recordId": "mem:be63cc1948a06ce0f98aafa57dcc3e3c72bf3ff1aebf078ad6080f80e1929aac",
+      "file": "be63cc1948a06ce0f98aafa57dcc3e3c72bf3ff1aebf078ad6080f80e1929aac.md",
+      "subject": "The WP4.x identifiers in packages/cli/src belong to an earlier plan, not this program's WP4",
+      "evidence": "valid"
+    },
+    {
+      "recordId": "mem:c7616aa2e6b09f2e6aee2e923928c6d23eaf4dd88bd497df85ebe2697258d967",
+      "file": "c7616aa2e6b09f2e6aee2e923928c6d23eaf4dd88bd497df85ebe2697258d967.md",
+      "subject": "The x-dc component payload in packages/ui/web/index.html cannot be extracted to a <script src> module",
+      "evidence": "valid"
+    },
+    {
+      "recordId": "mem:dd162a2d1acfdd07d08ff7bb14856b48a69fde005041fd3b1563d60856d5941a",
+      "file": "dd162a2d1acfdd07d08ff7bb14856b48a69fde005041fd3b1563d60856d5941a.md",
+      "subject": "graph-context-budget-envelope",
+      "evidence": "valid"
+    },
+    {
+      "recordId": "mem:e0b02057965e13e891bafac063fb0a84444b6c02313af0069d674955348709eb",
+      "file": "e0b02057965e13e891bafac063fb0a84444b6c02313af0069d674955348709eb.md",
+      "subject": "The WP1 item-8 reader/ledger pin is supplied by exactly one process — cmdServe, which IS the MCP server — and that is the only place it can matter",
+      "evidence": "valid"
+    },
+    {
+      "recordId": "mem:e68fb39ed40f99d48227cca3f362ab241fe7066cc7eafc4503b2836f06cf9a46",
+      "file": "e68fb39ed40f99d48227cca3f362ab241fe7066cc7eafc4503b2836f06cf9a46.md",
+      "subject": "The release gate's red silently disables the cross-platform verify-matrix below it",
+      "evidence": "valid"
+    }
+  ],
+  "deliberatelyUnenhanced": [
+    {
+      "recordId": "mem:8de72df01b52f788bb8810899ee50b403cde17620320dc58e4a05c54588bd9a9",
+      "subject": "memory-durability-model",
+      "reason": "superseded v1. It is lifecycle=superseded, and the lineage edge runs the other way: the successor mem:686d520df6d819809efdb508ab5804c441694a11b8872c2952aab3e092f9d83c carries lineage.supersedes pointing back at this record, while this record's own lineage is null (local ledger active/99.jsonl and active/ee.jsonl under ~/.crib/memory/repos/31fec5e7-5a85-497a-9cf6-3d2e98e08e5b/, with the supersede decision in decisions/57.jsonl there). A previous version of this entry stated that edge in the reverse direction; it was false and is deleted. Hard rule 4 of README.md makes its file name the v1 id, and hard rule 5 makes a missing file a legitimate state — but the reason to leave it unenhanced is stronger than either: an enhancement describing how to apply a superseded claim would be an enhancement for a claim that should not be applied. Its successor is the right target, and the successor has no evidence yet.",
+      "evidence": "valid",
+      "lifecycle": "superseded"
+    },
+    {
+      "recordId": "mem:686d520df6d819809efdb508ab5804c441694a11b8872c2952aab3e092f9d83c",
+      "subject": "memory-durability-model",
+      "reason": "v2 successor, trust=candidate with EMPTY evidence (evidence: invalid) and verdicts: null. There are no derived verdicts to stamp and no evidence to describe, so every section of the file format would be empty or invented. This is the intended state for a claim that has not been admitted yet: it is not unenhanced by oversight, it is not eligible for enhancement.",
+      "evidence": "invalid",
+      "trust": "candidate",
+      "lifecycle": "active"
+    }
+  ],
+  "pendingCapturesFile": "pending-captures.md",
+  "notRecallable": "Nothing in this directory is served by brief, memory_recall or memory op=search. It is read by a human or an agent that already has the record id (README.md, hard rule 6).",
+  "verification": {
+    "method": "Each file was written by one agent and independently verified by a second agent prompted to REFUTE it, defaulting to a violation finding when uncertain. What those verifiers returned is not counted here: their verdicts live in the verification run's journal, outside this repository, so no file-level or finding-level number drawn from them can be anchored from inside it. The fixes list below is the record, and filesFixed names only the files whose fixes are recorded there — not the set of files the verifiers flagged. A previous version of this field ended \"Two files were reported as carrying rule-3 violations and both were fixed.\"; the number two was sourced from nothing in this repository, and \"both were fixed\" outran filesFixed, so that sentence was deleted rather than re-guessed.",
+    "countsNote": "No violation count is stated. A previous version read violationsFound: 3 and violationsFixed: 3; that number was not derivable from anything recorded here — the fixes list below holds four entries across the two files in filesFixed, and no mapping from four fixes to three violations was given — so it was deleted rather than re-guessed. The fixes list is the record.",
+    "filesFixed": [
+      "45591b62535fa429c9f9fb63b621d0a41f5aaa44ca5054566d564aee7c27e24e.md",
+      "bab1095d1a6bf60d4687c5e2afd432b219eb8a6016112c88bb923c9476b99290.md"
+    ],
+    "fixes": [
+      "45591b62: removed a fabricated count (\"six-step\") that appeared nowhere in the record and contradicted the eight-token procedure rendered on the same line.",
+      "bab1095d: a falsifier that already held at three of four call sites was reworded to the condition that is actually false today (a source NOT derived from the store being read), with all four call sites and the sourceOf resolution cited.",
+      "bab1095d: a self-contradiction was removed — the file told the reader not to hand-thread a source while naming two hand-threading call sites as the model.",
+      "bab1095d: an assertion about docs/audits/2026-09-05/launch-audit.md content was given its resolving pointer (:144)."
+    ],
+    "anchorsNote": "No directory-wide count of broken anchors is stated. A previous version read anchorsThatDoNotResolve: 0; a second reader falsified that with two anchors which did not land on what they named. c7616aa2e6b09f2e6aee2e923928c6d23eaf4dd88bd497df85ebe2697258d967.md cited packages/ui/web/graph-model.js:250 for `root.KCGraphModel`, which is at packages/ui/web/graph-model.js:252 (line 250 is the closing brace of `rr`, defined at :242; hex :197, esc :212 and ellipsize :227 do resolve, and the component's load of the file is at packages/ui/web/index.html:13). bab1095d1a6bf60d4687c5e2afd432b219eb8a6016112c88bb923c9476b99290.md cited packages/memory/src/api.ts:4249 for the sourceOf body expression, which is at packages/memory/src/api.ts:4250 (4249 is the `private sourceOf(store: MemoryStore): MemorySource | undefined {` signature). Both files have since been re-pointed at the symbol each anchor names, so neither defect stands at this reading — but a count of zero cannot be maintained from here, so check each anchor against the symbol it names rather than trust a number."
+  }
+}
