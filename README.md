@@ -71,7 +71,7 @@ parse → graph → persist as a committable soul (.crib/graph) → derived SQLi
 - **Memory** — a bi-temporal ledger of reusable, evidence-backed claims (team memory over Git,
   local memory per machine, opt-in encrypted cross-device sync) and resumable work intakes.
 - **Freshness** — git hooks, `crib serve --watch`, or a background worker keep the index current.
-- **Languages** — TypeScript/JavaScript, Python, Java, C#, Go, Rust, PHP, PL/SQL, Markdown,
+- **Languages** — TypeScript/JavaScript (including inline `<script>` code in HTML, Vue, Svelte and Astro files), Python, Java, C#, Go, Rust, PHP, PL/SQL, Markdown,
   MuleSoft, and agent artifacts (skills, rules, instructions). Counts live in
   [docs/STATS.md](docs/STATS.md).
 
