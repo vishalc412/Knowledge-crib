@@ -30,6 +30,9 @@ on:
     branches:
       - main
       - master
+      # GitHub branch filters are case-sensitive and this repository's default branch is `Master`.
+      # With only the lowercase names this trigger never fired on a merge (evidence register §4.4).
+      - Master
   workflow_dispatch:
 
 permissions:

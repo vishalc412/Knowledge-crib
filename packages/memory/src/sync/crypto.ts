@@ -67,14 +67,39 @@ function decodeSyncKeyMaterial(text: string, source: string): Buffer {
   return key;
 }
 
+/**
+ * Whether a keyfile's owner-only protection can be VERIFIED from its mode bits. On Windows the mode
+ * `stat` reports is synthesized (a writable file is always 0666) and says nothing about the NTFS
+ * ACL, so the D7 check can neither pass nor be trusted there. The keyfile source is therefore
+ * refused on Windows — fail closed, as D7 requires — and the environment key is the supported path.
+ * Measured on the Windows CI cells 2026-09-24: a keyfile `crib` itself wrote with mode 0o600 was
+ * reported as 0666 and refused.
+ */
+export function keyfileProtectionVerifiable(platform: NodeJS.Platform = process.platform): boolean {
+  return platform !== 'win32';
+}
+
+/** The refusal for a keyfile on a platform where its protection cannot be verified. */
+export function unverifiableKeyfileError(
+  keyFile: string,
+  envName = 'KCRIB_SYNC_KEY',
+): SyncKeyError {
+  return new SyncKeyError(
+    `${keyFile}: a keyfile's owner-only protection cannot be verified on Windows (file modes do not reflect NTFS ACLs) — set ${envName} instead; sync fails closed`,
+  );
+}
+
 /** Resolve the sync key, fail closed (D7): `KCRIB_SYNC_KEY` env first (64 hex or 44-char base64),
  *  then the keyfile `<memoryHome>/sync-key` (chmod 0600 expected — a wider mode is a refusal, not a
- *  warning). No key anywhere → `SyncKeyError`. Errors name the SOURCE, never the bytes. */
+ *  warning; on Windows, where the mode cannot express that, any keyfile is a refusal). No key
+ *  anywhere → `SyncKeyError`. Errors name the SOURCE, never the bytes. */
 export function resolveSyncKey(
   opts: {
     keyEnv?: string;
     keyFile?: string;
     env?: NodeJS.ProcessEnv;
+    /** the host platform; injectable so both branches are testable on any host. */
+    platform?: NodeJS.Platform;
   } = {},
 ): { key: Buffer; source: 'env' | 'keyfile' } {
   const envName = opts.keyEnv ?? 'KCRIB_SYNC_KEY';
@@ -85,6 +110,8 @@ export function resolveSyncKey(
   }
   const keyFile = opts.keyFile ?? join(memoryHome(env), 'sync-key');
   if (existsSync(keyFile)) {
+    if (!keyfileProtectionVerifiable(opts.platform))
+      throw unverifiableKeyfileError(keyFile, envName);
     const mode = statSync(keyFile).mode & 0o777;
     if ((mode & 0o077) !== 0) {
       throw new SyncKeyError(

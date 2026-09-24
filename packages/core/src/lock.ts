@@ -114,10 +114,12 @@ export class CribLock {
     // contenders in the same release window would each unlink the other's freshly created lock and
     // both proceed into the critical section.
     for (let attempt = 0; attempt < ACQUIRE_RACE_ATTEMPTS; attempt += 1) {
-      if (this.tryCreate(this.path)) {
+      const created = this.tryCreate(this.path);
+      if (created === 'won') {
         this.held = true;
         return;
       }
+      if (created === 'transient') continue; // the holder's file is mid-delete: re-race, as for vanished
       const verdict = this.staleness();
       if (verdict.kind === 'vanished') continue; // re-race the create; never unlink
       if (verdict.kind === 'live') {
@@ -155,15 +157,21 @@ export class CribLock {
     }
   }
 
-  private tryCreate(p: string): boolean {
+  /**
+   * `won` — we created the lock. `exists` — someone holds it; classify it. `transient` — Windows
+   * could not open the path because another process still has it open or is deleting it; there is
+   * nothing to classify yet, so the caller re-races exactly as for a vanished lock.
+   */
+  private tryCreate(p: string): 'won' | 'exists' | 'transient' {
     try {
       const fd = openSync(p, 'wx'); // O_WRONLY | O_CREAT | O_EXCL — atomic on most filesystems
       writeSync(fd, `${process.pid}\n`);
       closeSync(fd);
-      return true;
+      return 'won';
     } catch (error) {
       const code = (error as NodeJS.ErrnoException)?.code;
-      if (code === 'EEXIST') return false;
+      if (code === 'EEXIST') return 'exists';
+      if (isTransientLockCreateError(code, process.platform)) return 'transient';
       throw error;
     }
   }
@@ -218,8 +226,25 @@ export class CribLock {
     } catch {
       // vanished under us — the atomic create below re-races for it, which is the correct outcome
     }
-    return this.tryCreate(this.path);
+    return this.tryCreate(this.path) === 'won';
   }
+}
+
+/**
+ * Whether an exclusive-create failure means "contended right now" rather than "cannot lock here".
+ *
+ * On Windows, `open(O_CREAT|O_EXCL)` on a path another process still holds open — or has unlinked
+ * but not yet closed ("delete pending") — fails with EPERM/EACCES/EBUSY, not EEXIST. That is the
+ * release window every contender races through, so it is contention, and treating it as a hard
+ * error failed writers outright (measured on the Windows CI cells, 2026-09-24: 1–3 of 8 racing
+ * processes died with EPERM on `.counter.lock`). On POSIX the same codes mean a real permission
+ * problem and must still throw, so the classification is per-platform.
+ */
+export function isTransientLockCreateError(
+  code: string | undefined,
+  platform: NodeJS.Platform,
+): boolean {
+  return platform === 'win32' && (code === 'EPERM' || code === 'EACCES' || code === 'EBUSY');
 }
 
 /** Run `fn` while holding the crib lock; release on return or throw (sync). */

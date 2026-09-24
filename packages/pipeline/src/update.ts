@@ -46,7 +46,9 @@ import {
   AnchorUnavailableError,
   changedFilesSince,
   currentHead,
+  trackedFiles,
   uncommittedChanges,
+  untrackedFiles,
 } from './vcs.js';
 
 export interface UpdateOpts {
@@ -75,6 +77,10 @@ export interface UpdateOpts {
    * normal updates see no committed diff, but `repo.vcsHead` stays pinned to the last real commit so
    * `crib status` can still report the dirty delta. */
   dirty?: boolean;
+  /** Explicit repo-relative paths to refresh in dirty mode, even when Git has not staged them.
+   *  Only tracked or non-ignored untracked paths are accepted; ordinary dirty updates still exclude
+   *  untracked files. Used when a command creates a new public document immediately before update. */
+  includePaths?: string[];
   /** Restrict this update to files under any of these repo-relative package roots (multi-package
    *  federation: independently re-sync one package's slice of a shared, already-indexed monorepo
    *  soul without touching the rest). Changed files OUTSIDE every root are left untouched AND —
@@ -148,6 +154,16 @@ export async function updateRepo(
   if (opts.dirty) {
     for (const p of uncommittedChanges(root)) {
       if (!allChangedPaths.includes(p)) allChangedPaths.push(p);
+    }
+  }
+  if (opts.includePaths?.length) {
+    if (!opts.dirty) throw new Error('includePaths requires dirty mode');
+    const eligible = new Set([...trackedFiles(root), ...untrackedFiles(root)]);
+    for (const path of opts.includePaths) {
+      if (!eligible.has(path)) {
+        throw new Error(`included path is not tracked or non-ignored untracked: ${path}`);
+      }
+      if (!allChangedPaths.includes(path)) allChangedPaths.push(path);
     }
   }
 

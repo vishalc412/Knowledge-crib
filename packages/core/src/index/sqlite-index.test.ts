@@ -746,7 +746,11 @@ describe('vector channel survives a reopen (vector_meta)', () => {
     viaFactory.buildFromSoul(store, dir);
     expect(viaFactory.capabilities().vector).toBe(true);
     viaFactory.close();
-    expect(openIndex('sqlite', { path: dbPath }).capabilities().vector).toBe(false);
+    // Closed before afterEach removes the directory: Windows cannot delete an open SQLite file, so
+    // an unclosed reader failed this test there with EPERM in cleanup (CI, 2026-09-24).
+    const reopened = openIndex('sqlite', { path: dbPath });
+    expect(reopened.capabilities().vector).toBe(false);
+    reopened.close();
   });
 });
 

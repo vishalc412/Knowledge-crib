@@ -96,6 +96,7 @@ export const CAPABILITIES: readonly Capability[] = [
       { op: 'intake_list', verb: 'memoryIntakeList' },
       { op: 'intake_get', verb: 'memoryIntakeGet' },
       { op: 'intake_share', verb: 'memoryIntakeShare' },
+      { op: 'implementations', verb: 'memoryImplementations' },
     ],
   },
   {

@@ -188,11 +188,17 @@ import {
   memoryRecordId,
 } from '@knowledge-crib/memory';
 import {
+  CONCERN_RECORDED_MESSAGE,
+  MAX_CONCERN_REASON,
   type VizMemoryHomeOperations,
   graphRefKind,
+  parseEvidenceQuery,
+  parseFeedbackBody,
   parseMemoryLedgerQuery,
   parseMemoryPendingQuery,
   parseResumeBody,
+  projectVizHealth,
+  readMemoryEvidence,
   readMemoryGraphDetail,
   readMemoryHome,
   readMemoryIntakeDetail,
@@ -313,6 +319,27 @@ describe('parseMemoryLedgerQuery', () => {
       VizHttpError,
     );
   });
+
+  it('accepts a working view and rejects unknown views or a view combined with a group', () => {
+    expect(parseMemoryLedgerQuery(new URLSearchParams('view=needs-review&limit=50'))).toEqual({
+      offset: 0,
+      limit: 50,
+      revalidate: true,
+      view: 'needs-review',
+    });
+    expect(parseMemoryLedgerQuery(new URLSearchParams('view=active')).view).toBe('active');
+    const status = (query: string) => {
+      try {
+        parseMemoryLedgerQuery(new URLSearchParams(query));
+        return 200;
+      } catch (err) {
+        return err instanceof VizHttpError ? err.status : 500;
+      }
+    };
+    expect(status('view=history')).toBe(400);
+    expect(status('view=active&group=stale')).toBe(400);
+    expect(status('view=needs-review&group=current')).toBe(400);
+  });
 });
 
 describe('memory ledger endpoints', () => {
@@ -347,6 +374,22 @@ describe('memory ledger endpoints', () => {
     expect(result.rows).toHaveLength(1);
     expect(result.rows[0]?.subject).toBe(MEM_LIVE);
     expect(result.rows[0]?.group).toBe('current');
+  });
+
+  it('serves working views additively: views counts and typed review reasons on every row', () => {
+    const api = memApi(home);
+    const history = readMemoryLedger(api, parseMemoryLedgerQuery(new URLSearchParams('')));
+    const active = readMemoryLedger(
+      api,
+      parseMemoryLedgerQuery(new URLSearchParams('view=active')),
+    );
+    if (!history.configured || !active.configured) throw new Error('memory not configured');
+    expect(history.views).toEqual({ active: 1, needsReview: 0 });
+    expect(active.total).toBe(history.views.active);
+    expect(active.rows[0]?.reviewReasons).toEqual([]);
+    // Existing History callers keep the unfiltered ledger and its group counts.
+    expect(history.total).toBe(1);
+    expect(history.counts.current).toBe(1);
   });
 
   it('composes detail from get + audit and 404s unknown ids', () => {
@@ -411,6 +454,26 @@ describe('memory ledger endpoints', () => {
     expect(stamped.rows[0]?.eligible).toBe(true);
     expect(stamped.rows[0]?.excludedBy).toBeUndefined();
     expect(stamped.rows[0]?.reasons).toEqual([]);
+  });
+
+  // The seam between WP5 §7.1 and UI Phase 2: the working views read `eligible` and the evidence
+  // verdict, which the default re-check can overturn. A home tile folded from stamps would count a
+  // claim as Active while the list it opens — `/memory.json?view=…`, re-checked by default — files
+  // it under Needs review. Each tile must equal the total of the view it opens, as that view is served.
+  it('counts each home tile from the same re-checked verdicts its destination list is served with', () => {
+    const api = driftedApi(home);
+    const served = (view: string) => {
+      const r = readMemoryLedger(api, parseMemoryLedgerQuery(new URLSearchParams(`view=${view}`)));
+      if (!r.configured) throw new Error('memory not configured');
+      return r.total;
+    };
+    const result = readMemoryHome(api, {});
+    if (!result.configured) throw new Error('memory not configured');
+    // The drifted claim is out of recall once re-checked: not Active, needs review.
+    expect(served('active')).toBe(0);
+    expect(served('needs-review')).toBe(1);
+    expect(result.sections.active.count).toBe(served('active'));
+    expect(result.sections.needsReview.count).toBe(served('needs-review'));
   });
 });
 
@@ -589,6 +652,47 @@ describe('record connections endpoint (WP-G7)', () => {
 });
 
 describe('memory home endpoint', () => {
+  it('reports the published revision independently from the loaded reader snapshot', () => {
+    const currentHead = 'a'.repeat(40);
+    const oldHead = 'b'.repeat(40);
+    const cold = {
+      indexedHead: currentHead,
+      currentHead,
+      publishedGeneration: null,
+      readerGeneration: null,
+      graphSourcePosition: null,
+      codeRevision: currentHead,
+      graphGeneration: null,
+      searchGeneration: null,
+      refreshState: 'idle',
+      stale: false,
+      staleReasons: [],
+      lastSuccessfulRefreshAt: '2026-09-22T10:00:00.000Z',
+      lastRefreshError: null,
+    } satisfies ReaderFreshness;
+    const result = projectVizHealth(
+      {
+        behindHead: false,
+        lastKnownGood: {
+          head: currentHead,
+          publishedAt: '2026-09-22T10:00:00.000Z',
+        },
+      },
+      cold,
+      { head: oldHead, lastSuccessfulAt: '2026-09-21T09:00:00.000Z' },
+    );
+    expect(result.codeIndex).toMatchObject({
+      checkedRevision: currentHead,
+      lastSuccessfulAt: '2026-09-22T10:00:00.000Z',
+      behindHead: false,
+    });
+    expect(result.readerFreshness).toMatchObject({
+      indexedHead: oldHead,
+      stale: true,
+      lastSuccessfulRefreshAt: '2026-09-21T09:00:00.000Z',
+    });
+  });
+
   it('projects lifecycle sections and independent health signals', () => {
     const home = mkdtempSync(join(tmpdir(), 'crib-viz-home-'));
     try {
@@ -631,6 +735,12 @@ describe('memory home endpoint', () => {
         },
       });
       expect(result.nextAction.toLowerCase()).toContain('capture');
+      // Every tile count is the total of the ledger view the tile opens.
+      const api = memApi(home);
+      if (!result.configured) throw new Error('memory not configured');
+      expect(result.sections.active.count).toBe(api.ledger({ view: 'active' }).total);
+      expect(result.sections.needsReview.count).toBe(api.ledger({ view: 'needs-review' }).total);
+      expect(result.sections.history.count).toBe(api.ledger().total);
     } finally {
       rmSync(home, { recursive: true, force: true });
     }
@@ -1152,5 +1262,103 @@ describe('mutation boundary helpers (WP6.5)', () => {
     // vocabulary law: no internal admission words anywhere on the mutation error surface
     expect(JSON.stringify(fromMutation)).not.toMatch(/candidate|trust/i);
     expect(JSON.stringify(fromPlain)).not.toMatch(/candidate|trust/i);
+  });
+});
+
+// ─── evidence inspection + concern reporting (UI remediation Phase 4) ─────────
+
+describe('evidence and concern request parsing', () => {
+  it('accepts a record id and a non-negative integer index, never a path', () => {
+    expect(parseEvidenceQuery(new URLSearchParams('recordId=mem:a&index=2'))).toEqual({
+      recordId: 'mem:a',
+      index: 2,
+    });
+    for (const bad of [
+      'recordId=mem:a',
+      'index=0',
+      'recordId=mem:a&index=-1',
+      'recordId=mem:a&index=1.5',
+      'recordId=mem:a&index=x',
+    ]) {
+      expect(() => parseEvidenceQuery(new URLSearchParams(bad))).toThrow(VizHttpError);
+    }
+  });
+
+  it('requires a nonblank reason of at most 500 characters and ignores any client actor', () => {
+    expect(
+      parseFeedbackBody({ recordId: 'mem:a', reason: '  wrong since v2  ', actor: 'human:spoof' }),
+    ).toEqual({
+      recordId: 'mem:a',
+      reason: 'wrong since v2',
+    });
+    expect(() => parseFeedbackBody({ recordId: 'mem:a', reason: '   ' })).toThrow(
+      /reason is required/,
+    );
+    expect(() => parseFeedbackBody({ recordId: 'mem:a' })).toThrow(/reason is required/);
+    expect(() =>
+      parseFeedbackBody({ recordId: 'mem:a', reason: 'x'.repeat(MAX_CONCERN_REASON + 1) }),
+    ).toThrow(/at most 500/);
+    expect(() => parseFeedbackBody({ reason: 'x' })).toThrow(VizMutationError);
+    expect(CONCERN_RECORDED_MESSAGE).toBe(
+      'Recorded for review; this does not automatically retract or quarantine the claim.',
+    );
+  });
+});
+
+describe('readMemoryEvidence', () => {
+  let home = '';
+  beforeEach(() => {
+    home = mkdtempSync(join(tmpdir(), 'crib-viz-evidence-'));
+    __resetMemoryLockGuardForTest();
+  });
+  afterEach(() => {
+    __resetMemoryLockGuardForTest();
+    rmSync(home, { recursive: true, force: true });
+  });
+
+  it('shows the saved quote beside a current excerpt read by indexed node id', async () => {
+    writeFileSync(join(root, 'src', 'demo.ts'), 'zero\nexport function run() {\n  return 1;\n}\n');
+    const node = sourceNode('src/demo.ts');
+    expect(node.id).toBe(MEM_LIVE);
+    soul.putNodes([node]);
+    const record = memRecord();
+    const inspected = await readMemoryEvidence(memApi(home), soul, root, {
+      recordId: record.id,
+      index: 0,
+    });
+    expect(inspected.kind).toBe('source-quote');
+    expect(inspected.detail).toMatchObject({
+      kind: 'source-quote',
+      location: { state: 'current' },
+    });
+    expect(inspected.current).toMatchObject({
+      status: 'ready',
+      file: 'src/demo.ts',
+      excerpt: { text: 'export function run() {\n  return 1;' },
+    });
+  });
+
+  it('explains an unreadable source instead of presenting the saved quote as current', async () => {
+    const record = memRecord();
+    // The index knows the node, but this checkout has no file behind it.
+    const inspected = await readMemoryEvidence(memApi(home), soul, root, {
+      recordId: record.id,
+      index: 0,
+    });
+    expect(inspected.current).toMatchObject({ status: 'unavailable' });
+  });
+
+  it('answers 404 for a missing record or index without saying which', async () => {
+    const record = memRecord();
+    const status = async (recordId: string, index: number) => {
+      try {
+        await readMemoryEvidence(memApi(home), soul, root, { recordId, index });
+        return 200;
+      } catch (err) {
+        return err instanceof VizHttpError ? `${err.status} ${err.message}` : 'other';
+      }
+    };
+    expect(await status(record.id, 9)).toBe('404 evidence not found');
+    expect(await status('mem:missing', 0)).toBe('404 evidence not found');
   });
 });

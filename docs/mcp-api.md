@@ -6,12 +6,12 @@
 
 ---
 
-## Tool consolidation (current surface: 18 tools / 49 operations)
+## Tool consolidation (current surface: 18 tools / 50 operations)
 
 Fourteen tools that differed only in which verb they called were folded behind an `op` parameter.
 Every tool costs name + description + JSON schema in the tool list of **every** session whether or
 not it is used, so a family of five rarely-used tools was a permanent tax on every conversation.
-The consolidated surface is 18 tools / 49 operations — down from 31 tools / ~6,249 tokens, a 42%
+The consolidated surface is 18 tools / 50 operations — down from 31 tools / ~6,249 tokens, a 42%
 token cut with no capability removed.
 
 These counts are not prose: they are derived from the single capability manifest
@@ -708,6 +708,12 @@ when exactly one intake remains resumable. A non-terminal checkpoint requires `n
 MCP device sharing writes the local audience checkpoint and reports `sync:"staged-local-only"`;
 the next configured CLI push transfers it. Team sharing returns `status:"cli-required"` because
 Git-visible promotion is an explicit operator action: `crib intake share <id> --audience team`.
+
+`memory({op:"implementations"})` returns implemented-plan records in a distinct
+`implementations` group. Optional `id` selects one report, and `q` ranks matching reports.
+Each result cites its intake, plan digest, Git range, changed paths, receipts, and archive integrity.
+It is separate from grounded claim recall. Creation is through `crib intake implement`, which
+performs the Git and archive preflight before closing the intake.
 
 ### `memory({op:'get'})`
 One record by id — resolved through the portable memory API: a DIRECT hit wins in each store

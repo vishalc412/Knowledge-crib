@@ -79,6 +79,7 @@ const MINIMAL_ARGS: Record<string, Record<string, unknown>> = {
   'memory:intake_list': {},
   'memory:intake_get': { id: 'intake:1' },
   'memory:intake_share': { id: 'intake:1', audience: 'devices', actor: 'a' },
+  'memory:implementations': {},
   // enrich
   'enrich:status': {},
   'enrich:next': {},

@@ -125,7 +125,7 @@ describe('crib viz — buildVizGraph (DC runtime contract)', () => {
     expect(html).toContain('selectedTrail');
     expect(html).toContain('depthMap');
     expect(html).toContain('Horizon');
-    expect(html).toContain('2-hop context');
+    expect(html).toContain('onGo:()=>this.setFocusDepth(shown?Math.max(1,hop-1):hop)');
   });
 
   it('presents focused selections as a compact local graph cockpit', () => {
@@ -142,16 +142,11 @@ describe('crib viz — buildVizGraph (DC runtime contract)', () => {
     const html = readFileSync(join(vizAssetsDir(), 'index.html'), 'utf8');
 
     expect(html).toContain('KCGraphModel.searchProjection');
+    expect(html).toContain('KCExplorerProjection.prepare');
     expect(html).toContain('arrangeSearch');
-    expect(html).toContain('No graph matches');
+    expect(html).toContain('No matches in the code graph');
+    expect(html).toContain('data-kc-result-list');
     expect(html).toContain('{{ searchStatus }}');
-    const visibleNodes = html.slice(
-      html.indexOf('visibleNodes(){'),
-      html.indexOf('arrangeSearch('),
-    );
-    expect(visibleNodes.indexOf('if(q)return [...this.searchProjection(q).nodeIds]')).toBeLessThan(
-      visibleNodes.indexOf('if(this.state.selectedClusterId && !this.state.selectedId)'),
-    );
   });
 
   it('keeps overview labels and narrow headers inside their boxes', () => {

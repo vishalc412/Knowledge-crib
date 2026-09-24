@@ -80,6 +80,7 @@ export type MemoryCollection =
   | 'outbox'
   | 'dead'
   | 'intakes'
+  | 'implementations'
   | 'graph'
   | 'graph-jobs';
 
@@ -88,6 +89,7 @@ const TEAM_COLLECTIONS: readonly MemoryCollection[] = [
   'decisions',
   'receipts',
   'intakes',
+  'implementations',
 ];
 const LOCAL_COLLECTIONS: readonly MemoryCollection[] = [
   'attempts',
@@ -99,6 +101,7 @@ const LOCAL_COLLECTIONS: readonly MemoryCollection[] = [
   'outbox',
   'dead',
   'intakes',
+  'implementations',
   'graph',
   'graph-jobs',
 ];
@@ -137,6 +140,7 @@ function collectionCountKey(c: MemoryCollection): keyof MemoryCounts | undefined
     case 'outbox':
     case 'dead':
     case 'intakes':
+    case 'implementations':
     case 'graph':
     case 'graph-jobs':
       return undefined;
@@ -1275,6 +1279,11 @@ export class MemoryStore {
    */
   upsertEntries(collection: MemoryCollection, entries: MemoryEntry[]): void {
     this.assertCollection(collection);
+    for (const entry of entries) {
+      if (entry.id.startsWith('impl:') !== (collection === 'implementations')) {
+        throw new Error('implementation records must be stored only in implementations');
+      }
+    }
     if (collection === 'graph') {
       throw new Error(
         'refusing to upsertEntries into the graph collection directly: graph entries enter through submitGraphEntries — an id-replace here would re-author a first-writer-wins decision and bypass every graph merge law',
@@ -1293,7 +1302,17 @@ export class MemoryStore {
         const existing = this.readShard(collection, shard).entries;
         const merged = new Map<string, MemoryEntry>();
         for (const e of existing) merged.set(e.id, e);
-        for (const e of incoming) merged.set(e.id, e); // replace by id
+        for (const e of incoming) {
+          const prior = merged.get(e.id);
+          if (
+            collection === 'implementations' &&
+            prior &&
+            canonicalMemoryJson(prior) !== canonicalMemoryJson(e)
+          ) {
+            throw new Error(`immutable implementation record already exists: ${e.id}`);
+          }
+          merged.set(e.id, e); // other collections retain replace-by-id behavior
+        }
         writeJsonAtomic(
           this.shardPath(collection, shard),
           serializeMemoryShard([...merged.values()]),
@@ -1568,25 +1587,30 @@ export class MemoryStore {
       );
     }
     this.withLock(() => {
+      // G3.1: a cleared root takes the generation sidecar (and, for the local root, the FTS
+      // snapshot dir) with it. The reset notice goes out BEFORE the delete: its listener closes the
+      // snapshot's SQLite handle and removes the snapshot files, and on Windows an open database
+      // cannot be deleted — notified after, the delete itself failed with EBUSY (measured on the
+      // Windows CI cells, 2026-09-24). The generation it carries is the one the sidecar reads once
+      // the root is gone, {0, ''}, stated directly because the file still exists at this moment. It
+      // can never match a recorded snapshot generation, and a subsequent write mints a fresh nonce —
+      // so cross-process readers still converge on "rebuild".
+      const listener = this.ftsListener;
+      if (listener) {
+        try {
+          listener({
+            role: this.init.role,
+            upserted: [],
+            removed: [],
+            reset: true,
+            generation: { gen: 0, nonce: '' },
+          });
+        } catch {
+          // fail-open — the snapshot's next open reconciles via the (new) generation
+        }
+      }
       if (existsSync(this.init.rootDir))
         rmSync(this.init.rootDir, { recursive: true, force: true });
-      // G3.1: a cleared root takes the generation sidecar (and, for the local root, the FTS
-      // snapshot dir) with it. Notify WITHOUT re-bumping: the sidecar reads {0, ''} after the
-      // delete, which can never match a recorded snapshot generation, and a subsequent write mints
-      // a fresh nonce — so cross-process readers converge on "rebuild" from either path.
-      const listener = this.ftsListener;
-      if (!listener) return;
-      try {
-        listener({
-          role: this.init.role,
-          upserted: [],
-          removed: [],
-          reset: true,
-          generation: this.readFtsGeneration(),
-        });
-      } catch {
-        // fail-open — the snapshot's next open reconciles via the (new) generation
-      }
     });
   }
 
@@ -1631,6 +1655,14 @@ export class MemoryStore {
   private assertWritable(entry: MemoryEntry): void {
     assertValidMemoryEntry(entry as unknown as { id: string } & Record<string, unknown>);
     assertNoMemorySecrets(entry);
+    if (
+      this.init.role === 'team' &&
+      entry.id.startsWith('impl:') &&
+      'audience' in entry &&
+      entry.audience !== 'team'
+    ) {
+      throw new Error('private implementation records cannot enter team memory');
+    }
     if (
       this.init.role === 'team' &&
       isMemoryRecordVersioned(entry) &&

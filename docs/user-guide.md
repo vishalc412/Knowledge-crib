@@ -145,7 +145,8 @@ crib status .                           # 2. health + stats
 | `crib audit-llm [path]` | Re-verify every LLM artifact against the soul (grounding moat); exits non-zero on drift |
 | `crib skill <install\|list> [name] [--dest <dir>]` | Install the bundled `/crib-enrich` skill (the loop driver) into `~/.claude/skills/`, or list bundled skills. Idempotent — skips byte-identical re-installs |
 | `crib mcp <install\|list\|remove> [--ide <name\|all>] [--global]` | Auto-wire the MCP server into each IDE config (no hand-editing); `--ide claude --global` = one user-scope entry for every project |
-| `crib intake create\|checkpoint\|list\|show\|complete\|share` | Persist sanitized intent and immutable resume checkpoints; sharing is explicit (`devices` encrypted sync or `team` Git memory) |
+| `crib intake create\|checkpoint\|list\|show\|complete\|implement\|share` | Persist sanitized intent, resume checkpoints, and explicitly implemented plans; sharing is explicit (`devices` encrypted sync or `team` Git memory) |
+| `crib memory implementations list\|get\|search` | Retrieve implemented plans in a separate typed group with archive integrity |
 | `crib session bootstrap [--json]` | Restore the deterministic intake/handoff brief before a new session acts |
 
 Exit codes: `0` ok · `1` error · `2` bad args · `3` not indexed.
@@ -163,6 +164,28 @@ share with `--audience devices`, then push/pull as described in [the sync guide]
 For collaborators, `crib intake share <id> --audience team` copies the secret-scanned full history
 to Git-backed team memory; commit and push those `.crib/memory/team` files. No session startup,
 adapter install, or MCP call implicitly widens the audience.
+
+### Archive an implemented plan
+
+After committing the plan and code changes, run:
+
+```bash
+crib intake implement <intake-id> --plan docs/plan.md --base <base-commit> \
+  --category enhancement --summary "Feature completed" --receipt <receipt-id>
+crib memory implementations list --json
+crib memory implementations search "feature" --json
+```
+
+The command requires a clean worktree, an ancestor base commit, a nonempty diff, and an intake
+owned by the caller. It archives the verbatim Markdown plan and full binary-capable Git patch,
+updates the graph, then appends the completion checkpoint. The default archive is private under the
+repository's local memory store. To publish it in `docs/implemented-plans/`, share the intake with
+`crib intake share <id> --audience team --next "<action>"`, commit that team memory, then add
+`--team` to `intake implement`. Commit and review the generated Markdown and team memory record.
+The implementation record reports a completed plan; it does not certify release readiness.
+The MCP `memory` tool exposes the same separate lane with `op: "implementations"`. Matching
+implementations also appear in `brief` as their own budgeted group, alongside code, docs, and
+grounded claims. Results report archive integrity and whether a team archive is indexed or stale.
 
 ### What gets indexed
 

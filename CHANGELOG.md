@@ -31,6 +31,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
   HLD/LLD, launch/marketing drafts, pitch decks, the decisions log, `outputs/` and `media/` — and
   dropped the `knowledge-crib-` prefix from the remaining doc filenames. Everything removed is still
   in git history at `17e3d65f`.
+- The `crib viz` accessibility evidence read by `pnpm ui:gate` moved from `docs/audits/2026-09-23/a11y/`
+  to `docs/a11y/`, and the rerank measurement preload moved to `scripts/bench/no-rerank-preload.mjs`.
 - The rename rollback test injects its write failure through a mocked `fs` instead of `chmod`,
   so it also passes when the suite runs as root (containers).
 

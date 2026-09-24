@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import path from 'node:path';
@@ -92,6 +92,11 @@ assert.throws(
     writeFileSync(join(explicitRoot, 'knowledge-crib-chosen', 'manifest.json'), '{}\n');
     mkdirSync(join(explicitRoot, 'knowledge-crib-newer'));
     writeFileSync(join(explicitRoot, 'knowledge-crib-newer', 'manifest.json'), '{}\n');
+    // Pin the order: written microseconds apart, the two mtimes can tie on a coarse-timestamp
+    // filesystem, and a tie falls back to directory order — the hosted release gate picked 'chosen'
+    // here on 2026-09-24. The test is about the tiebreak-free case, so it states the times.
+    utimesSync(join(explicitRoot, 'knowledge-crib-chosen', 'manifest.json'), 1_000_000, 1_000_000);
+    utimesSync(join(explicitRoot, 'knowledge-crib-newer', 'manifest.json'), 2_000_000, 2_000_000);
     assert.equal(
       selectBundle({ outRoot: explicitRoot }).bundleDir,
       join(explicitRoot, 'knowledge-crib-newer'),

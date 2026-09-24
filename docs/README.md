@@ -38,5 +38,8 @@ Measured results and the frozen methodology behind every performance and quality
 [launch gates](bench/launch-gates.md), [scale curve](bench/scale-curve.md) and
 [review cost](bench/review-cost.md).
 
+Accessibility evidence for the `crib viz` UI release gate (`pnpm ui:gate`) lives in
+[`a11y/`](a11y/) — see the [assessor protocol](a11y/assessor-protocol.md).
+
 A static HTML version of this index is generated at [site/index.html](site/index.html) by
 `pnpm docs:build`.

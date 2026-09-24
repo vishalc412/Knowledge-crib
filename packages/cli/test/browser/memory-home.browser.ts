@@ -70,12 +70,16 @@ async function openMemoryView(page: import('@playwright/test').Page, tileTitle: 
 }
 
 /**
- * Opens the panel on its DEFAULT view — the lifecycle ledger, not one of the home tiles. The tabs
- * are the ledger's own marker: they exist only inside `mem.list`, which is `configured && !detail`.
+ * Opens the panel and enters the lifecycle ledger — History, since the UI remediation made Memory
+ * home the panel's default view (Phase 2). The tabs are the ledger's own marker: they exist only in
+ * History, inside `mem.list`, which is `configured && !detail`.
  */
 async function openLedger(page: import('@playwright/test').Page, url = backend.url) {
   await page.goto(url);
   await page.locator('[data-kc-memory-trigger]').click();
+  const history = page.locator('[data-kc-memory-home-action="history"]');
+  await history.waitFor({ state: 'visible', timeout: 20_000 });
+  await history.click();
   await expect(page.locator('[data-kc-mem-tab="All"]')).toBeVisible({ timeout: 20_000 });
 }
 
@@ -322,7 +326,7 @@ test.describe
         // rather than repeating the unfiltered one.
         await page.locator('[data-kc-mem-tab="Stale"]').click();
         await expect(state).toHaveText(
-          'No records match this lifecycle view. Return to All or inspect Needs review above.',
+          'No records in this lifecycle group. Choose All to see every record.',
         );
       } finally {
         await empty.dispose();
@@ -465,7 +469,8 @@ test.describe
       expect(after?.eligible).toBe(false);
       expect(after?.reasons).toContain(SEEDED.observedReason);
 
-      // 4. Continue the saved work in the same session.
+      // 4. Continue the saved work in the same session — back on Memory home, where the tiles live.
+      await page.locator('[data-kc-mem-view-back]').click();
       await page
         .locator('[data-kc-memory-home-action][title="Continue, finish or cancel saved work"]')
         .click();
@@ -504,6 +509,11 @@ test.describe
       await page.keyboard.press('Enter');
       // Opening the panel moves focus INTO it — the close control is where a keyboard user lands.
       await expect(page.locator('[data-kc-memory-close]')).toBeFocused({ timeout: 20_000 });
+      // Memory home is the default view; the lifecycle ledger is History, entered by keyboard.
+      const history = page.locator('[data-kc-memory-home-action="history"]');
+      await history.waitFor({ state: 'visible', timeout: 20_000 });
+      await history.focus();
+      await page.keyboard.press('Enter');
       await expect(page.locator('[data-kc-mem-tab="All"]')).toBeVisible({ timeout: 20_000 });
 
       // Walk forward until both a lifecycle tab and the excluded row have been reached.
@@ -554,7 +564,9 @@ test.describe
 
       const visited = { tab: false, row: false };
       let carriedPanel = false;
-      for (let i = 0; i < 40 && !(visited.tab && visited.row); i++) {
+      // A budget, not an expectation: History adds its own stops ahead of the rows (Back, the
+      // lifecycle group) and earlier tests in this file add rows, so the walk is bounded generously.
+      for (let i = 0; i < 200 && !(visited.tab && visited.row); i++) {
         await page.keyboard.press('Tab');
         const active = await settleFocus();
         expect(active.lost, `Tab ${i + 1} left focus on the document body`).toBe(false);
@@ -655,20 +667,27 @@ test.describe
           }
         }
       };
-      // The two spans this work package added, plus the §7.4 recovery line — the tile's own repair
-      // text, which sits on the same chip surface.
-      const LIST_SURFACES = [
-        '[data-kc-mem-excluded] > span',
-        '[data-kc-mem-reason]',
-        '[data-kc-mem-recovery]',
-      ];
+      // The two spans this work package added. The §7.4 recovery line — the tile's own repair text —
+      // lives on the Memory home tiles, which the UI remediation separated from the ledger, so it is
+      // measured there, after the list and the detail.
+      const LIST_SURFACES = ['[data-kc-mem-excluded] > span', '[data-kc-mem-reason]'];
       const DETAIL_SURFACES = [
         '[data-kc-mem-detail-excluded] > span',
         '[data-kc-mem-detail-reason]',
-        '[data-kc-mem-recovery]',
       ];
-      // The theme toggle carries no data attribute; it is located by its title.
-      const toggleTheme = () => page.locator('button[title="Toggle theme"]').click();
+      const HOME_SURFACES = ['[data-kc-mem-recovery]'];
+      // Memory is a modal dialog since the UI remediation (Phase 1), so the header's theme toggle is
+      // inert behind it. With no stored choice the app follows the system scheme live, so the theme
+      // is switched through the system preference instead — the panel stays open and focus stays put.
+      const toggleTheme = async () => {
+        const current = await page.locator('[data-kc-theme]').first().getAttribute('data-kc-theme');
+        const next = current === 'light' ? 'dark' : 'light';
+        await page.emulateMedia({ colorScheme: next });
+        await expect(page.locator('[data-kc-theme]').first()).toHaveAttribute(
+          'data-kc-theme',
+          next,
+        );
+      };
 
       await contrast('dark', LIST_SURFACES);
       await toggleTheme();
@@ -686,5 +705,13 @@ test.describe
       await contrast('light', DETAIL_SURFACES);
       await toggleTheme();
       await contrast('dark', DETAIL_SURFACES);
+
+      // Back to the list, then Back to Memory home, where each health tile carries its repair line.
+      await page.locator('[data-kc-mem-detail-back]').press('Enter');
+      await page.locator('[data-kc-mem-view-back]').press('Enter');
+      await expect(page.locator('[data-kc-memory-home-action="history"]')).toBeFocused();
+      await contrast('dark', HOME_SURFACES);
+      await toggleTheme();
+      await contrast('light', HOME_SURFACES);
     });
   });

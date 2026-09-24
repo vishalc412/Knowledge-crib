@@ -35,6 +35,9 @@
  * function — the clock enters only through the caller-supplied `now` port.
  */
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { type RehydratedBody, type SoulStore, rehydrateBody } from '@knowledge-crib/core';
 import type { Node } from '@knowledge-crib/soul-schema';
 import {
@@ -77,6 +80,8 @@ import {
   recordSortTime,
   supersedeDecision,
 } from './evaluator.js';
+import { type EvidenceInspectionResult, inspectEvidenceItem } from './evidence-inspection.js';
+import { contradictedForReview, quarantinedRecordIds } from './feedback.js';
 import {
   type DependencyGenerations,
   type GenerationCache,
@@ -127,8 +132,10 @@ import {
   MAX_LEDGER_PAGE,
   capClaim,
   correlateAnchors,
+  inLedgerView,
   ledgerExclusionOf,
   ledgerGroupOf,
+  reviewReasonsOf,
   standingOf,
 } from './ledger.js';
 import {
@@ -162,6 +169,7 @@ import {
   resolveStrictPrincipal,
 } from './recall.js';
 import { assertNoMemorySecrets } from './secrets.js';
+import { canonicalMemoryJson } from './serialization.js';
 import type { MemoryCollection, MemoryStore } from './store.js';
 import { TeamPrivateVisibilityError } from './store.js';
 import type { SyncObjectStore } from './sync/adapter.js';
@@ -184,10 +192,12 @@ import { type ConflictRecord, loadSyncState, saveSyncState } from './sync/queue.
 import { type SyncStageContext, stageSyncableWrite } from './sync/stage.js';
 import type {
   CaptureOutboxEntry,
+  GateReceipt,
   GraphAssertion,
   GraphEntity,
   GraphExtractionJob,
   GraphResolutionDecision,
+  ImplementationRecord,
   IntakeCheckpoint,
   IntakeRequirement,
   MemoryAlias,
@@ -207,6 +217,12 @@ import type {
 import { isMemoryRecordV2, isMemoryRecordVersioned } from './types.js';
 
 type ReadableMemoryRecord = MemoryRecord | MemoryRecordV2 | MemoryRecordV3;
+
+export interface ImplementationHit {
+  record: ImplementationRecord;
+  integrity: 'valid' | 'missing' | 'mismatch';
+  graph: 'private' | 'indexed' | 'stale' | 'unknown';
+}
 
 /** The only graph placement choices exposed to callers; repository identity is resolved server-side. */
 /** When a record was recorded: memory-2/3 transaction time, memory-1 creation time. */
@@ -1232,7 +1248,14 @@ export interface AuditRecordView {
     decisionId: string;
     source: MemorySource;
   }[];
-  feedback: readonly { at: string; signal: FeedbackSignal; actor: string; source: MemorySource }[];
+  feedback: readonly {
+    at: string;
+    signal: FeedbackSignal;
+    actor: string;
+    source: MemorySource;
+    /** the reporter's own words, when the feedback carried them (a reported concern's reason). */
+    context?: string;
+  }[];
 }
 
 export interface AuditResult {
@@ -1261,6 +1284,8 @@ export interface MemoryApiDeps {
   now?: () => string;
   /** the repo's `.crib` dir — resolves the repoId for repo-scoped capture (`readRepoId`). */
   cribDir?: string;
+  /** source checkout root for integrity checks on Git-shared implementation archives. */
+  repoRoot?: string;
   /** the soul port {@link capture} auto-anchors against (absent → capture refuses loose refs). */
   soul?: MemoryAnchorPort;
   /** fresh-revaluation ports for `search` (both must be present for a fresh evaluation). */
@@ -2376,6 +2401,209 @@ export class MemoryApi {
     return requirement;
   }
 
+  /** Persist an explicit implementation report after checking intake ownership and audience. */
+  recordImplementation(record: ImplementationRecord): ImplementationRecord {
+    const local = this.deps.stores.local;
+    if (!local) throw new Error('recording an implementation requires a local repository store');
+    const history = this.getIntake(record.intakeId);
+    if (!history || history.requirement.namespace.principalId !== this.callerPrincipal()) {
+      throw new Error('implementation intake is unknown or is not owned by this principal');
+    }
+    if (record.namespace.principalId !== this.callerPrincipal()) {
+      throw new Error('implementation principal does not match the caller');
+    }
+    if (record.namespace.projectId !== history.requirement.namespace.projectId) {
+      throw new Error('implementation project does not match the intake');
+    }
+    if (record.audience === 'team' && !history.checkpoints.some((cp) => cp.audience === 'team')) {
+      throw new Error('team implementation requires an intake already shared with the team');
+    }
+    if (history.checkpoints.some((cp) => cp.kind === 'cancelled')) {
+      throw new Error('cancelled intakes cannot be implemented');
+    }
+    const shard = local.readShard('implementations', memoryShard(record.id));
+    if (shard.errors.length > 0) {
+      throw new Error(`cannot read implementation shard: ${shard.errors.join('; ')}`);
+    }
+    const prior = shard.entries.find((entry) => entry.id === record.id) as
+      | ImplementationRecord
+      | undefined;
+    if (history.checkpoints.some((cp) => cp.kind === 'completed') && !prior) {
+      throw new Error('completed intake has no matching implementation record');
+    }
+    if (
+      prior &&
+      canonicalMemoryJson({ ...prior, recordedAt: record.recordedAt }) !==
+        canonicalMemoryJson(record)
+    ) {
+      throw new Error(`implementation ID already has different content: ${record.id}`);
+    }
+    const stable = prior ?? record;
+    local.upsertEntry('implementations', stable);
+    if (stable.audience === 'team') {
+      const team = this.deps.stores.team;
+      if (!team)
+        throw new Error('implementation is durable locally, but team store is unavailable');
+      try {
+        team.upsertEntry('implementations', stable);
+      } catch (error) {
+        throw new Error(
+          `implementation is durable locally, but team mirror failed: ${(error as Error).message}`,
+        );
+      }
+    }
+    return stable;
+  }
+
+  /** Filter by authorization and a matching terminal checkpoint before any archive is read. */
+  private implementationRows(): ImplementationRecord[] {
+    const records = new Map<string, { record: ImplementationRecord; source: 'local' | 'team' }>();
+    const intakes = this.intakeEntries();
+    const visibleIntakes = new Map(intakes.requirements.map((item) => [item.id, item]));
+    const completedByIntake = new Map<string, IntakeCheckpoint[]>();
+    for (const checkpoint of intakes.checkpoints) {
+      if (checkpoint.kind !== 'completed') continue;
+      const bucket = completedByIntake.get(checkpoint.intakeId);
+      if (bucket) bucket.push(checkpoint);
+      else completedByIntake.set(checkpoint.intakeId, [checkpoint]);
+    }
+    const teamCheckpointIds = new Set(
+      this.deps.stores.team
+        ?.readCollection('intakes')
+        .entries.filter((entry) => entry.id.startsWith('icp:'))
+        .map((entry) => entry.id) ?? [],
+    );
+    for (const [source, store] of [
+      ['team', this.deps.stores.team],
+      ['local', this.deps.stores.local],
+    ] as const) {
+      if (!store || !store.collections.includes('implementations')) continue;
+      const read = store.readCollection('implementations');
+      if (read.errors.length > 0)
+        throw new Error(`cannot read implementation store: ${read.errors.join('; ')}`);
+      for (const entry of read.entries) {
+        if (!entry.id.startsWith('impl:')) continue;
+        const record = entry as ImplementationRecord;
+        if (source === 'local' && record.namespace.principalId !== this.callerPrincipal()) continue;
+        records.set(record.id, { record, source });
+      }
+    }
+    const visible: ImplementationRecord[] = [];
+    for (const { record, source } of records.values()) {
+      if (source === 'team' && record.audience !== 'team') continue;
+      const intake = visibleIntakes.get(record.intakeId);
+      if (
+        !intake ||
+        intake.namespace.principalId !== record.namespace.principalId ||
+        intake.namespace.projectId !== record.namespace.projectId
+      )
+        continue;
+      if (
+        !(completedByIntake.get(record.intakeId) ?? []).some(
+          (cp) =>
+            cp.kind === 'completed' &&
+            cp.artifactPaths?.includes(record.archivePath) &&
+            cp.repository.head === record.headCommit &&
+            (record.namespace.principalId === this.callerPrincipal() ||
+              teamCheckpointIds.has(cp.id)),
+        )
+      )
+        continue;
+      visible.push(record);
+    }
+    return visible.sort((a, b) => a.id.localeCompare(b.id));
+  }
+
+  private implementationIndexedPaths(): Set<string> | undefined {
+    if (!this.deps.soul) return undefined;
+    return new Set(
+      this.deps.soul
+        .allNodes()
+        .map((node) => node.file)
+        .filter((path): path is string => typeof path === 'string'),
+    );
+  }
+
+  private implementationHit(
+    record: ImplementationRecord,
+    indexedPaths?: Set<string>,
+  ): ImplementationHit {
+    const archive =
+      record.audience === 'team'
+        ? this.deps.repoRoot
+          ? join(this.deps.repoRoot, record.archivePath)
+          : this.deps.cribDir
+            ? join(dirname(this.deps.cribDir), record.archivePath)
+            : undefined
+        : this.deps.stores.local
+          ? join(this.deps.stores.local.rootDir, record.archivePath)
+          : undefined;
+    let integrity: ImplementationHit['integrity'] = 'missing';
+    if (archive) {
+      try {
+        integrity =
+          createHash('sha256').update(readFileSync(archive)).digest('hex') === record.archiveSha256
+            ? 'valid'
+            : 'mismatch';
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+      }
+    }
+    const graph: ImplementationHit['graph'] =
+      record.audience === 'private'
+        ? 'private'
+        : !this.deps.soul
+          ? 'unknown'
+          : integrity === 'valid' && indexedPaths?.has(record.archivePath)
+            ? 'indexed'
+            : 'stale';
+    return { record, integrity, graph };
+  }
+
+  /** Only records joined to a matching terminal checkpoint are discoverable as implemented. */
+  listImplementations(): ImplementationHit[] {
+    const rows = this.implementationRows();
+    const indexed = rows.some((record) => record.audience === 'team')
+      ? this.implementationIndexedPaths()
+      : undefined;
+    return rows.map((record) => this.implementationHit(record, indexed));
+  }
+
+  getImplementation(id: string): ImplementationHit | undefined {
+    const record = this.implementationRows().find((item) => item.id === id);
+    return record
+      ? this.implementationHit(
+          record,
+          record.audience === 'team' ? this.implementationIndexedPaths() : undefined,
+        )
+      : undefined;
+  }
+
+  searchImplementations(query: string, limit = 20): ImplementationHit[] {
+    const words = [...new Set(query.toLocaleLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [])];
+    if (words.length === 0) return [];
+    const ranked = this.implementationRows()
+      .map((record) => ({
+        record,
+        score: words.reduce((score, word) => {
+          return (
+            score +
+            (record.summary.toLocaleLowerCase().includes(word) ? 4 : 0) +
+            (record.category.includes(word) ? 3 : 0) +
+            (record.planPath.toLocaleLowerCase().includes(word) ? 2 : 0) +
+            (record.changedPaths.some((path) => path.toLocaleLowerCase().includes(word)) ? 1 : 0)
+          );
+        }, 0),
+      }))
+      .filter(({ score }) => score > 0)
+      .sort((a, b) => b.score - a.score || a.record.id.localeCompare(b.record.id))
+      .slice(0, Math.max(0, Math.min(limit, 100)));
+    const indexed = ranked.some(({ record }) => record.audience === 'team')
+      ? this.implementationIndexedPaths()
+      : undefined;
+    return ranked.map(({ record }) => this.implementationHit(record, indexed));
+  }
+
   checkpointIntake(input: IntakeCheckpointInput): IntakeCheckpoint {
     const local = this.deps.stores.local;
     if (!local) throw new Error('checkpointing an intake requires a local repository memory store');
@@ -2924,6 +3152,51 @@ export class MemoryApi {
         this.gatherAllRecords().map((r) => r.record),
       ),
     };
+  }
+
+  // ── evidence inspection (UI remediation Phase 4) ───────────────────────────
+
+  /**
+   * Explain evidence item `index` of an authorized record, display-safe (see
+   * {@link inspectEvidenceItem}). The record resolves through the same principal-scoped
+   * {@link locate} `get()` uses, and receipts only from this API's own stores, so an inaccessible
+   * record, an out-of-range index, and a missing record are the SAME `{found: false}` — nothing
+   * about another principal's ids leaks through the difference.
+   */
+  inspectEvidence(recordId: string, index: number): EvidenceInspectionResult {
+    if (typeof recordId !== 'string' || recordId.length === 0) return { found: false };
+    const located = this.locate(recordId);
+    if (!located) return { found: false };
+    const evidence = located.record.evidence;
+    if (!Number.isInteger(index) || index < 0 || index >= evidence.length) return { found: false };
+    const item = evidence[index] as MemoryEvidence;
+    const nodes = this.deps.soul ? this.deps.soul.allNodes() : [];
+    const byId = new Map(nodes.map((n) => [n.id, n]));
+    return {
+      found: true,
+      recordId: located.record.id,
+      index,
+      total: evidence.length,
+      kind: item.kind,
+      verdict: item.verdict,
+      checkedAt: item.checkedAt,
+      ...(item.reason ? { reason: item.reason } : {}),
+      detail: inspectEvidenceItem(item, {
+        byId,
+        nodes,
+        findReceipt: (id) => this.findReceipt(id),
+      }),
+    };
+  }
+
+  /** A gate receipt by id from this API's own stores (never another principal's home). */
+  private findReceipt(id: string): GateReceipt | undefined {
+    for (const { store } of this.orderedStores()) {
+      if (!store.collections.includes('receipts')) continue;
+      const entry = this.directEntry(store, 'receipts', id);
+      if (entry && (entry as { id?: unknown }).id === id) return entry as unknown as GateReceipt;
+    }
+    return undefined;
   }
 
   // ── supersede ──────────────────────────────────────────────────────────────
@@ -3849,11 +4122,32 @@ export class MemoryApi {
       ...this.foldedVerdicts(record, source, aliasIndex, decisions, opts.revalidate === true),
     }));
     const conflicts = conflictGroups(folded).map((c) => conflictSummaryOf(c));
+    // Recorded concerns awaiting review: contradicted feedback no quarantine has settled. Gathered
+    // ONCE per projection (never per row) from the same feedback + decision pools get()/audit() read.
+    const concernSubjects = new Set(
+      contradictedForReview(
+        this.allFeedback().map((f) => f.feedback),
+        quarantinedRecordIds(decisions.map((d) => d.decision)),
+      ).map((f) => f.subject),
+    );
     // Sort-time per id, built once — a comparator calling back into the records would be O(n²).
     const sortTimeById = new Map(gatheredRecords.map((r) => [r.id, recordSortTime(r)]));
+    const newestFirst = (a: LedgerRow, b: LedgerRow) =>
+      (sortTimeById.get(b.id) ?? '').localeCompare(sortTimeById.get(a.id) ?? '') ||
+      a.id.localeCompare(b.id);
     const rows = folded
       .map((f) =>
-        this.ledgerRow(f.record, f.source, f, aliasIndex, gatheredRecords, byId, nodes, conflicts),
+        this.ledgerRow(
+          f.record,
+          f.source,
+          f,
+          aliasIndex,
+          gatheredRecords,
+          byId,
+          nodes,
+          conflicts,
+          concernSubjects,
+        ),
       )
       .sort(
         (a, b) =>
@@ -3870,7 +4164,28 @@ export class MemoryApi {
       conflicts: conflicts.length,
     };
     for (const row of rows) counts[row.group] += 1;
-    const filtered = opts.group ? rows.filter((r) => r.group === opts.group) : rows;
+    if (opts.group && opts.view) {
+      throw new Error('ledger: `group` filters History and cannot be combined with `view`');
+    }
+    // Views count and filter with ONE predicate, before pagination, so a home tile's number is
+    // always the length of the list it opens.
+    const views = {
+      active: rows.filter((r) => inLedgerView('active', r)).length,
+      needsReview: rows.filter((r) => inLedgerView('needs-review', r)).length,
+    };
+    const blocking = (r: LedgerRow) => (r.reviewReasons.some((x) => x.blocking) ? 0 : 1);
+    const view = opts.view;
+    const filtered = view
+      ? rows
+          .filter((r) => inLedgerView(view, r))
+          .sort(
+            view === 'needs-review'
+              ? (a, b) => blocking(a) - blocking(b) || newestFirst(a, b)
+              : newestFirst,
+          )
+      : opts.group
+        ? rows.filter((r) => r.group === opts.group)
+        : rows;
     const offset = Math.max(0, Math.trunc(opts.offset ?? 0));
     const limit = Math.min(
       MAX_LEDGER_PAGE,
@@ -3887,6 +4202,7 @@ export class MemoryApi {
       offset,
       limit,
       counts,
+      views,
       conflicts,
       ...(capturePolicy ? { capturePolicy } : {}),
       // The gather paths are fail-loud (a corrupt shard throws, exactly as get()/audit() do) —
@@ -3999,17 +4315,25 @@ export class MemoryApi {
     byId: ReadonlyMap<string, Node>,
     nodes: readonly Node[],
     conflicts: readonly ConflictSummary[],
+    concernSubjects: ReadonlySet<string>,
   ): LedgerRow {
     const { verdicts, pool } = folded;
+    const concern =
+      concernSubjects.has(record.id) ||
+      aliasIndex.aliasesFor(record.id).some((a) => concernSubjects.has(a.legacyId));
+    const standing = standingOf(verdicts.trust);
+    // WP5 §7.2 — ONE walk decides both: `eligible` and the clause that produced it are read off the
+    // same call, so the label a surface renders cannot disagree with the gate's own decision — and
+    // the working views (`reviewReasons`, `inLedgerView`) read this same `eligible`.
+    const excludedBy = recallExclusionClause(verdicts);
+    const eligible = excludedBy === undefined;
+    const rowConflicts = conflicts.filter((c) => c.recordIds.includes(record.id));
     const { anchors, status } = correlateAnchors(
       record as MemoryRecord | MemoryRecordV2,
       byId,
       nodes,
     );
     const isV1 = !isMemoryRecordVersioned(record);
-    // WP5 §7.2 — ONE walk decides both: `eligible` and the clause that produced it are read off the
-    // same call, so the label a surface renders cannot disagree with the gate's own decision.
-    const excludedBy = recallExclusionClause(verdicts);
     return {
       id: record.id,
       schemaVersion: record.schemaVersion,
@@ -4019,13 +4343,13 @@ export class MemoryApi {
       visibility: visibilityOf(record),
       source,
       placement: this.placementsOf(record.id),
-      standing: standingOf(verdicts.trust),
+      standing,
       evidenceVerdict: verdicts.evidence,
       applicability: verdicts.applicability,
       lifecycle: verdicts.lifecycle,
       quarantined: verdicts.quarantined,
       reasons: verdicts.reasons,
-      eligible: excludedBy === undefined,
+      eligible,
       // Mapped to the DISPLAY vocabulary here, at the one boundary where the clause becomes part of a
       // serialized row: the evaluator's clause name for the admission axis is a word Gate-0 forbids on
       // any surface a person reads, and `ledgerExclusionOf` is exhaustive, so a new clause breaks the
@@ -4044,10 +4368,20 @@ export class MemoryApi {
       supersededBy: this.supersededBy(record, aliasIndex, pool, gatheredRecords).map(
         ({ id, via, found }) => ({ id, via, found }),
       ),
-      conflicts: conflicts.filter((c) => c.recordIds.includes(record.id)),
+      conflicts: rowConflicts,
       anchors,
       anchorStatus: status,
       group: ledgerGroupOf(verdicts, status),
+      reviewReasons: reviewReasonsOf({
+        standing,
+        evidenceVerdict: verdicts.evidence,
+        applicability: verdicts.applicability,
+        lifecycle: verdicts.lifecycle,
+        quarantined: verdicts.quarantined,
+        eligible,
+        conflicts: rowConflicts,
+        concern,
+      }),
     };
   }
 
@@ -4470,6 +4804,7 @@ export class MemoryApi {
         signal: f.feedback.signal,
         actor: f.feedback.actor,
         source: f.source,
+        ...(f.feedback.context ? { context: f.feedback.context } : {}),
       }))
       .sort((a, b) => a.at.localeCompare(b.at));
     return {

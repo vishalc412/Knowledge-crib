@@ -373,6 +373,40 @@ describe('updateRepo (M6 incremental, git-anchored)', () => {
     expect(manifest.stats.incrementalSince).toBe(h1);
   });
 
+  it('indexes an explicitly included untracked Markdown file without indexing other untracked drafts', async () => {
+    await indexAndCommit();
+    mkdirSync(join(repo, 'docs'), { recursive: true });
+    writeFileSync(join(repo, 'docs', 'implemented.md'), '# Implemented plan\n');
+    writeFileSync(join(repo, 'docs', 'draft.md'), '# Unshared draft\n');
+
+    const soul = soulFor();
+    const result = await updateRepo(soul, repo, {
+      dirty: true,
+      includePaths: ['docs/implemented.md'],
+      ownership: false,
+    });
+    expect(result && 'noop' in result).toBe(false);
+    expect((result as UpdateReport).changedPaths).toContain('docs/implemented.md');
+    expect((result as UpdateReport).changedPaths).not.toContain('docs/draft.md');
+    const files = [...soulFor().iterate()].map((node) => node.file);
+    expect(files).toContain('docs/implemented.md');
+    expect(files).not.toContain('docs/draft.md');
+  });
+
+  it('rejects explicitly included ignored files', async () => {
+    await indexAndCommit();
+    writeFileSync(join(repo, '.gitignore'), 'private.md\n');
+    writeFileSync(join(repo, 'private.md'), '# Private notes\n');
+
+    await expect(
+      updateRepo(soulFor(), repo, {
+        dirty: true,
+        includePaths: ['private.md'],
+        ownership: false,
+      }),
+    ).rejects.toThrow('included path is not tracked or non-ignored untracked: private.md');
+  });
+
   it('dirty no-op still refreshes incrementalSince without moving vcsHead', async () => {
     await indexAndCommit();
     const h1 = git(repo, ['rev-parse', 'HEAD']);
