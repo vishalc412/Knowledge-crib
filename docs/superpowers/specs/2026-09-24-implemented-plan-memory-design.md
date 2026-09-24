@@ -22,7 +22,7 @@ Preflight all inputs and scan the archive for secrets before any write. Write th
 
 ## Retrieval
 
-`crib memory implementations list|get|search` and the existing memory MCP surface return implementation hits in a distinct typed group, authorized by principal and audience. Ranking uses deterministic lexical scoring first and optional local semantic scoring when available; results cite archive hashes, Git revisions, changed paths, and receipts. An implementation result is never merged into trusted claim recall as though it were a verified fact. Repository-shared Markdown is picked up by `crib update`, so `crib query`, `context`, and graph paths can find the plan and its changed code. The private archive stays outside the project code graph; its record remains searchable through private memory retrieval. Retrieval reports index lag and missing archives explicitly.
+`crib memory implementations list|get|search`, `memory({op:"implementations"})`, and a separate budgeted `brief.implementations` group return authorized implementation hits. Ranking is deterministic lexical scoring; semantic scoring can be added without mixing these reports into trusted claim recall. Results cite archive hashes, Git revisions, changed paths, and receipts. Repository-shared Markdown is picked up by `crib update`, so `crib query`, `context`, and graph paths can find the plan and its changed code. The private archive stays outside the project code graph; its record remains searchable through private memory retrieval. Retrieval reports archive integrity and a graph state of private, indexed, stale, or unknown.
 
 ## Tests and acceptance
 

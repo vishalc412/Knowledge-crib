@@ -1280,7 +1280,7 @@ export class MemoryStore {
   upsertEntries(collection: MemoryCollection, entries: MemoryEntry[]): void {
     this.assertCollection(collection);
     for (const entry of entries) {
-      if ((entry.id.startsWith('impl:')) !== (collection === 'implementations')) {
+      if (entry.id.startsWith('impl:') !== (collection === 'implementations')) {
         throw new Error('implementation records must be stored only in implementations');
       }
     }
@@ -1302,7 +1302,17 @@ export class MemoryStore {
         const existing = this.readShard(collection, shard).entries;
         const merged = new Map<string, MemoryEntry>();
         for (const e of existing) merged.set(e.id, e);
-        for (const e of incoming) merged.set(e.id, e); // replace by id
+        for (const e of incoming) {
+          const prior = merged.get(e.id);
+          if (
+            collection === 'implementations' &&
+            prior &&
+            canonicalMemoryJson(prior) !== canonicalMemoryJson(e)
+          ) {
+            throw new Error(`immutable implementation record already exists: ${e.id}`);
+          }
+          merged.set(e.id, e); // other collections retain replace-by-id behavior
+        }
         writeJsonAtomic(
           this.shardPath(collection, shard),
           serializeMemoryShard([...merged.values()]),
@@ -1640,6 +1650,14 @@ export class MemoryStore {
   private assertWritable(entry: MemoryEntry): void {
     assertValidMemoryEntry(entry as unknown as { id: string } & Record<string, unknown>);
     assertNoMemorySecrets(entry);
+    if (
+      this.init.role === 'team' &&
+      entry.id.startsWith('impl:') &&
+      'audience' in entry &&
+      entry.audience !== 'team'
+    ) {
+      throw new Error('private implementation records cannot enter team memory');
+    }
     if (
       this.init.role === 'team' &&
       isMemoryRecordVersioned(entry) &&

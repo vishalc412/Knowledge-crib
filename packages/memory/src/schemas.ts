@@ -18,9 +18,11 @@ import graphResolutionV2Schema from './schema/graph-resolution-v2.schema.json' w
   type: 'json',
 };
 import graphResolutionSchema from './schema/graph-resolution.schema.json' with { type: 'json' };
+import implementationRecordSchema from './schema/implementation-record.schema.json' with {
+  type: 'json',
+};
 import intakeCheckpointSchema from './schema/intake-checkpoint.schema.json' with { type: 'json' };
 import intakeSchema from './schema/intake.schema.json' with { type: 'json' };
-import implementationRecordSchema from './schema/implementation-record.schema.json' with { type: 'json' };
 import manifestSchema from './schema/manifest.schema.json' with { type: 'json' };
 import receiptSchema from './schema/receipt.schema.json' with { type: 'json' };
 import recordV2Schema from './schema/record-v2.schema.json' with { type: 'json' };

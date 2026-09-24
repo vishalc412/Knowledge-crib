@@ -1,5 +1,6 @@
 import Ajv from 'ajv';
 import type { ValidateFunction } from 'ajv';
+import { implementationArchivePath, implementationRecordId } from './implementation.js';
 import {
   ALIAS_SCHEMA,
   ATTEMPT_SCHEMA,
@@ -12,9 +13,9 @@ import {
   GRAPH_EXTRACTION_JOB_SCHEMA,
   GRAPH_RESOLUTION_SCHEMA,
   GRAPH_RESOLUTION_V2_SCHEMA,
+  IMPLEMENTATION_RECORD_SCHEMA,
   INTAKE_CHECKPOINT_SCHEMA,
   INTAKE_SCHEMA,
-  IMPLEMENTATION_RECORD_SCHEMA,
   MEMORY_MANIFEST_SCHEMA,
   RECEIPT_SCHEMA,
   RECORD_SCHEMA,
@@ -38,9 +39,9 @@ import type {
   GraphExtractionJob,
   GraphResolutionDecision,
   GraphResolutionDecisionV2,
+  ImplementationRecord,
   IntakeCheckpoint,
   IntakeRequirement,
-  ImplementationRecord,
   MemoryAlias,
   MemoryCandidate,
   MemoryDecision,
@@ -198,7 +199,22 @@ export function assertValidIntakeCheckpoint(checkpoint: IntakeCheckpoint): void 
 
 export function assertValidImplementationRecord(record: ImplementationRecord): void {
   const ok: boolean = validateImplementationRecordFn(record);
-  if (!ok) throw new MemorySchemaError('implementation-record', validateImplementationRecordFn.errors, record.id);
+  if (!ok)
+    throw new MemorySchemaError(
+      'implementation-record',
+      validateImplementationRecordFn.errors,
+      record.id,
+    );
+  if (record.id !== implementationRecordId(record)) {
+    throw new MemorySchemaError('implementation-record', [{ idMismatch: true }], record.id);
+  }
+  if (record.archivePath !== implementationArchivePath(record)) {
+    throw new MemorySchemaError(
+      'implementation-record',
+      [{ archivePathMismatch: true }],
+      record.id,
+    );
+  }
 }
 
 // ─── connected memory graph (WP-G1) ──────────────────────────────────────────
@@ -384,4 +400,5 @@ export function assertValidMemoryEntry(entry: { id: string } & Record<string, un
   if (!v) throw new MemorySchemaError('entry', [{ unknownIdPrefix: prefix }], entry.id);
   const ok: boolean = v.validate(entry);
   if (!ok) throw new MemorySchemaError(v.label, v.validate.errors, entry.id);
+  if (prefix === 'impl') assertValidImplementationRecord(entry as unknown as ImplementationRecord);
 }
