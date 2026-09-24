@@ -112,6 +112,17 @@ export function evalAssertion(a: GateAssertion, exitCode: number, output: string
 
 // ─── the runner ──────────────────────────────────────────────────────────────
 
+const WINDOWS_SYSTEM_ENV = ['SystemRoot', 'SystemDrive', 'windir'] as const;
+
+/** Env lookup that matches Windows semantics: names are case-insensitive there (`Path` is `PATH`). */
+function envValue(env: NodeJS.ProcessEnv, name: string): string | undefined {
+  if (env[name] !== undefined) return env[name];
+  if (process.platform !== 'win32') return undefined;
+  const lower = name.toLowerCase();
+  const key = Object.keys(env).find((k) => k.toLowerCase() === lower);
+  return key === undefined ? undefined : env[key];
+}
+
 /**
  * Run a gate profile and produce a sanitized {@link GateReceipt}. Never throws on a non-zero exit or
  * a timeout — those are valid (failed) receipts. Throws only on an unresolvable executable (no
@@ -137,7 +148,15 @@ export async function runGate(input: GateRunInput): Promise<GateRunOutcome> {
   // for that, but a child that itself shells out would; that is the profile author's call.
   const childEnv: NodeJS.ProcessEnv = {};
   for (const name of profile.permittedEnv) {
-    if (input.env[name] !== undefined) childEnv[name] = input.env[name]!;
+    const value = envValue(input.env, name);
+    if (value !== undefined) childEnv[name] = value;
+  }
+  // A Windows process cannot start without these (they locate the OS itself, not user data).
+  if (process.platform === 'win32') {
+    for (const name of WINDOWS_SYSTEM_ENV) {
+      const value = envValue(input.env, name) ?? envValue(process.env, name);
+      if (value !== undefined && childEnv[name] === undefined) childEnv[name] = value;
+    }
   }
 
   const cwd = profile.cwd ? resolve(input.repoRoot, profile.cwd) : input.repoRoot;
@@ -204,11 +223,16 @@ export class NodeGateExecPort implements GateExecPort {
   resolveExecutable(name: string, env: NodeJS.ProcessEnv): string {
     if (isAbsolute(name)) return name;
     if (name.includes('/') || name.includes('\\')) return resolve(process.cwd(), name);
-    const path = env.PATH ?? process.env.PATH ?? '';
+    const path = envValue(env, 'PATH') ?? envValue(process.env, 'PATH') ?? '';
+    // Windows binaries carry an extension (`node` is `node.exe`). Only .exe/.com: the gate spawns
+    // without a shell, which cannot launch .bat/.cmd.
+    const suffixes = process.platform === 'win32' ? ['', '.exe', '.com'] : [''];
     for (const dir of path.split(delimiter)) {
       if (!dir) continue;
-      const candidate = join(dir, name);
-      if (existsSync(candidate)) return candidate;
+      for (const suffix of suffixes) {
+        const candidate = join(dir, name + suffix);
+        if (existsSync(candidate)) return candidate;
+      }
     }
     throw new Error(`executable '${name}' not found on PATH`);
   }

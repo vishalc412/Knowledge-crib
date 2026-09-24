@@ -79,8 +79,18 @@ function stagedDir(env: NodeJS.ProcessEnv): string {
   return join(freshnessDir(env), 'staged');
 }
 
+/** Task ids are `fq:<hash>`; `:` is not a legal file-name character on Windows, so escape anything
+ *  outside a portable set (collision-free: `%` itself is escaped). */
+function taskFileName(taskId: string): string {
+  const safe = taskId.replace(
+    /[^A-Za-z0-9._-]/g,
+    (ch) => `%${ch.charCodeAt(0).toString(16).padStart(2, '0')}`,
+  );
+  return `${safe}.json`;
+}
+
 function stagedPath(env: NodeJS.ProcessEnv, taskId: string): string {
-  return join(stagedDir(env), `${taskId}.json`);
+  return join(stagedDir(env), taskFileName(taskId));
 }
 
 function writeJsonAtomic(path: string, value: unknown): void {
@@ -152,7 +162,7 @@ function cancelRequestDir(env: NodeJS.ProcessEnv): string {
 }
 
 function cancelRequestPath(env: NodeJS.ProcessEnv, taskId: string): string {
-  return join(cancelRequestDir(env), `${taskId}.json`);
+  return join(cancelRequestDir(env), taskFileName(taskId));
 }
 
 /** `crib freshness cancel` writes this; no lease is needed or taken. */

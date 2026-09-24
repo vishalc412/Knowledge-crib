@@ -36,7 +36,7 @@ describe('pkg-manager — the shared package-manager launcher (WP1.1–WP1.2)', 
     const res = resolveNpm({
       execPath: '/usr/local/bin/node',
       env: {},
-      exists: (p) => p === script,
+      exists: (p) => p.replace(/\\/g, '/') === script,
     });
     expect(res.ok).toBe(true);
     if (res.ok) expect(res.npm.source).toBe('bundled-npm');
@@ -48,7 +48,8 @@ describe('pkg-manager — the shared package-manager launcher (WP1.1–WP1.2)', 
     const res = resolveNpm({
       execPath: 'C:/Program Files/nodejs/node.exe',
       env: {},
-      exists: (p) => p === 'C:/Program Files/nodejs/node_modules/npm/bin/npm-cli.js',
+      exists: (p) =>
+        p.replace(/\\/g, '/') === 'C:/Program Files/nodejs/node_modules/npm/bin/npm-cli.js',
       platform: 'win32',
     });
     expect(res.ok).toBe(true);

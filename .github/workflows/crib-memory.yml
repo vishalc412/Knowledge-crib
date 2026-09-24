@@ -39,27 +39,26 @@ jobs:
     # the added index step re-parses the whole monorepo; 10 min left no headroom on a cold runner
     timeout-minutes: 20
     steps:
+      # Actions are pinned to full commit SHAs, like every other workflow here: an unpinned tag was
+      # refused at startup (the run failed with zero jobs).
       - name: Checkout (full history for merge-base + trusted ref)
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 0
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9.15.0
-
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
-          cache: pnpm
+
+      - name: Enable Corepack
+        run: corepack enable
 
       - name: Install
-        run: pnpm install --frozen-lockfile
+        run: corepack pnpm@9.15.0 install --frozen-lockfile
 
       - name: Build
-        run: pnpm build
+        run: corepack pnpm@9.15.0 build
 
       # `.crib/` is generated and no longer committed (4193 files that consumed GitHub's entire
       # 3000-file diff budget and hid every source change in review). `memory check` resolves the

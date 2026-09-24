@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { SoulStore, newManifest } from '@knowledge-crib/core';
 import { Verbs } from '@knowledge-crib/mcp';
 import { indexRepo } from '@knowledge-crib/pipeline';
@@ -201,7 +201,9 @@ describe('CLI runtime — archive resolution', () => {
     // The archive file itself need NOT exist on disk for read-only resolution — the registered cache
     // tree + .crib are what matter. resolveProjectRoot must trust the registry here (no stat,
     // no existsSync guard), so a `crib status /path/to/app.zip` run resolves without re-extracting.
-    registerProject('/work/app.zip', {
+    // Registry keys are resolved absolute paths (on Windows that adds a drive letter).
+    const archive = resolve('/work/app.zip');
+    registerProject(archive, {
       repoId: 'r1',
       cribDir: '/cache/crib',
       sourceRoot: '/cache/source',
@@ -209,8 +211,8 @@ describe('CLI runtime — archive resolution', () => {
       sourceFingerprint: 'sha256:abc',
       env,
     });
-    expect(resolveProjectRoot({ explicitRoot: '/work/app.zip', env })).toEqual({
-      projectKey: '/work/app.zip',
+    expect(resolveProjectRoot({ explicitRoot: archive, env })).toEqual({
+      projectKey: archive,
       repoRoot: '/cache/source',
       cribDir: '/cache/crib',
       sourceArchive: '/work/app.zip',

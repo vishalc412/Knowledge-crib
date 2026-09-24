@@ -41,8 +41,10 @@ export default defineConfig({
   server: {
     fs: {
       // realpath: on macOS tmpdir() is /var/... but ids resolve to /private/var/... — the
-      // allowlist must name the REAL path or the check denies the import.
-      allow: [realpathSync(tmpdir())],
+      // allowlist must name the REAL path or the check denies the import. On Windows tmpdir() is
+      // the 8.3 short form (RUNNER~1) and only the native realpath expands it to the long form vite
+      // resolves ids to, so all three spellings are allowed.
+      allow: [...new Set([tmpdir(), realpathSync(tmpdir()), realpathSync.native(tmpdir())])],
     },
     deps: {
       external: [/embedder\.mjs$/, /embedder\.cjs$/, /\/embed\//],

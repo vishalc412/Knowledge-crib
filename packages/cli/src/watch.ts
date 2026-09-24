@@ -23,7 +23,7 @@
  *
  * Watch mode NEVER promotes memory or runs an evaluation/enrichment provider (PRD line 373).
  */
-import { type FSWatcher, watch } from 'node:fs';
+import { type FSWatcher, realpathSync, watch } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { langForPath } from '@knowledge-crib/pipeline';
 
@@ -83,6 +83,20 @@ export interface WatchOpts {
   watchFactory?: typeof watch;
 }
 
+/**
+ * The directory to hand to fs.watch. On Windows libuv aborts the whole process (an assertion in
+ * fs-event.c) when the watched path is an 8.3 short name (`RUNNER~1`) but events arrive with the long
+ * name, so watch the native real path there. Event filenames are relative, so nothing else changes.
+ */
+function watchRoot(repoRoot: string): string {
+  if (process.platform !== 'win32') return repoRoot;
+  try {
+    return realpathSync.native(repoRoot);
+  } catch {
+    return repoRoot;
+  }
+}
+
 export class WatchMode {
   private watcher?: FSWatcher;
   private fallbackTimer?: NodeJS.Timeout;
@@ -107,7 +121,7 @@ export class WatchMode {
   async start(): Promise<void> {
     try {
       this.watcher = (this.opts.watchFactory ?? watch)(
-        this.repoRoot,
+        watchRoot(this.repoRoot),
         { recursive: true },
         (_event, filename) => {
           const rel = toRepoRelative(this.repoRoot, filename);

@@ -305,64 +305,70 @@ describe('freshness supervisor/child split — real processes', () => {
     }
   }, 60_000);
 
-  it('WP5.2: a FROZEN owner loses its lease — its late fenced activation publishes nothing and it stands down', async () => {
-    const root = registeredRoot();
-    enqueueFreshness(root, 'frozen-run', env);
-    const fixtureUrl = pathToFileURL(
-      writeRevalidateFixture({ sleepMs: 600, generation: 'gen-from-frozen-owner' }),
-    ).href;
-    const s = forkSupervisor(dir, fixtureUrl, { heartbeatMs: 50, leaseTtlMs: 300 });
-    await startSupervisor(s);
-    await vi.waitFor(
-      () => expect(readWorkerState(env)?.activeTask?.id).toBe(freshnessTaskId(root, 'frozen-run')),
-      { timeout: 5_000 },
-    );
-
-    // freeze the supervisor mid-run: timers stop, the heartbeat ages out, the CHILD keeps working
-    process.kill(s.child.pid!, 'SIGSTOP');
-    try {
-      // the child runs to completion and stages honestly (its supervisor is ALIVE, just frozen)
+  // Freezing a process needs SIGSTOP/SIGCONT, which Windows does not have.
+  it.skipIf(process.platform === 'win32')(
+    'WP5.2: a FROZEN owner loses its lease — its late fenced activation publishes nothing and it stands down',
+    async () => {
+      const root = registeredRoot();
+      enqueueFreshness(root, 'frozen-run', env);
+      const fixtureUrl = pathToFileURL(
+        writeRevalidateFixture({ sleepMs: 600, generation: 'gen-from-frozen-owner' }),
+      ).href;
+      const s = forkSupervisor(dir, fixtureUrl, { heartbeatMs: 50, leaseTtlMs: 300 });
+      await startSupervisor(s);
       await vi.waitFor(
         () =>
-          expect(readStagedResult(env, freshnessTaskId(root, 'frozen-run'))?.generation).toBe(
-            'gen-from-frozen-owner',
-          ),
-        { timeout: 10_000 },
+          expect(readWorkerState(env)?.activeTask?.id).toBe(freshnessTaskId(root, 'frozen-run')),
+        { timeout: 5_000 },
       );
 
-      // the heartbeat ages past the TTL; a successor takes over the stalled owner and completes
-      await new Promise((r) => setTimeout(r, 450));
-      const done: string[] = [];
-      const successor = new FreshnessWorker({
-        env,
-        revalidate: async (task) => {
-          done.push(task.projectRoot);
-          return { generation: 'gen-recovered' };
-        },
-        pollMs: 10,
-        heartbeatMs: 50,
-        leaseTtlMs: 300,
-      });
-      await successor.start();
+      // freeze the supervisor mid-run: timers stop, the heartbeat ages out, the CHILD keeps working
+      process.kill(s.child.pid!, 'SIGSTOP');
       try {
-        await vi.waitFor(() => expect(done).toEqual([root]), { timeout: 10_000 });
-      } finally {
-        await successor.stop();
-      }
+        // the child runs to completion and stages honestly (its supervisor is ALIVE, just frozen)
+        await vi.waitFor(
+          () =>
+            expect(readStagedResult(env, freshnessTaskId(root, 'frozen-run'))?.generation).toBe(
+              'gen-from-frozen-owner',
+            ),
+          { timeout: 10_000 },
+        );
 
-      // NOW the frozen owner resumes: its staged result arrives, but the epoch fence refuses the
-      // activation — the successor's publication is what stands, and the old owner stands down.
-      process.kill(s.child.pid!, 'SIGCONT');
-      await vi.waitFor(() => expect(s.events.some((e) => e.kind === 'superseded')).toBe(true), {
-        timeout: 10_000,
-      });
-      expect(s.events.some((e) => e.kind === 'task-done')).toBe(false);
-      expect(readPublishedGeneration(root, env)).toMatchObject({ generation: 'gen-recovered' });
-    } finally {
-      // never leave a SIGSTOPped child alive for the teardown to SIGKILL in a stopped state
-      if (s.child.exitCode === null && s.child.signalCode === null) {
+        // the heartbeat ages past the TTL; a successor takes over the stalled owner and completes
+        await new Promise((r) => setTimeout(r, 450));
+        const done: string[] = [];
+        const successor = new FreshnessWorker({
+          env,
+          revalidate: async (task) => {
+            done.push(task.projectRoot);
+            return { generation: 'gen-recovered' };
+          },
+          pollMs: 10,
+          heartbeatMs: 50,
+          leaseTtlMs: 300,
+        });
+        await successor.start();
+        try {
+          await vi.waitFor(() => expect(done).toEqual([root]), { timeout: 10_000 });
+        } finally {
+          await successor.stop();
+        }
+
+        // NOW the frozen owner resumes: its staged result arrives, but the epoch fence refuses the
+        // activation — the successor's publication is what stands, and the old owner stands down.
         process.kill(s.child.pid!, 'SIGCONT');
+        await vi.waitFor(() => expect(s.events.some((e) => e.kind === 'superseded')).toBe(true), {
+          timeout: 10_000,
+        });
+        expect(s.events.some((e) => e.kind === 'task-done')).toBe(false);
+        expect(readPublishedGeneration(root, env)).toMatchObject({ generation: 'gen-recovered' });
+      } finally {
+        // never leave a SIGSTOPped child alive for the teardown to SIGKILL in a stopped state
+        if (s.child.exitCode === null && s.child.signalCode === null) {
+          process.kill(s.child.pid!, 'SIGCONT');
+        }
       }
-    }
-  }, 60_000);
+    },
+    60_000,
+  );
 });
