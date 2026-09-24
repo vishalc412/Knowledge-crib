@@ -143,6 +143,9 @@ describe('capability manifest', () => {
       },
     });
     const tools = toolsOf(spy);
+    // Building the server reads the handoff once for the handshake instructions; that is not a
+    // routed call, and this test is about what each tool call reaches.
+    calls.length = 0;
 
     const expected: string[] = [];
     for (const cap of CAPABILITIES) {

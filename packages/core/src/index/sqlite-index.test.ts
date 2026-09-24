@@ -926,3 +926,55 @@ describe('vector text recipe is versioned (F3)', () => {
     built.close();
   });
 });
+
+describe('SqliteIndexStore.query — identifier queries resolve through the symbol table', () => {
+  it('ranks the exact qualified name first, ahead of symbols that only mention it', () => {
+    // a caller whose signature mentions "issue" many times would outrank TokenService.issue on BM25
+    const noisy = sym('src/auth/Noisy.ts', 'Noisy.handleIssue', 5, {
+      signature: 'handleIssue(issue, issue, issue): issue',
+    });
+    store.putNodes([file('src/auth/Noisy.ts'), noisy]);
+    store.commit('2026-01-01T00:00:00.000Z');
+    const idx = new SqliteIndexStore();
+    idx.buildFromSoul(store, dir);
+    expect(idx.query({ text: 'TokenService.issue' })[0]?.id).toBe(issue.id);
+    expect(idx.query({ text: 'issue', kinds: ['symbol'] })[0]?.id).toBe(issue.id);
+    expect(idx.query({ text: 'tokenservice.issue' })[0]?.id).toBe(issue.id);
+    const ids = idx.query({ text: 'issue', limit: 20 }).map((h) => h.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    idx.close();
+  });
+
+  it('prefers a non-test symbol over a same-named test helper', () => {
+    const helper = sym('src/auth/__tests__/helpers.ts', 'login', 3, { name: 'login' });
+    const real = sym('src/auth/session.ts', 'login', 7, { name: 'login' });
+    store.putNodes([helper, real]);
+    store.commit('2026-01-01T00:00:00.000Z');
+    const idx = new SqliteIndexStore();
+    idx.buildFromSoul(store, dir);
+    const ids = idx.query({ text: 'login', kinds: ['symbol'] }).map((h) => h.id);
+    expect(ids.indexOf(real.id)).toBeLessThan(ids.indexOf(helper.id));
+    idx.close();
+  });
+
+  it('sees a symbol added by an incremental delta', () => {
+    const idx = new SqliteIndexStore();
+    idx.buildFromSoul(store, dir);
+    expect(idx.query({ text: 'Refresher.rotate' })[0]?.id).not.toBe(
+      sym('src/auth/Refresher.ts', 'Refresher.rotate', 3).id,
+    );
+    const added = sym('src/auth/Refresher.ts', 'Refresher.rotate', 3);
+    idx.applyDelta({ nodes: [added], edges: [], removed: [] }, dir);
+    expect(idx.query({ text: 'Refresher.rotate' })[0]?.id).toBe(added.id);
+    idx.close();
+  });
+
+  it('leaves multi-word queries to ranking', () => {
+    const idx = new SqliteIndexStore();
+    idx.buildFromSoul(store, dir);
+    expect(idx.query({ text: 'issue a session token', kinds: ['symbol'] }).length).toBeGreaterThan(
+      0,
+    );
+    idx.close();
+  });
+});

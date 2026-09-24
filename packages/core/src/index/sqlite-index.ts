@@ -176,6 +176,23 @@ const BODY_FTS_CAP = 8192;
 /** Cache of file → split lines, so `buildFromSoul` reads each file ONCE, not once per node. */
 type FileLineCache = Map<string, string[] | undefined>;
 
+/** One row of the exact-name lookup table. */
+interface NameRow {
+  id: string;
+  kind: NodeKind;
+  name: string | null;
+  file: string | null;
+}
+
+/** "buildHandoff", "Verbs.gaps", "Foo::bar", "Pkg#Proc" — one identifier path, no spaces. */
+const IDENTIFIER_QUERY = /^[A-Za-z_$][\w$]*(?:(?:\.|::|#)[A-Za-z_$][\w$]*)*$/;
+const EXACT_NAME_MAX = 20;
+const TEST_PATH = /(^|\/)(test|tests|__tests__|spec|fixtures?)(\/|$)|\.(test|spec)\.[a-z]+$/i;
+
+function isTestPath(file: string | null): boolean {
+  return file !== null && TEST_PATH.test(file);
+}
+
 export class SqliteIndexStore implements IndexStore {
   private readonly db: DatabaseSync;
   /** When set, `buildFromSoul` embeds every node and `query` fuses BM25 ∪ vector via RRF. */
@@ -213,6 +230,10 @@ export class SqliteIndexStore implements IndexStore {
    * tables.
    */
   private stmtCache = new Map<string, StatementSync>();
+  /** Symbol-name lookup for identifier-shaped queries; see {@link exactNameHits}. */
+  private nameTable:
+    | { key: string; byName: Map<string, NameRow[]>; byQualified: Map<string, NameRow[]> }
+    | undefined;
 
   /**
    * @param path file path for the sqlite db, or ':memory:' for an ephemeral index.
@@ -342,6 +363,7 @@ export class SqliteIndexStore implements IndexStore {
       for (const id of changed.removed) {
         // `removed` carries both node ids and edge ids (see IndexDelta), hence both deletes.
         this.stmt('DELETE FROM nodes WHERE id = ?').run(id);
+        this.nameTable = undefined;
         this.deleteFtsRow(id);
         this.stmt('DELETE FROM vectors WHERE id = ?').run(id);
         this.stmt('DELETE FROM edges WHERE id = ?').run(id);
@@ -377,6 +399,106 @@ export class SqliteIndexStore implements IndexStore {
   }
 
   query(q: HybridQuery): Hit[] {
+    // An identifier-shaped query ("buildHandoff", "Verbs.gaps") names a symbol. BM25 ranks it among
+    // every body that merely mentions the word: measured selfR@1 was 33.5% for bare names against a
+    // 74.7% ambiguity ceiling. Exact symbol-table matches go first; ranked results follow, deduped.
+    const exact = this.exactNameHits(q.text, q.kinds);
+    if (exact.length === 0) return this.rankedQuery(q);
+    const limit = q.limit ?? 10;
+    const offset = q.offset ?? 0;
+    const exactIds = new Set(exact.map((h) => h.id));
+    const rest = this.rankedQuery({ ...q, limit: offset + limit + exact.length, offset: 0 }).filter(
+      (h) => !exactIds.has(h.id),
+    );
+    // Keep each channel's score direction: BM25 is lower-is-better, fused/reranked is higher.
+    const lowerIsBetter = !(q.semantic !== false && this.builtEmbedderId !== null);
+    const edge = rest[0]?.score ?? 0;
+    const placed = exact.map((h, i) => ({
+      ...h,
+      score: round5(lowerIsBetter ? edge - (exact.length - i) : edge + (exact.length - i)),
+    }));
+    return [...placed, ...rest].slice(offset, offset + limit);
+  }
+
+  /**
+   * Symbols whose qualified name, then simple name, equals an identifier-shaped query — exact case
+   * first, then case-insensitive. Within a tier: symbols before other kinds, non-test files before
+   * test files, then graph degree. Capped so a common name ("run") cannot crowd out everything else.
+   */
+  private exactNameHits(text: string, kinds?: NodeKind[]): Hit[] {
+    const t = text.trim();
+    if (t.length < 2 || !IDENTIFIER_QUERY.test(t)) return [];
+    const table = this.loadNameTable();
+    const kindSet = kinds?.length ? new Set(kinds) : undefined;
+    const seen = new Set<string>();
+    const tiers: NameRow[][] = [
+      table.byQualified.get(t) ?? [],
+      table.byName.get(t) ?? [],
+      table.byQualified.get(`~${t.toLowerCase()}`) ?? [],
+      table.byName.get(`~${t.toLowerCase()}`) ?? [],
+    ];
+    const ordered: NameRow[] = [];
+    for (const tier of tiers) {
+      const fresh = tier.filter((r) => !seen.has(r.id) && (!kindSet || kindSet.has(r.kind)));
+      if (fresh.length === 0) continue;
+      const degrees = this.degreesFor(fresh.map((r) => r.id));
+      fresh.sort(
+        (a, b) =>
+          Number(b.kind === 'symbol') - Number(a.kind === 'symbol') ||
+          Number(isTestPath(a.file)) - Number(isTestPath(b.file)) ||
+          (degrees.get(b.id) ?? 0) - (degrees.get(a.id) ?? 0) ||
+          a.id.localeCompare(b.id),
+      );
+      for (const r of fresh) {
+        seen.add(r.id);
+        ordered.push(r);
+      }
+      if (ordered.length >= EXACT_NAME_MAX) break;
+    }
+    return ordered.slice(0, EXACT_NAME_MAX).map((r) => ({
+      id: r.id,
+      kind: r.kind,
+      score: 0,
+      ...(r.name != null ? { name: r.name } : {}),
+      ...(r.file != null ? { file: r.file } : {}),
+    }));
+  }
+
+  /**
+   * Built lazily and keyed by the code generation plus the row count, so a refresh written by
+   * another process (the freshness worker) invalidates it too; this process's writes drop it.
+   */
+  private loadNameTable(): NonNullable<SqliteIndexStore['nameTable']> {
+    const count = (this.stmt('SELECT COUNT(*) AS n FROM nodes').get() as { n: number }).n;
+    const key = `${this.codeGeneration() ?? 'none'}:${count}`;
+    if (this.nameTable?.key === key) return this.nameTable;
+    const byName = new Map<string, NameRow[]>();
+    const byQualified = new Map<string, NameRow[]>();
+    const add = (m: Map<string, NameRow[]>, k: string, r: NameRow): void => {
+      const list = m.get(k);
+      if (list) list.push(r);
+      else m.set(k, [r]);
+    };
+    const rows = this.db
+      .prepare(
+        "SELECT id, kind, name, file, json_extract(json, '$.qualifiedName') AS qn FROM nodes WHERE name IS NOT NULL",
+      )
+      .all() as unknown as Array<NameRow & { qn: string | null }>;
+    for (const { qn, ...r } of rows) {
+      if (r.name) {
+        add(byName, r.name, r);
+        add(byName, `~${r.name.toLowerCase()}`, r);
+      }
+      if (qn) {
+        add(byQualified, qn, r);
+        add(byQualified, `~${qn.toLowerCase()}`, r);
+      }
+    }
+    this.nameTable = { key, byName, byQualified };
+    return this.nameTable;
+  }
+
+  private rankedQuery(q: HybridQuery): Hit[] {
     const limit = q.limit ?? 10;
     const offset = q.offset ?? 0;
     const wantSemantic = q.semantic !== false && this.builtEmbedderId !== null;
@@ -757,6 +879,7 @@ export class SqliteIndexStore implements IndexStore {
   }
 
   private insertNode(node: Node, repoRoot: string, fileCache: FileLineCache, fresh: boolean): void {
+    this.nameTable = undefined;
     this.stmt(
       'INSERT OR REPLACE INTO nodes (id, kind, name, file, json) VALUES (?, ?, ?, ?, ?)',
     ).run(node.id, node.kind, node.name ?? null, node.file ?? null, JSON.stringify(node));
@@ -923,6 +1046,7 @@ export class SqliteIndexStore implements IndexStore {
     `);
     // Every cached statement was compiled against the tables just dropped.
     this.stmtCache.clear();
+    this.nameTable = undefined;
     this.builtEmbedderId = null;
     this.builtDim = 0;
     this.indexHasVectors = false;
