@@ -7,7 +7,28 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
-Nothing yet.
+### Fixed
+
+- **Cargo workspaces with a multi-line `members` array are detected.** `members =` followed by the
+  array on later lines was ignored entirely, and keys after the closing `]` (e.g. `resolver = "2"`)
+  could be read as members. The parser now tracks the array's brackets and ignores `#` comments.
+- **`crib mcp install --ide codex` no longer writes a `#!/bin/sh` line into `.codex/config.toml`.**
+- **`crib --help`** — removed a stray `',` after the `embed setup` line and internal tracker tags,
+  and placed the `adapters` description under its own command.
+- The committed `.mcp.json`, `.gemini/settings.json` and `.codex/config.toml` pointed at one
+  developer's absolute `crib` path; they now run `crib serve .` from `PATH`.
+- `crib memory distill` no longer loads the whole soul graph only to discard it.
+
+### Changed
+
+- `noUnusedLocals` is enabled for every package; dead code it surfaced was removed, including the
+  unused Python/sentence-transformers adapter generator in `embed-setup.ts` (setup is ONNX-only).
+- Five script test suites that nothing ran (`sbom`, `license-check`, `dep-risk-check`,
+  `client-protocol-recorder`, `locate-eval`) now run in `installer:test`; `bench:graph` and
+  `bench:code-retrieval` are exposed as package scripts.
+- Rewrote the README and the docs index around the quick start and the user-facing reference.
+- The rename rollback test injects its write failure through a mocked `fs` instead of `chmod`,
+  so it also passes when the suite runs as root (containers).
 
 ## [0.1.0] - 2026-07-18
 
