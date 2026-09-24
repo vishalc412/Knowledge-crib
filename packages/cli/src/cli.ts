@@ -4961,7 +4961,13 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
       openerArgs = [url];
     }
     try {
-      spawn(opener, openerArgs, { stdio: 'ignore', detached: true }).unref();
+      const child = spawn(opener, openerArgs, { stdio: 'ignore', detached: true });
+      // A missing opener (no xdg-open on a server or container) is reported as an async 'error'
+      // event, not a throw; unhandled, it killed the server that had just started.
+      child.on('error', () => {
+        process.stderr.write(`could not open a browser (${opener}); open ${url} yourself\n`);
+      });
+      child.unref();
     } catch {
       // ignore — the URL is printed above.
     }
