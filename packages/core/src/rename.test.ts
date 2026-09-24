@@ -1,12 +1,29 @@
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { contentHash, edgeId, idFor } from '@knowledge-crib/soul-schema';
 import type { Edge, Node } from '@knowledge-crib/soul-schema';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { newManifest } from './manifest.js';
 import { applyRenamePlan, buildRenamePlan } from './rename.js';
 import { SoulStore } from './soul-store.js';
+
+// The write-failure fault to inject, named by the path suffix it targets — armed by one test only.
+// A real `writeFileSync` wraps everything except this, so the fault is the sole simulated step.
+const writeFault = vi.hoisted(() => ({ failSuffix: null as string | null }));
+
+vi.mock('node:fs', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs')>();
+  return {
+    ...actual,
+    writeFileSync: (path: Parameters<typeof actual.writeFileSync>[0], ...rest: unknown[]) => {
+      if (writeFault.failSuffix && String(path).endsWith(writeFault.failSuffix)) {
+        throw Object.assign(new Error('EACCES: simulated write failure'), { code: 'EACCES' });
+      }
+      return (actual.writeFileSync as (...args: unknown[]) => void)(path, ...rest);
+    },
+  };
+});
 
 let root: string;
 let soul: SoulStore;
@@ -222,9 +239,11 @@ describe('applyRenamePlan (G5.1)', () => {
 
   it('rolls back atomically when one write fails — the net effect is nothing changed', () => {
     const plan = planFor('verifyToken', 'checkToken', ['src/auth.ts', 'src/caller.ts']);
-    // files apply in sorted order: src/auth.ts < src/caller.ts. Make the LAST one unwritable AFTER
-    // the plan was taken (phase 1 only needs read access, so the stale check still passes).
-    chmodSync(join(root, 'src/caller.ts'), 0o444);
+    // files apply in sorted order: src/auth.ts < src/caller.ts. Fail the LAST write only, via the
+    // injected fault rather than chmod 0o444: a process running as root (this sandbox, and many
+    // CI containers) ignores permission bits entirely, so chmod cannot reliably force the write
+    // to fail — the fault forces the I/O error regardless of who is running the test.
+    writeFault.failSuffix = 'caller.ts';
     try {
       const result = applyRenamePlan(plan, root, plan.planId);
       expect(result.ok).toBe(false);
@@ -236,7 +255,7 @@ describe('applyRenamePlan (G5.1)', () => {
       expect(readFileSync(join(root, 'src/caller.ts'), 'utf8')).toContain('verifyToken');
       expect(readFileSync(join(root, 'src/auth.ts'), 'utf8')).not.toContain('checkToken');
     } finally {
-      chmodSync(join(root, 'src/caller.ts'), 0o644);
+      writeFault.failSuffix = null;
     }
   });
 
