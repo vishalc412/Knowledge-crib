@@ -171,6 +171,10 @@ describe('crib intake and session bootstrap', () => {
       git('add', '.');
       git('commit', '-qm', 'plan');
       const base = git('rev-parse', 'HEAD');
+      // Establish a real VCS anchor so implementation exercises incremental `update --dirty`
+      // rather than falling back to a full index that would find the untracked archive anyway.
+      const indexed = run(['index', '.']);
+      expect(indexed.status, indexed.stderr).toBe(0);
       writeFileSync(join(repo, 'src', 'index.ts'), 'export const value = 3;\n');
       git('add', '.');
       git('commit', '-qm', 'feature');
@@ -242,10 +246,15 @@ describe('crib intake and session bootstrap', () => {
       expect(JSON.parse(run(['memory', 'implementations', 'list', '--json']).stdout)).toEqual([]);
       const done = run(command);
       expect(done.status, done.stderr).toBe(0);
-      const record = JSON.parse(done.stdout) as { id: string; archivePath: string };
+      const record = JSON.parse(done.stdout) as {
+        id: string;
+        archivePath: string;
+        graphReport: string;
+      };
       expect(readFileSync(join(repo, record.archivePath), 'utf8')).toContain(
         '# Add shared feature',
       );
+      expect(record.graphReport).toContain(record.archivePath);
       const query = run(['query', 'Shared feature done', '--json']);
       expect(query.status, query.stderr).toBe(0);
       expect(query.stdout).toContain('implemented-plans');

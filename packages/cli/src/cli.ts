@@ -390,6 +390,7 @@ const VALUE_FLAGS = new Set([
   '--format',
   '--cwd',
   '--since',
+  '--include-path',
   // G5.1 rename (`crib rename --from X --to Y --plan-id <id>`): value-taking, and the delegated
   // `crib update --dirty` must never see them as positionals.
   '--from',
@@ -2456,6 +2457,10 @@ async function cmdUpdate(args: string[], ctx?: CmdCtx): Promise<number> {
   const sinceIdx = args.indexOf('--since');
   const since = sinceIdx >= 0 ? args[sinceIdx + 1] : undefined;
   const dirty = args.includes('--dirty');
+  const includePaths = repeatedFlag(args, '--include-path');
+  if (includePaths.length > 0 && !dirty) {
+    throw new CliUsageError('--include-path requires --dirty');
+  }
   // Archive inputs have no VCS work tree, so the git-delta knobs (`--since`/`--dirty`) are
   // meaningless. Detecting change on an archive is by fingerprint, handled below as a no-op or a
   // full re-index — never a `--since`/`--dirty` delta. Reject up front rather than silently ignoring.
@@ -2489,6 +2494,7 @@ async function cmdUpdate(args: string[], ctx?: CmdCtx): Promise<number> {
   const updateOpts: Parameters<typeof updateRepo>[2] = {
     ...(since ? { since } : {}),
     ...(dirty ? { dirty: true } : {}),
+    ...(includePaths.length > 0 ? { includePaths } : {}),
     ...(scope.packageRoots ? { packageRoots: scope.packageRoots } : {}),
   };
   // Sentinel returned from inside the lock when there is no incremental anchor: we must NOT call
@@ -6224,7 +6230,13 @@ async function cmdIntake(args: string[], ctx?: CmdCtx): Promise<number> {
       try {
         graphReport = execFileSync(
           process.execPath,
-          [fileURLToPath(import.meta.url), 'update', ...(audience === 'team' ? ['--dirty'] : [])],
+          [
+            fileURLToPath(import.meta.url),
+            'update',
+            ...(audience === 'team'
+              ? ['--dirty', '--include-path', prepared.record.archivePath]
+              : []),
+          ],
           {
             cwd: resolved.repoRoot,
             env: process.env,
@@ -10977,7 +10989,7 @@ function printHelp(): void {
       '  crib path <from> <to> [--max-hops N] [--include-llm]   shortest path',
       '  crib neighbors <id> [--rel reads] [--dir in|out|both] [--include-llm]   adjacency',
       '  crib serve [path] [--crib-dir <absolute-path>] [--watch]              run the MCP server on stdio (resolves root: arg/--cwd/KCRIB_ROOT/CLAUDE_PROJECT_DIR/walk/cwd); --watch overlays dirty/untracked files in memory so edits are queryable without dirtying .crib/graph',
-      '  crib update [path] [--crib-dir <absolute-path>] [--since <sha>] [--dirty] [--package <name>]  incremental re-extract since the VCS anchor; --dirty includes working-tree changes without advancing vcsHead; --package scopes to one package of a monorepo without advancing the shared anchor if other packages changed too',
+      '  crib update [path] [--crib-dir <absolute-path>] [--since <sha>] [--dirty] [--include-path <path>] [--package <name>]  incremental re-extract since the VCS anchor; --dirty includes tracked working-tree changes without advancing vcsHead; --include-path explicitly includes a non-ignored repo-relative file in dirty mode; --package scopes to one package of a monorepo without advancing the shared anchor if other packages changed too',
       '  crib reindex [path] [--crib-dir <absolute-path>] [--package <name|all>...]     full re-index (alias for `crib index`; --package scopes to one monorepo package)',
       '  crib migrate-graph [path] [--dry-run]     move legacy nodes/edges/llm into canonical .crib/graph',
       '  crib materialize [path]                   build derived composite graph.json + sqlite',
