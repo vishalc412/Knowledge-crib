@@ -1,11 +1,16 @@
+import { createHash } from 'node:crypto';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { SoulStore, SqliteIndexStore, newManifest } from '@knowledge-crib/core';
 import {
+  type ImplementationRecord,
   IntelligenceEventJournal,
   MemoryStore,
   __resetMemoryLockGuardForTest,
+  createIntakeCheckpoint,
+  implementationArchivePath,
+  implementationRecordId,
 } from '@knowledge-crib/memory';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { buildServer } from './server.js';
@@ -68,6 +73,68 @@ function memoryCaller() {
 }
 
 describe('MCP intake continuation operations', () => {
+  it('returns completed plans in a separate brief and memory group', async () => {
+    const callMemory = memoryCaller();
+    const created = await callMemory({
+      op: 'intake_create',
+      original: 'Build durable rocket feature',
+      outcome: 'Rocket feature complete',
+      actor: 'human:test',
+    });
+    const intakeId = created.id as string;
+    const principalId = (created.namespace as { principalId: string }).principalId;
+    const record: ImplementationRecord = {
+      id: '',
+      schemaVersion: '1',
+      namespace: { principalId, projectId: REPO_ID },
+      intakeId,
+      audience: 'private',
+      category: 'addon',
+      summary: 'Durable rocket feature',
+      planPath: 'docs/rocket-plan.md',
+      planSha256: 'a'.repeat(64),
+      baseCommit: 'b'.repeat(40),
+      headCommit: 'c'.repeat(40),
+      commits: ['c'.repeat(40)],
+      changedPaths: ['src/index.ts'],
+      patchSha256: 'd'.repeat(64),
+      archivePath: '',
+      archiveSha256: createHash('sha256').update('rocket archive').digest('hex'),
+      receiptIds: [],
+      actor: 'human:test',
+      recordedAt: NOW,
+    };
+    record.id = implementationRecordId(record);
+    record.archivePath = implementationArchivePath(record);
+    const archive = join(local.rootDir, record.archivePath);
+    mkdirSync(dirname(archive), { recursive: true });
+    writeFileSync(archive, 'rocket archive');
+    local.upsertEntry('implementations', record);
+    local.upsertEntry(
+      'intakes',
+      createIntakeCheckpoint({
+        intakeId,
+        kind: 'completed',
+        phase: 'complete',
+        summary: 'Rocket done',
+        repository: { head: record.headCommit, dirty: false },
+        artifactPaths: [record.archivePath],
+        actor: 'human:test',
+        recordedAt: NOW,
+      }),
+    );
+    const verbs = new Verbs({ soul, index, repoRoot: repo, memory: { local } });
+    expect(
+      verbs.brief({ q: 'durable rocket' }).implementations as Array<{
+        id: string;
+        integrity: string;
+      }>,
+    ).toMatchObject([{ id: record.id, integrity: 'valid' }]);
+    expect(await callMemory({ op: 'implementations', q: 'durable rocket' })).toMatchObject({
+      implementations: [{ record: { id: record.id }, integrity: 'valid' }],
+    });
+  });
+
   it('returns the prior MCP process anchor and excludes the current process activity', () => {
     const journal = new IntelligenceEventJournal({ rootDir: join(home, 'events') });
     const vcs = {

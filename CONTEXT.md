@@ -27,3 +27,11 @@ _Avoid_: Public share, device sync
 **Resume Brief**:
 The deterministic new-session view of active intake requirements, current checkpoints, repository drift, blockers, and next safe actions.
 _Avoid_: Transcript summary, automatic execution
+
+**Implemented Plan**:
+A plan that a caller explicitly associates with a completed intake and a bounded, committed Git change range. The association reports what was implemented; it does not certify release quality.
+_Avoid_: Any plan document found in the tree, a guessed match from a commit message
+
+**Implementation Record**:
+The durable, separately retrievable provenance for one implemented plan: its intake, plan digest, Git revisions, complete change archive, audience, and evidence references.
+_Avoid_: Memory claim, intake checkpoint, unverified prose summary

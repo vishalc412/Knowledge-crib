@@ -542,6 +542,7 @@ const PUBLIC_VERBS = new Set<string>([
   'memoryIntakeList',
   'memoryIntakeGet',
   'memoryIntakeShare',
+  'memoryImplementations',
 ]);
 
 export class Verbs {
@@ -2748,31 +2749,55 @@ export class Verbs {
     const memories = projection
       ? projection.memories.slice(0, limit).map((m) => this.memoryView(m, false))
       : [];
+    const implementations =
+      this.memoryApi()
+        ?.searchImplementations(args.q, 3)
+        .map(({ record, integrity, graph }) => ({
+          id: record.id,
+          intakeId: record.intakeId,
+          category: record.category,
+          summary: record.summary,
+          planPath: record.planPath,
+          headCommit: record.headCommit,
+          archivePath: record.archivePath,
+          archiveSha256: record.archiveSha256,
+          changedPaths: record.changedPaths.slice(0, 5),
+          changedPathCount: record.changedPaths.length,
+          receiptIds: record.receiptIds,
+          integrity,
+          graph,
+        })) ?? [];
     const conflicts = projection ? projection.conflicts.map((g) => this.conflictView(g)) : [];
     const memoryProvenance = projection?.provenance;
 
     // Fit the whole typed-group payload to the budget: one binary search over a tagged item stream
     // (code/instr/mem) whose serialize fn rebuilds the exact response shape, so the budget guards the
     // real on-wire size, not a proxy. The cursor resumes the CODE BM25 offset (the paged group).
-    type Tagged = { group: 'code' | 'instr' | 'mem'; view: Record<string, unknown> };
+    type Tagged = { group: 'code' | 'instr' | 'mem' | 'impl'; view: Record<string, unknown> };
     const items: Tagged[] = [
       ...codeHits.map((view) => ({ group: 'code' as const, view })),
       ...instructions.map((view) => ({ group: 'instr' as const, view })),
       ...memories.map((view) => ({ group: 'mem' as const, view })),
+      ...implementations.map((view) => ({ group: 'impl' as const, view })),
     ];
     const maxTokens = args.maxTokens === undefined ? 2000 : capMaxTokens(args.maxTokens);
     const fitted = fitTokenBudget(items, maxTokens, (prefix) => {
       // coverage + retrieval describe the candidate prefix, so the estimate counts the real
       // fixed fields the wire response carries (a low-coverage `hint` is one of them).
-      const cov = coverageOf(prefix.filter((i) => i.group !== 'mem').map((i) => i.view));
+      const cov = coverageOf(
+        prefix.filter((i) => i.group === 'code' || i.group === 'instr').map((i) => i.view),
+      );
       return JSON.stringify({
         codeHits: prefix.filter((i) => i.group === 'code').map((i) => i.view),
         instructions: prefix.filter((i) => i.group === 'instr').map((i) => i.view),
         memories: prefix.filter((i) => i.group === 'mem').map((i) => i.view),
+        implementations: prefix.filter((i) => i.group === 'impl').map((i) => i.view),
         conflicts,
         ...(memoryProvenance ? { provenance: memoryProvenance } : {}),
         coverage: cov,
-        retrieval: retrievalOf(prefix.filter((i) => i.group !== 'mem').map((i) => i.view)),
+        retrieval: retrievalOf(
+          prefix.filter((i) => i.group === 'code' || i.group === 'instr').map((i) => i.view),
+        ),
         ...lowCoverageHint(cov),
         truncated: true,
         budgetExhausted: true,
@@ -2781,12 +2806,14 @@ export class Verbs {
     const keptCode = fitted.items.filter((i) => i.group === 'code').map((i) => i.view);
     const keptInstr = fitted.items.filter((i) => i.group === 'instr').map((i) => i.view);
     const keptMem = fitted.items.filter((i) => i.group === 'mem').map((i) => i.view);
+    const keptImpl = fitted.items.filter((i) => i.group === 'impl').map((i) => i.view);
     const more = moreCode || fitted.budgetExhausted;
     const coverage = coverageOf([...keptCode, ...keptInstr]);
     const result: Record<string, unknown> = {
       codeHits: keptCode,
       instructions: keptInstr,
       memories: keptMem,
+      implementations: keptImpl,
       conflicts,
       ...(memoryProvenance ? { provenance: memoryProvenance } : {}),
       // Staged-but-unadmitted candidates matching this query. `brief` is the FIRST call the agent
@@ -3628,6 +3655,20 @@ export class Verbs {
     if (!api) return this.applyIfHash(args, { memory: 'not configured' });
     const found = api.getIntake(args.id);
     return this.applyIfHash(args, found ? { ...found } : { found: false, id: args.id });
+  }
+
+  memoryImplementations(args: { id?: string; q?: string; ifHash?: string }): Record<
+    string,
+    unknown
+  > {
+    const api = this.memoryApi();
+    if (!api) return this.applyIfHash(args, { memory: 'not configured' });
+    const items = args.id
+      ? api.getImplementation(args.id)
+      : args.q
+        ? api.searchImplementations(args.q)
+        : api.listImplementations();
+    return this.applyIfHash(args, { implementations: items });
   }
 
   memoryIntakeShare(args: {
@@ -4516,6 +4557,7 @@ export class Verbs {
       stores,
       soul: new SoulStoreAnchorPort(this.deps.soul, this.deps.repoRoot),
       cribDir: this.deps.soul.cribDir,
+      repoRoot: this.deps.repoRoot,
       ...(mem.evaluator !== undefined ? { evaluator: mem.evaluator } : {}),
       ...(mem.evalCtx !== undefined ? { evalCtx: mem.evalCtx } : {}),
       ...(mem.eventJournal !== undefined ? { eventJournal: mem.eventJournal } : {}),

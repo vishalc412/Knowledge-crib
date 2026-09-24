@@ -89,6 +89,7 @@ import {
   FileSyncObjectStore,
   type GateReceipt,
   HttpSyncObjectStore,
+  type ImplementationRecord,
   IntelligenceEventJournal,
   MemoryApi,
   type MemoryCandidate,
@@ -136,6 +137,8 @@ import {
   appendAttemptEvent,
   applyContradictedFeedback,
   applyVerifiedDecision,
+  assertNoMemorySecrets,
+  assertValidImplementationRecord,
   assertValidMemoryEntry,
   attemptEventId,
   attemptGroupId,
@@ -308,6 +311,7 @@ import {
   installHooks,
   mergeDriverFiles,
 } from './hooks.js';
+import { gitDirtyPaths, prepareImplementedPlan } from './implemented-plan.js';
 import {
   type McpIde,
   type McpScope,
@@ -394,6 +398,7 @@ const VALUE_FLAGS = new Set([
   '--format',
   '--cwd',
   '--since',
+  '--include-path',
   // G5.1 rename (`crib rename --from X --to Y --plan-id <id>`): value-taking, and the delegated
   // `crib update --dirty` must never see them as positionals.
   '--from',
@@ -2460,6 +2465,10 @@ async function cmdUpdate(args: string[], ctx?: CmdCtx): Promise<number> {
   const sinceIdx = args.indexOf('--since');
   const since = sinceIdx >= 0 ? args[sinceIdx + 1] : undefined;
   const dirty = args.includes('--dirty');
+  const includePaths = repeatedFlag(args, '--include-path');
+  if (includePaths.length > 0 && !dirty) {
+    throw new CliUsageError('--include-path requires --dirty');
+  }
   // Archive inputs have no VCS work tree, so the git-delta knobs (`--since`/`--dirty`) are
   // meaningless. Detecting change on an archive is by fingerprint, handled below as a no-op or a
   // full re-index — never a `--since`/`--dirty` delta. Reject up front rather than silently ignoring.
@@ -2493,6 +2502,7 @@ async function cmdUpdate(args: string[], ctx?: CmdCtx): Promise<number> {
   const updateOpts: Parameters<typeof updateRepo>[2] = {
     ...(since ? { since } : {}),
     ...(dirty ? { dirty: true } : {}),
+    ...(includePaths.length > 0 ? { includePaths } : {}),
     ...(scope.packageRoots ? { packageRoots: scope.packageRoots } : {}),
   };
   // Sentinel returned from inside the lock when there is no incremental anchor: we must NOT call
@@ -5968,6 +5978,7 @@ function createMemoryApi(
     stores: { team: deps.team, local: deps.local, global: deps.global },
     soul: new SoulStoreAnchorPort(soul, repoRoot),
     cribDir,
+    repoRoot,
     evaluator: deps.evaluator,
     evalCtx: deps.evalCtx,
     eventJournal: deps.eventJournal,
@@ -6045,11 +6056,11 @@ function intakeApi(ctx?: CmdCtx):
   };
 }
 
-function cmdIntake(args: string[], ctx?: CmdCtx): number {
+async function cmdIntake(args: string[], ctx?: CmdCtx): Promise<number> {
   const [sub, ...rest] = args;
   if (sub === undefined || sub === '--help' || sub === '-h') {
     process.stdout.write(
-      'usage: crib intake create|checkpoint|list|show|complete|cancel|share [options]\n',
+      'usage: crib intake create|checkpoint|list|show|complete|implement|cancel|share [options]\n',
     );
     return EXIT.OK;
   }
@@ -6131,6 +6142,198 @@ function cmdIntake(args: string[], ctx?: CmdCtx): number {
           recordedAt: new Date().toISOString(),
         }),
       );
+    }
+    if (sub === 'implement') {
+      const planPath = stringFlag(rest, '--plan')?.trim();
+      const base = stringFlag(rest, '--base')?.trim();
+      const category = stringFlag(rest, '--category')?.trim();
+      const summary = stringFlag(rest, '--summary')?.trim();
+      if (
+        !planPath ||
+        !base ||
+        !summary ||
+        !['enhancement', 'addon', 'fix', 'refactor'].includes(category ?? '')
+      ) {
+        throw new CliUsageError(
+          'usage: crib intake implement <id> --plan <markdown> --base <git-ref> --category enhancement|addon|fix|refactor --summary <text> [--receipt <id>] [--team]',
+        );
+      }
+      const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
+      const projectId = readRepoId(resolved.cribDir);
+      if (!projectId) throw new CliUsageError('repository id is unavailable — run crib index');
+      const history = api.getIntake(id);
+      if (!history || history.requirement.namespace.principalId !== principalId) {
+        throw new CliUsageError('intake is unknown or is not owned by this principal');
+      }
+      const audience: 'team' | 'private' = rest.includes('--team') ? 'team' : 'private';
+      if (audience === 'team' && !history.checkpoints.some((cp) => cp.audience === 'team')) {
+        throw new CliUsageError(
+          'team implementation requires an intake already shared with the team',
+        );
+      }
+      const local = MemoryStore.local(projectId, { repoRoot: resolved.repoRoot });
+      const team =
+        audience === 'team'
+          ? MemoryStore.team(resolved.cribDir, { repoRoot: resolved.repoRoot })
+          : undefined;
+      const receiptIds = repeatedFlag(rest, '--receipt');
+      const receipts = receiptIds.map((receiptId) => {
+        const receipt = team
+          ? (team.readCollection('receipts').entries as GateReceipt[]).find(
+              (item) => item.id === receiptId,
+            )
+          : findReceipt(local, receiptId);
+        if (!receipt)
+          throw new CliUsageError(`receipt is unavailable in the ${audience} store: ${receiptId}`);
+        return {
+          id: receipt.id,
+          runner: receipt.runner,
+          head: receipt.head,
+          exitCode: receipt.exitCode,
+          policyHash: receipt.policyHash,
+          profileHash: receipt.profileHash,
+          outputDigest: receipt.outputDigest,
+        };
+      });
+      const input = {
+        repoRoot: resolved.repoRoot,
+        intakeId: id,
+        principalId,
+        projectId,
+        planPath,
+        base,
+        category: category as 'enhancement' | 'addon' | 'fix' | 'refactor',
+        summary,
+        audience,
+        receiptIds,
+        receipts,
+        actor,
+      };
+      const previous = api
+        .listImplementations()
+        .find(
+          (hit) =>
+            hit.record.intakeId === id &&
+            hit.record.audience === audience &&
+            hit.record.category === category &&
+            hit.record.planPath === planPath &&
+            hit.integrity === 'valid',
+        );
+      if (previous) {
+        const retry = prepareImplementedPlan({ ...input, allowDirty: true });
+        if (
+          retry.record.id === previous.record.id &&
+          retry.record.archiveSha256 === previous.record.archiveSha256
+        ) {
+          return output({
+            id: previous.record.id,
+            archivePath: previous.record.archivePath,
+            baseCommit: previous.record.baseCommit,
+            headCommit: previous.record.headCommit,
+            changedPaths: previous.record.changedPaths,
+            graphUpdated: true,
+            alreadyCompleted: true,
+          });
+        }
+      }
+      // An interrupted attempt may have written the exact generated archive/record before graph
+      // refresh or checkpointing. Resume only when both content hashes match and every dirty path
+      // belongs to that generated attempt; unrelated source edits still fail the clean-tree gate.
+      const pendingRows = local
+        .readCollection('implementations')
+        .entries.filter((entry) => entry.id.startsWith('impl:')) as ImplementationRecord[];
+      let pendingPrepared: ReturnType<typeof prepareImplementedPlan> | undefined;
+      if (
+        pendingRows.some(
+          (row) =>
+            row.intakeId === id &&
+            row.namespace.principalId === principalId &&
+            row.audience === audience &&
+            row.category === category &&
+            row.planPath === planPath,
+        )
+      ) {
+        const candidate = prepareImplementedPlan({ ...input, allowDirty: true });
+        const prior = pendingRows.find(
+          (row) =>
+            row.id === candidate.record.id && row.archiveSha256 === candidate.record.archiveSha256,
+        );
+        if (prior) {
+          const generated = gitDirtyPaths(resolved.repoRoot).every(
+            (path) =>
+              path === prior.archivePath ||
+              path === '.crib/crib.json' ||
+              path === '.crib/memory/team/store.gen' ||
+              path.startsWith('.crib/graph/') ||
+              path.startsWith('.crib/memory/team/implementations/'),
+          );
+          if (generated) pendingPrepared = candidate;
+        }
+      }
+      const prepared = pendingPrepared ?? prepareImplementedPlan(input);
+      assertValidImplementationRecord(prepared.record);
+      assertNoMemorySecrets(prepared.record);
+      const archive =
+        audience === 'team'
+          ? join(resolved.repoRoot, prepared.record.archivePath)
+          : join(local.rootDir, prepared.record.archivePath);
+      if (existsSync(archive) && readFileSync(archive, 'utf8') !== prepared.markdown) {
+        throw new Error(`archive exists with different bytes: ${prepared.record.archivePath}`);
+      }
+      if (!existsSync(archive)) {
+        mkdirSync(dirname(archive), { recursive: true });
+        writeJsonAtomic(archive, prepared.markdown);
+      }
+      api.recordImplementation(prepared.record);
+      // A separate process captures the updater's normal output and exit status, leaving --json
+      // machine-readable. Team Markdown is uncommitted at this point, so include dirty paths.
+      let graphReport: string;
+      try {
+        graphReport = execFileSync(
+          process.execPath,
+          [
+            fileURLToPath(import.meta.url),
+            'update',
+            ...(audience === 'team'
+              ? ['--dirty', '--include-path', prepared.record.archivePath]
+              : []),
+          ],
+          {
+            cwd: resolved.repoRoot,
+            env: process.env,
+            encoding: 'utf8',
+            maxBuffer: 16 * 1024 * 1024,
+            stdio: ['ignore', 'pipe', 'pipe'],
+          },
+        ).trim();
+      } catch (error) {
+        const reason = error instanceof Error ? error.message : String(error);
+        throw new Error(
+          `archive and implementation record are durable; graph refresh failed; no completion checkpoint was written: ${reason}`,
+        );
+      }
+      api.checkpointIntake({
+        intakeId: id,
+        kind: 'completed',
+        phase: 'complete',
+        summary,
+        completedStepIds: [],
+        repository: currentRepositoryAnchor(resolved.repoRoot),
+        artifactPaths: [prepared.record.archivePath],
+        receiptIds: prepared.record.receiptIds,
+        actor,
+        recordedAt: new Date().toISOString(),
+      });
+      return output({
+        id: prepared.record.id,
+        archivePath: prepared.record.archivePath,
+        baseCommit: prepared.record.baseCommit,
+        headCommit: prepared.record.headCommit,
+        commits: prepared.record.commits,
+        changedPaths: prepared.record.changedPaths,
+        graphUpdated: true,
+        graphReport,
+      });
     }
     if (sub === 'cancel') {
       // Retires work that will not be finished, so it stops showing as work to resume. Like
@@ -6752,6 +6955,8 @@ async function cmdMemory(args: string[], ctx?: CmdCtx): Promise<number> {
   await ensureInstalledEmbedder();
   const [sub, ...rest] = args;
   switch (sub) {
+    case 'implementations':
+      return cmdMemoryImplementations(rest, ctx);
     case 'init':
       return cmdMemoryInit(rest, ctx);
     case 'recall':
@@ -6840,6 +7045,38 @@ async function cmdMemory(args: string[], ctx?: CmdCtx): Promise<number> {
     default:
       process.stderr.write(`unknown memory subcommand: ${sub}\n`);
       return EXIT.BAD_ARGS;
+  }
+}
+
+function cmdMemoryImplementations(args: string[], ctx?: CmdCtx): number {
+  const runtime = intakeApi(ctx);
+  if (!runtime) {
+    process.stderr.write('not indexed — run crib index first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const [sub, ...rest] = args;
+  try {
+    let result: unknown;
+    if (sub === 'list') result = runtime.api.listImplementations();
+    else if (sub === 'get') {
+      const id = positionalsOf(rest)[0];
+      if (!id) throw new CliUsageError('usage: crib memory implementations get <impl-id>');
+      result = runtime.api.getImplementation(id);
+      if (!result) throw new CliUsageError(`implementation not found: ${id}`);
+    } else if (sub === 'search') {
+      const query = positionalsOf(rest).join(' ').trim();
+      if (!query) throw new CliUsageError('usage: crib memory implementations search <query>');
+      result = runtime.api.searchImplementations(query);
+    } else {
+      throw new CliUsageError('usage: crib memory implementations list|get|search [value]');
+    }
+    process.stdout.write(
+      `${JSON.stringify(result, null, rest.includes('--json') ? 2 : undefined)}\n`,
+    );
+    return EXIT.OK;
+  } catch (error) {
+    process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+    return EXIT.BAD_ARGS;
   }
 }
 
@@ -10841,7 +11078,7 @@ function printHelp(): void {
       '  crib path <from> <to> [--max-hops N] [--include-llm]   shortest path',
       '  crib neighbors <id> [--rel reads] [--dir in|out|both] [--include-llm]   adjacency',
       '  crib serve [path] [--crib-dir <absolute-path>] [--watch]              run the MCP server on stdio (resolves root: arg/--cwd/KCRIB_ROOT/CLAUDE_PROJECT_DIR/walk/cwd); --watch overlays dirty/untracked files in memory so edits are queryable without dirtying .crib/graph',
-      '  crib update [path] [--crib-dir <absolute-path>] [--since <sha>] [--dirty] [--package <name>]  incremental re-extract since the VCS anchor; --dirty includes working-tree changes without advancing vcsHead; --package scopes to one package of a monorepo without advancing the shared anchor if other packages changed too',
+      '  crib update [path] [--crib-dir <absolute-path>] [--since <sha>] [--dirty] [--include-path <path>] [--package <name>]  incremental re-extract since the VCS anchor; --dirty includes tracked working-tree changes without advancing vcsHead; --include-path explicitly includes a non-ignored repo-relative file in dirty mode; --package scopes to one package of a monorepo without advancing the shared anchor if other packages changed too',
       '  crib reindex [path] [--crib-dir <absolute-path>] [--package <name|all>...]     full re-index (alias for `crib index`; --package scopes to one monorepo package)',
       '  crib migrate-graph [path] [--dry-run]     move legacy nodes/edges/llm into canonical .crib/graph',
       '  crib materialize [path]                   build derived composite graph.json + sqlite',
@@ -10850,8 +11087,8 @@ function printHelp(): void {
       '  crib export [--format F] [--procedure P] [--extracted-only] [--redact|--no-redact] render graph: rules|mermaid|graph.json|report|llm',
       '  crib viz [path] [--port N]               serve the offline web UI (Claude Design DC graph) + open browser',
       '  crib enrich [path] [--budget-tokens N]    semantic work queue; --next (token-packed batch) | run --provider <name> [--max-tokens N --max-batches N --concurrency N] | --auto [--provider <name>] | --save <file> | --overview | --scopes | --prune-stale [--apply]',
-      '  crib memory <init|handoff|recall|graph|backup|sync|evaluate|activate|propose|attest>   persistent memory, connected graph, recovery, sync, and trusted promotion',
-      '  crib intake <create|checkpoint|list|show|complete|share>   durable intent and continuation checkpoints',
+      '  crib memory <init|handoff|recall|implementations|graph|backup|sync|evaluate|activate|propose|attest>   persistent memory, implemented plans, and recovery',
+      '  crib intake <create|checkpoint|list|show|complete|implement|share>   durable intent and implemented-plan archives',
       '  crib session bootstrap [--json]       restore the deterministic resume brief for this project',
       '  crib audit-llm [path]                    re-verify every LLM artifact against the soul (grounding moat); exits non-zero on ungrounded/drift',
       '  crib mcp <install|list|remove> [--ide <claude|cursor|vscode|codex|windsurf|gemini|all>] [--global] [--bin <path>] [path]',

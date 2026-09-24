@@ -35,6 +35,9 @@
  * function — the clock enters only through the caller-supplied `now` port.
  */
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { type RehydratedBody, type SoulStore, rehydrateBody } from '@knowledge-crib/core';
 import type { Node } from '@knowledge-crib/soul-schema';
 import {
@@ -166,6 +169,7 @@ import {
   resolveStrictPrincipal,
 } from './recall.js';
 import { assertNoMemorySecrets } from './secrets.js';
+import { canonicalMemoryJson } from './serialization.js';
 import type { MemoryCollection, MemoryStore } from './store.js';
 import { TeamPrivateVisibilityError } from './store.js';
 import type { SyncObjectStore } from './sync/adapter.js';
@@ -193,6 +197,7 @@ import type {
   GraphEntity,
   GraphExtractionJob,
   GraphResolutionDecision,
+  ImplementationRecord,
   IntakeCheckpoint,
   IntakeRequirement,
   MemoryAlias,
@@ -212,6 +217,12 @@ import type {
 import { isMemoryRecordV2, isMemoryRecordVersioned } from './types.js';
 
 type ReadableMemoryRecord = MemoryRecord | MemoryRecordV2 | MemoryRecordV3;
+
+export interface ImplementationHit {
+  record: ImplementationRecord;
+  integrity: 'valid' | 'missing' | 'mismatch';
+  graph: 'private' | 'indexed' | 'stale' | 'unknown';
+}
 
 /** The only graph placement choices exposed to callers; repository identity is resolved server-side. */
 /** When a record was recorded: memory-2/3 transaction time, memory-1 creation time. */
@@ -1273,6 +1284,8 @@ export interface MemoryApiDeps {
   now?: () => string;
   /** the repo's `.crib` dir — resolves the repoId for repo-scoped capture (`readRepoId`). */
   cribDir?: string;
+  /** source checkout root for integrity checks on Git-shared implementation archives. */
+  repoRoot?: string;
   /** the soul port {@link capture} auto-anchors against (absent → capture refuses loose refs). */
   soul?: MemoryAnchorPort;
   /** fresh-revaluation ports for `search` (both must be present for a fresh evaluation). */
@@ -2386,6 +2399,209 @@ export class MemoryApi {
     const requirement = createIntakeRequirement(input);
     local.upsertEntry('intakes', requirement);
     return requirement;
+  }
+
+  /** Persist an explicit implementation report after checking intake ownership and audience. */
+  recordImplementation(record: ImplementationRecord): ImplementationRecord {
+    const local = this.deps.stores.local;
+    if (!local) throw new Error('recording an implementation requires a local repository store');
+    const history = this.getIntake(record.intakeId);
+    if (!history || history.requirement.namespace.principalId !== this.callerPrincipal()) {
+      throw new Error('implementation intake is unknown or is not owned by this principal');
+    }
+    if (record.namespace.principalId !== this.callerPrincipal()) {
+      throw new Error('implementation principal does not match the caller');
+    }
+    if (record.namespace.projectId !== history.requirement.namespace.projectId) {
+      throw new Error('implementation project does not match the intake');
+    }
+    if (record.audience === 'team' && !history.checkpoints.some((cp) => cp.audience === 'team')) {
+      throw new Error('team implementation requires an intake already shared with the team');
+    }
+    if (history.checkpoints.some((cp) => cp.kind === 'cancelled')) {
+      throw new Error('cancelled intakes cannot be implemented');
+    }
+    const shard = local.readShard('implementations', memoryShard(record.id));
+    if (shard.errors.length > 0) {
+      throw new Error(`cannot read implementation shard: ${shard.errors.join('; ')}`);
+    }
+    const prior = shard.entries.find((entry) => entry.id === record.id) as
+      | ImplementationRecord
+      | undefined;
+    if (history.checkpoints.some((cp) => cp.kind === 'completed') && !prior) {
+      throw new Error('completed intake has no matching implementation record');
+    }
+    if (
+      prior &&
+      canonicalMemoryJson({ ...prior, recordedAt: record.recordedAt }) !==
+        canonicalMemoryJson(record)
+    ) {
+      throw new Error(`implementation ID already has different content: ${record.id}`);
+    }
+    const stable = prior ?? record;
+    local.upsertEntry('implementations', stable);
+    if (stable.audience === 'team') {
+      const team = this.deps.stores.team;
+      if (!team)
+        throw new Error('implementation is durable locally, but team store is unavailable');
+      try {
+        team.upsertEntry('implementations', stable);
+      } catch (error) {
+        throw new Error(
+          `implementation is durable locally, but team mirror failed: ${(error as Error).message}`,
+        );
+      }
+    }
+    return stable;
+  }
+
+  /** Filter by authorization and a matching terminal checkpoint before any archive is read. */
+  private implementationRows(): ImplementationRecord[] {
+    const records = new Map<string, { record: ImplementationRecord; source: 'local' | 'team' }>();
+    const intakes = this.intakeEntries();
+    const visibleIntakes = new Map(intakes.requirements.map((item) => [item.id, item]));
+    const completedByIntake = new Map<string, IntakeCheckpoint[]>();
+    for (const checkpoint of intakes.checkpoints) {
+      if (checkpoint.kind !== 'completed') continue;
+      const bucket = completedByIntake.get(checkpoint.intakeId);
+      if (bucket) bucket.push(checkpoint);
+      else completedByIntake.set(checkpoint.intakeId, [checkpoint]);
+    }
+    const teamCheckpointIds = new Set(
+      this.deps.stores.team
+        ?.readCollection('intakes')
+        .entries.filter((entry) => entry.id.startsWith('icp:'))
+        .map((entry) => entry.id) ?? [],
+    );
+    for (const [source, store] of [
+      ['team', this.deps.stores.team],
+      ['local', this.deps.stores.local],
+    ] as const) {
+      if (!store || !store.collections.includes('implementations')) continue;
+      const read = store.readCollection('implementations');
+      if (read.errors.length > 0)
+        throw new Error(`cannot read implementation store: ${read.errors.join('; ')}`);
+      for (const entry of read.entries) {
+        if (!entry.id.startsWith('impl:')) continue;
+        const record = entry as ImplementationRecord;
+        if (source === 'local' && record.namespace.principalId !== this.callerPrincipal()) continue;
+        records.set(record.id, { record, source });
+      }
+    }
+    const visible: ImplementationRecord[] = [];
+    for (const { record, source } of records.values()) {
+      if (source === 'team' && record.audience !== 'team') continue;
+      const intake = visibleIntakes.get(record.intakeId);
+      if (
+        !intake ||
+        intake.namespace.principalId !== record.namespace.principalId ||
+        intake.namespace.projectId !== record.namespace.projectId
+      )
+        continue;
+      if (
+        !(completedByIntake.get(record.intakeId) ?? []).some(
+          (cp) =>
+            cp.kind === 'completed' &&
+            cp.artifactPaths?.includes(record.archivePath) &&
+            cp.repository.head === record.headCommit &&
+            (record.namespace.principalId === this.callerPrincipal() ||
+              teamCheckpointIds.has(cp.id)),
+        )
+      )
+        continue;
+      visible.push(record);
+    }
+    return visible.sort((a, b) => a.id.localeCompare(b.id));
+  }
+
+  private implementationIndexedPaths(): Set<string> | undefined {
+    if (!this.deps.soul) return undefined;
+    return new Set(
+      this.deps.soul
+        .allNodes()
+        .map((node) => node.file)
+        .filter((path): path is string => typeof path === 'string'),
+    );
+  }
+
+  private implementationHit(
+    record: ImplementationRecord,
+    indexedPaths?: Set<string>,
+  ): ImplementationHit {
+    const archive =
+      record.audience === 'team'
+        ? this.deps.repoRoot
+          ? join(this.deps.repoRoot, record.archivePath)
+          : this.deps.cribDir
+            ? join(dirname(this.deps.cribDir), record.archivePath)
+            : undefined
+        : this.deps.stores.local
+          ? join(this.deps.stores.local.rootDir, record.archivePath)
+          : undefined;
+    let integrity: ImplementationHit['integrity'] = 'missing';
+    if (archive) {
+      try {
+        integrity =
+          createHash('sha256').update(readFileSync(archive)).digest('hex') === record.archiveSha256
+            ? 'valid'
+            : 'mismatch';
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+      }
+    }
+    const graph: ImplementationHit['graph'] =
+      record.audience === 'private'
+        ? 'private'
+        : !this.deps.soul
+          ? 'unknown'
+          : integrity === 'valid' && indexedPaths?.has(record.archivePath)
+            ? 'indexed'
+            : 'stale';
+    return { record, integrity, graph };
+  }
+
+  /** Only records joined to a matching terminal checkpoint are discoverable as implemented. */
+  listImplementations(): ImplementationHit[] {
+    const rows = this.implementationRows();
+    const indexed = rows.some((record) => record.audience === 'team')
+      ? this.implementationIndexedPaths()
+      : undefined;
+    return rows.map((record) => this.implementationHit(record, indexed));
+  }
+
+  getImplementation(id: string): ImplementationHit | undefined {
+    const record = this.implementationRows().find((item) => item.id === id);
+    return record
+      ? this.implementationHit(
+          record,
+          record.audience === 'team' ? this.implementationIndexedPaths() : undefined,
+        )
+      : undefined;
+  }
+
+  searchImplementations(query: string, limit = 20): ImplementationHit[] {
+    const words = [...new Set(query.toLocaleLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [])];
+    if (words.length === 0) return [];
+    const ranked = this.implementationRows()
+      .map((record) => ({
+        record,
+        score: words.reduce((score, word) => {
+          return (
+            score +
+            (record.summary.toLocaleLowerCase().includes(word) ? 4 : 0) +
+            (record.category.includes(word) ? 3 : 0) +
+            (record.planPath.toLocaleLowerCase().includes(word) ? 2 : 0) +
+            (record.changedPaths.some((path) => path.toLocaleLowerCase().includes(word)) ? 1 : 0)
+          );
+        }, 0),
+      }))
+      .filter(({ score }) => score > 0)
+      .sort((a, b) => b.score - a.score || a.record.id.localeCompare(b.record.id))
+      .slice(0, Math.max(0, Math.min(limit, 100)));
+    const indexed = ranked.some(({ record }) => record.audience === 'team')
+      ? this.implementationIndexedPaths()
+      : undefined;
+    return ranked.map(({ record }) => this.implementationHit(record, indexed));
   }
 
   checkpointIntake(input: IntakeCheckpointInput): IntakeCheckpoint {

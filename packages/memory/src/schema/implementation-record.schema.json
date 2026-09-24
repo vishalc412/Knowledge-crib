@@ -1,0 +1,66 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://knowledge-crib.dev/schema/memory-1/implementation-record.schema.json",
+  "title": "ImplementationRecord",
+  "type": "object",
+  "required": [
+    "id",
+    "schemaVersion",
+    "namespace",
+    "intakeId",
+    "audience",
+    "category",
+    "summary",
+    "planPath",
+    "planSha256",
+    "baseCommit",
+    "headCommit",
+    "commits",
+    "changedPaths",
+    "patchSha256",
+    "archivePath",
+    "archiveSha256",
+    "receiptIds",
+    "actor",
+    "recordedAt"
+  ],
+  "properties": {
+    "id": { "type": "string", "pattern": "^impl:[0-9a-f]{64}$" },
+    "schemaVersion": { "const": "1" },
+    "namespace": {
+      "type": "object",
+      "required": ["principalId", "projectId"],
+      "properties": {
+        "principalId": { "type": "string", "minLength": 1 },
+        "workspaceId": { "type": "string", "minLength": 1 },
+        "projectId": { "type": "string", "minLength": 1 },
+        "agentProfileId": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "intakeId": { "type": "string", "pattern": "^intake:[0-9a-f]+$" },
+    "audience": { "enum": ["private", "team"] },
+    "category": { "enum": ["enhancement", "addon", "fix", "refactor"] },
+    "summary": { "type": "string", "minLength": 1 },
+    "planPath": { "type": "string", "minLength": 1 },
+    "planSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "baseCommit": { "type": "string", "pattern": "^[0-9a-f]{40,64}$" },
+    "headCommit": { "type": "string", "pattern": "^[0-9a-f]{40,64}$" },
+    "commits": { "type": "array", "items": { "type": "string", "pattern": "^[0-9a-f]{40,64}$" } },
+    "changedPaths": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "patchSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "archivePath": {
+      "type": "string",
+      "pattern": "^(implementations|docs/implemented-plans)/[0-9a-f]{64}\\.md$"
+    },
+    "archiveSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "receiptIds": { "type": "array", "items": { "type": "string", "pattern": "^rcpt:[0-9a-f]+$" } },
+    "actor": { "type": "string", "minLength": 1 },
+    "recordedAt": { "type": "string", "minLength": 1 }
+  },
+  "additionalProperties": false
+}
