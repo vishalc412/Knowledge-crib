@@ -24,7 +24,9 @@ jobs:
   release-gate:
     name: Release gate (ubuntu, Node 22)
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # release:verify alone takes ~26 minutes, then the semantic tier install and the browser
+    # acceptance suite run in the same job — 30 minutes cancelled the browser suite mid-run.
+    timeout-minutes: 50
 
     steps:
       - name: Checkout
