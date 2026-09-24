@@ -16,6 +16,7 @@ import {
   encryptEvent,
   genSyncKey,
   keyFingerprint,
+  keyfileProtectionVerifiable,
   resolveSyncKey,
   routeKeyFor,
 } from './crypto.js';
@@ -48,25 +49,48 @@ describe('key resolution (D7, fail closed)', () => {
     }
   });
 
-  it('falls back to a 0600 keyfile under the memory home', () => {
-    home = mkdtempSync(join(tmpdir(), 'sync-crypto-'));
-    const env = { KCRIB_MEMORY_DIR: home };
-    expect(memoryHome(env)).toBe(home);
-    const keyFile = join(home, 'sync-key');
-    writeFileSync(keyFile, `${KEY_HEX}\n`, { mode: 0o600 });
-    const resolved = resolveSyncKey({ env });
-    expect(resolved.source).toBe('keyfile');
-    expect(resolved.key.toString('hex')).toBe(KEY_HEX);
-  });
+  // POSIX only: on Windows the keyfile source is refused by design (the test below), because the
+  // mode `stat` reports there cannot express owner-only access.
+  it.skipIf(process.platform === 'win32')(
+    'falls back to a 0600 keyfile under the memory home',
+    () => {
+      home = mkdtempSync(join(tmpdir(), 'sync-crypto-'));
+      const env = { KCRIB_MEMORY_DIR: home };
+      expect(memoryHome(env)).toBe(home);
+      const keyFile = join(home, 'sync-key');
+      writeFileSync(keyFile, `${KEY_HEX}\n`, { mode: 0o600 });
+      const resolved = resolveSyncKey({ env });
+      expect(resolved.source).toBe('keyfile');
+      expect(resolved.key.toString('hex')).toBe(KEY_HEX);
+    },
+  );
 
   it('refuses an over-open keyfile (chmod 0644 is a refusal, not a warning)', () => {
     home = mkdtempSync(join(tmpdir(), 'sync-crypto-'));
     const env = { KCRIB_MEMORY_DIR: home };
     const keyFile = join(home, 'sync-key');
     writeFileSync(keyFile, KEY_HEX, { mode: 0o644 });
-    expect(() => resolveSyncKey({ env })).toThrow(/0600/);
+    expect(() => resolveSyncKey({ env })).toThrow(
+      process.platform === 'win32' ? /Windows/ : /0600/,
+    );
     // an explicit keyFile path is checked the same way
     expect(() => resolveSyncKey({ keyFile, env })).toThrow(SyncKeyError);
+  });
+
+  it('refuses any keyfile on Windows, where its protection cannot be verified, and names the env key', () => {
+    home = mkdtempSync(join(tmpdir(), 'sync-crypto-'));
+    const env = { KCRIB_MEMORY_DIR: home };
+    const keyFile = join(home, 'sync-key');
+    writeFileSync(keyFile, `${KEY_HEX}\n`, { mode: 0o600 });
+    expect(() => resolveSyncKey({ env, platform: 'win32' })).toThrow(SyncKeyError);
+    expect(() => resolveSyncKey({ env, platform: 'win32' })).toThrow(/KCRIB_SYNC_KEY/);
+    // The env key is still honoured there — it is the supported Windows path.
+    expect(
+      resolveSyncKey({ env: { ...env, KCRIB_SYNC_KEY: KEY_HEX }, platform: 'win32' }).source,
+    ).toBe('env');
+    expect(keyfileProtectionVerifiable('win32')).toBe(false);
+    expect(keyfileProtectionVerifiable('linux')).toBe(true);
+    expect(keyfileProtectionVerifiable('darwin')).toBe(true);
   });
 
   it('throws SyncKeyError when no key exists anywhere', () => {

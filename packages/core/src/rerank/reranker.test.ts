@@ -117,9 +117,11 @@ describe('reranker provisioning', () => {
     expect(rerankHomeDir({ KCRIB_RERANK_HOME: '/tmp/x' } as NodeJS.ProcessEnv)).toBe('/tmp/x');
     // The embed manifest hashes its own subtree, so a reranker written under it would break that
     // install on first use. The default path must therefore be a sibling, never a child.
+    // Built with path.join, so the expectation is too — a POSIX literal fails on Windows, where the
+    // same path is `\home\u\.crib\rerank` (CI, 2026-09-24).
     const def = rerankHomeDir({ HOME: '/home/u' } as NodeJS.ProcessEnv);
-    expect(def).toBe('/home/u/.crib/rerank');
-    expect(def.startsWith('/home/u/.crib/embed')).toBe(false);
+    expect(def).toBe(join('/home/u', '.crib', 'rerank'));
+    expect(def.startsWith(join('/home/u', '.crib', 'embed'))).toBe(false);
   });
 });
 

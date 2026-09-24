@@ -235,44 +235,69 @@ describe('crib memory backup — verified recovery workflow (F12)', () => {
 });
 
 describe('crib memory init-sync — the D5/D7 configuration surface', () => {
-  it('seeds the baseline, writes a references-only config, and syncs NOTHING', () => {
-    const rec = v1Record('loan_pkg threshold constant is 30');
-    localStore().upsertEntries('active', [rec]);
+  // POSIX only: `--gen-key` mints a keyfile, and on Windows the keyfile source is refused by design
+  // (a mode cannot express owner-only access there) — the test after this one pins that.
+  it.skipIf(process.platform === 'win32')(
+    'seeds the baseline, writes a references-only config, and syncs NOTHING',
+    () => {
+      const rec = v1Record('loan_pkg threshold constant is 30');
+      localStore().upsertEntries('active', [rec]);
 
-    const r = runJson([
-      'memory',
-      'init-sync',
-      '--scope',
-      'repo',
-      '--backend',
-      'file',
-      '--url',
-      remote,
-      '--gen-key',
-    ]);
-    expect(r.status).toBe(0);
-    expect(r.parsed.ok).toBe(true);
-    expect(r.parsed.synced).toBe(false); // D5 honesty: init-sync is bookkeeping, never a transfer
-    expect(String(r.parsed.message)).toContain('synced nothing');
-    const configPath = r.parsed.configPath as string;
-    expect(configPath).toContain(join('sync', `local-${REPO_ID}.json`));
+      const r = runJson([
+        'memory',
+        'init-sync',
+        '--scope',
+        'repo',
+        '--backend',
+        'file',
+        '--url',
+        remote,
+        '--gen-key',
+      ]);
+      expect(r.status).toBe(0);
+      expect(r.parsed.ok).toBe(true);
+      expect(r.parsed.synced).toBe(false); // D5 honesty: init-sync is bookkeeping, never a transfer
+      expect(String(r.parsed.message)).toContain('synced nothing');
+      const configPath = r.parsed.configPath as string;
+      expect(configPath).toContain(join('sync', `local-${REPO_ID}.json`));
 
-    // The config is references only: keySource + fingerprint + epoch + the backend location.
-    const config = JSON.parse(readFileSync(configPath, 'utf8')) as Record<string, unknown>;
-    expect(config.keySource).toBe('keyfile');
-    expect(typeof config.keyFingerprint).toBe('string');
-    expect(config.keyEpoch).toBe(1);
-    expect(config.backend).toEqual({ kind: 'file', url: remote });
-    // D7 — the minted key's bytes appear NOWHERE in the config.
-    const keyHex = readFileSync(join(home, 'sync-key'), 'utf8').trim();
-    expect(keyHex).toMatch(/^[0-9a-f]{64}$/);
-    expect(readFileSync(configPath, 'utf8')).not.toContain(keyHex);
-    // --gen-key mints the keyfile 0600 (owner-read/write only).
-    expect(statSync(join(home, 'sync-key')).mode & 0o777).toBe(0o600);
+      // The config is references only: keySource + fingerprint + epoch + the backend location.
+      const config = JSON.parse(readFileSync(configPath, 'utf8')) as Record<string, unknown>;
+      expect(config.keySource).toBe('keyfile');
+      expect(typeof config.keyFingerprint).toBe('string');
+      expect(config.keyEpoch).toBe(1);
+      expect(config.backend).toEqual({ kind: 'file', url: remote });
+      // D7 — the minted key's bytes appear NOWHERE in the config.
+      const keyHex = readFileSync(join(home, 'sync-key'), 'utf8').trim();
+      expect(keyHex).toMatch(/^[0-9a-f]{64}$/);
+      expect(readFileSync(configPath, 'utf8')).not.toContain(keyHex);
+      // --gen-key mints the keyfile 0600 (owner-read/write only).
+      expect(statSync(join(home, 'sync-key')).mode & 0o777).toBe(0o600);
 
-    // The remote target is untouched: init-sync never pushes (the baseline acked the record).
-    expect(existsSync(join(remote, 'manifest.json'))).toBe(false);
-  });
+      // The remote target is untouched: init-sync never pushes (the baseline acked the record).
+      expect(existsSync(join(remote, 'manifest.json'))).toBe(false);
+    },
+  );
+
+  it.runIf(process.platform === 'win32')(
+    'refuses --gen-key on Windows without writing any key material',
+    () => {
+      const r = run([
+        'memory',
+        'init-sync',
+        '--scope',
+        'repo',
+        '--backend',
+        'file',
+        '--url',
+        remote,
+        '--gen-key',
+      ]);
+      expect(r.status).not.toBe(0);
+      expect(r.stderr).toContain('KCRIB_SYNC_KEY');
+      expect(existsSync(join(home, 'sync-key'))).toBe(false);
+    },
+  );
 
   it('resolves the key from KCRIB_SYNC_KEY when no key flag is given', () => {
     const r = runJson([

@@ -1,0 +1,20 @@
+{
+  "source": "packages/cli/test/browser/large-graph-benchmark.mjs; search is timed inside the page from the input event to the DOM commit of the result count (MutationObserver), because frame polling quantizes to ~16.7 ms",
+  "method": "Interleaved A/B on the same machine and Chromium: Phase 0 (eef84d7f, 48,662 nodes) and the integrated tree (49,096 nodes / 135,463 edges), three runs of three fresh pages each",
+  "baselineHead": "eef84d7f (Phase 0)",
+  "currentHead": "claude/ui-remediation-audit",
+  "thresholdPct": 10,
+  "baseline": {
+    "pageStartupMs": 1585,
+    "searchMs": 50.2
+  },
+  "current": {
+    "pageStartupMs": 1560,
+    "searchMs": 47.5
+  },
+  "phase3": {
+    "presentationSwitchMedianMs": 85,
+    "peakRenderedResultRows": 50
+  },
+  "notes": "Earlier frame-polled figures (Phase 0 71 ms, first integrated run 80 ms) differed by one animation frame; the precise A/B shows no regression."
+}

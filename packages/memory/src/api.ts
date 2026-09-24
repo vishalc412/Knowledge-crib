@@ -77,6 +77,8 @@ import {
   recordSortTime,
   supersedeDecision,
 } from './evaluator.js';
+import { type EvidenceInspectionResult, inspectEvidenceItem } from './evidence-inspection.js';
+import { contradictedForReview, quarantinedRecordIds } from './feedback.js';
 import {
   type DependencyGenerations,
   type GenerationCache,
@@ -127,8 +129,10 @@ import {
   MAX_LEDGER_PAGE,
   capClaim,
   correlateAnchors,
+  inLedgerView,
   ledgerExclusionOf,
   ledgerGroupOf,
+  reviewReasonsOf,
   standingOf,
 } from './ledger.js';
 import {
@@ -184,6 +188,7 @@ import { type ConflictRecord, loadSyncState, saveSyncState } from './sync/queue.
 import { type SyncStageContext, stageSyncableWrite } from './sync/stage.js';
 import type {
   CaptureOutboxEntry,
+  GateReceipt,
   GraphAssertion,
   GraphEntity,
   GraphExtractionJob,
@@ -1232,7 +1237,14 @@ export interface AuditRecordView {
     decisionId: string;
     source: MemorySource;
   }[];
-  feedback: readonly { at: string; signal: FeedbackSignal; actor: string; source: MemorySource }[];
+  feedback: readonly {
+    at: string;
+    signal: FeedbackSignal;
+    actor: string;
+    source: MemorySource;
+    /** the reporter's own words, when the feedback carried them (a reported concern's reason). */
+    context?: string;
+  }[];
 }
 
 export interface AuditResult {
@@ -2926,6 +2938,51 @@ export class MemoryApi {
     };
   }
 
+  // ── evidence inspection (UI remediation Phase 4) ───────────────────────────
+
+  /**
+   * Explain evidence item `index` of an authorized record, display-safe (see
+   * {@link inspectEvidenceItem}). The record resolves through the same principal-scoped
+   * {@link locate} `get()` uses, and receipts only from this API's own stores, so an inaccessible
+   * record, an out-of-range index, and a missing record are the SAME `{found: false}` — nothing
+   * about another principal's ids leaks through the difference.
+   */
+  inspectEvidence(recordId: string, index: number): EvidenceInspectionResult {
+    if (typeof recordId !== 'string' || recordId.length === 0) return { found: false };
+    const located = this.locate(recordId);
+    if (!located) return { found: false };
+    const evidence = located.record.evidence;
+    if (!Number.isInteger(index) || index < 0 || index >= evidence.length) return { found: false };
+    const item = evidence[index] as MemoryEvidence;
+    const nodes = this.deps.soul ? this.deps.soul.allNodes() : [];
+    const byId = new Map(nodes.map((n) => [n.id, n]));
+    return {
+      found: true,
+      recordId: located.record.id,
+      index,
+      total: evidence.length,
+      kind: item.kind,
+      verdict: item.verdict,
+      checkedAt: item.checkedAt,
+      ...(item.reason ? { reason: item.reason } : {}),
+      detail: inspectEvidenceItem(item, {
+        byId,
+        nodes,
+        findReceipt: (id) => this.findReceipt(id),
+      }),
+    };
+  }
+
+  /** A gate receipt by id from this API's own stores (never another principal's home). */
+  private findReceipt(id: string): GateReceipt | undefined {
+    for (const { store } of this.orderedStores()) {
+      if (!store.collections.includes('receipts')) continue;
+      const entry = this.directEntry(store, 'receipts', id);
+      if (entry && (entry as { id?: unknown }).id === id) return entry as unknown as GateReceipt;
+    }
+    return undefined;
+  }
+
   // ── supersede ──────────────────────────────────────────────────────────────
 
   /**
@@ -3849,11 +3906,32 @@ export class MemoryApi {
       ...this.foldedVerdicts(record, source, aliasIndex, decisions, opts.revalidate === true),
     }));
     const conflicts = conflictGroups(folded).map((c) => conflictSummaryOf(c));
+    // Recorded concerns awaiting review: contradicted feedback no quarantine has settled. Gathered
+    // ONCE per projection (never per row) from the same feedback + decision pools get()/audit() read.
+    const concernSubjects = new Set(
+      contradictedForReview(
+        this.allFeedback().map((f) => f.feedback),
+        quarantinedRecordIds(decisions.map((d) => d.decision)),
+      ).map((f) => f.subject),
+    );
     // Sort-time per id, built once — a comparator calling back into the records would be O(n²).
     const sortTimeById = new Map(gatheredRecords.map((r) => [r.id, recordSortTime(r)]));
+    const newestFirst = (a: LedgerRow, b: LedgerRow) =>
+      (sortTimeById.get(b.id) ?? '').localeCompare(sortTimeById.get(a.id) ?? '') ||
+      a.id.localeCompare(b.id);
     const rows = folded
       .map((f) =>
-        this.ledgerRow(f.record, f.source, f, aliasIndex, gatheredRecords, byId, nodes, conflicts),
+        this.ledgerRow(
+          f.record,
+          f.source,
+          f,
+          aliasIndex,
+          gatheredRecords,
+          byId,
+          nodes,
+          conflicts,
+          concernSubjects,
+        ),
       )
       .sort(
         (a, b) =>
@@ -3870,7 +3948,28 @@ export class MemoryApi {
       conflicts: conflicts.length,
     };
     for (const row of rows) counts[row.group] += 1;
-    const filtered = opts.group ? rows.filter((r) => r.group === opts.group) : rows;
+    if (opts.group && opts.view) {
+      throw new Error('ledger: `group` filters History and cannot be combined with `view`');
+    }
+    // Views count and filter with ONE predicate, before pagination, so a home tile's number is
+    // always the length of the list it opens.
+    const views = {
+      active: rows.filter((r) => inLedgerView('active', r)).length,
+      needsReview: rows.filter((r) => inLedgerView('needs-review', r)).length,
+    };
+    const blocking = (r: LedgerRow) => (r.reviewReasons.some((x) => x.blocking) ? 0 : 1);
+    const view = opts.view;
+    const filtered = view
+      ? rows
+          .filter((r) => inLedgerView(view, r))
+          .sort(
+            view === 'needs-review'
+              ? (a, b) => blocking(a) - blocking(b) || newestFirst(a, b)
+              : newestFirst,
+          )
+      : opts.group
+        ? rows.filter((r) => r.group === opts.group)
+        : rows;
     const offset = Math.max(0, Math.trunc(opts.offset ?? 0));
     const limit = Math.min(
       MAX_LEDGER_PAGE,
@@ -3887,6 +3986,7 @@ export class MemoryApi {
       offset,
       limit,
       counts,
+      views,
       conflicts,
       ...(capturePolicy ? { capturePolicy } : {}),
       // The gather paths are fail-loud (a corrupt shard throws, exactly as get()/audit() do) —
@@ -3999,17 +4099,25 @@ export class MemoryApi {
     byId: ReadonlyMap<string, Node>,
     nodes: readonly Node[],
     conflicts: readonly ConflictSummary[],
+    concernSubjects: ReadonlySet<string>,
   ): LedgerRow {
     const { verdicts, pool } = folded;
+    const concern =
+      concernSubjects.has(record.id) ||
+      aliasIndex.aliasesFor(record.id).some((a) => concernSubjects.has(a.legacyId));
+    const standing = standingOf(verdicts.trust);
+    // WP5 §7.2 — ONE walk decides both: `eligible` and the clause that produced it are read off the
+    // same call, so the label a surface renders cannot disagree with the gate's own decision — and
+    // the working views (`reviewReasons`, `inLedgerView`) read this same `eligible`.
+    const excludedBy = recallExclusionClause(verdicts);
+    const eligible = excludedBy === undefined;
+    const rowConflicts = conflicts.filter((c) => c.recordIds.includes(record.id));
     const { anchors, status } = correlateAnchors(
       record as MemoryRecord | MemoryRecordV2,
       byId,
       nodes,
     );
     const isV1 = !isMemoryRecordVersioned(record);
-    // WP5 §7.2 — ONE walk decides both: `eligible` and the clause that produced it are read off the
-    // same call, so the label a surface renders cannot disagree with the gate's own decision.
-    const excludedBy = recallExclusionClause(verdicts);
     return {
       id: record.id,
       schemaVersion: record.schemaVersion,
@@ -4019,13 +4127,13 @@ export class MemoryApi {
       visibility: visibilityOf(record),
       source,
       placement: this.placementsOf(record.id),
-      standing: standingOf(verdicts.trust),
+      standing,
       evidenceVerdict: verdicts.evidence,
       applicability: verdicts.applicability,
       lifecycle: verdicts.lifecycle,
       quarantined: verdicts.quarantined,
       reasons: verdicts.reasons,
-      eligible: excludedBy === undefined,
+      eligible,
       // Mapped to the DISPLAY vocabulary here, at the one boundary where the clause becomes part of a
       // serialized row: the evaluator's clause name for the admission axis is a word Gate-0 forbids on
       // any surface a person reads, and `ledgerExclusionOf` is exhaustive, so a new clause breaks the
@@ -4044,10 +4152,20 @@ export class MemoryApi {
       supersededBy: this.supersededBy(record, aliasIndex, pool, gatheredRecords).map(
         ({ id, via, found }) => ({ id, via, found }),
       ),
-      conflicts: conflicts.filter((c) => c.recordIds.includes(record.id)),
+      conflicts: rowConflicts,
       anchors,
       anchorStatus: status,
       group: ledgerGroupOf(verdicts, status),
+      reviewReasons: reviewReasonsOf({
+        standing,
+        evidenceVerdict: verdicts.evidence,
+        applicability: verdicts.applicability,
+        lifecycle: verdicts.lifecycle,
+        quarantined: verdicts.quarantined,
+        eligible,
+        conflicts: rowConflicts,
+        concern,
+      }),
     };
   }
 
@@ -4470,6 +4588,7 @@ export class MemoryApi {
         signal: f.feedback.signal,
         actor: f.feedback.actor,
         source: f.source,
+        ...(f.feedback.context ? { context: f.feedback.context } : {}),
       }))
       .sort((a, b) => a.at.localeCompare(b.at));
     return {
