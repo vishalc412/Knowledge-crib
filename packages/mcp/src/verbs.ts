@@ -546,6 +546,24 @@ const PUBLIC_VERBS = new Set<string>([
 ]);
 
 /**
+ * A signature as an agent needs it: one line, no comments. Extractors capture the declaration's
+ * text span, which for a parameter object can include JSDoc and line comments across a dozen lines
+ * (MemoryApi.handoff's "signature" was ~180 tokens of prose) — repeated in every caller and callee.
+ */
+export function compactSignature(signature: string): string {
+  const flat = signature
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .replace(/\/\/[^\n]*/g, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/([({[<]) /g, '$1')
+    .replace(/ ([)}\]>,;])/g, '$1')
+    .trim();
+  return flat.length > SIGNATURE_MAX_CHARS ? `${flat.slice(0, SIGNATURE_MAX_CHARS - 1)}…` : flat;
+}
+
+const SIGNATURE_MAX_CHARS = 240;
+
+/**
  * One page of each list: `limit` rows from `offset`, plus where the next page starts. Without a
  * `limit` the lists pass through whole (CLI and internal callers that need everything).
  */
@@ -2158,7 +2176,7 @@ export class Verbs {
         ...(node?.name ? { name: node.name } : {}),
         ...(node?.kind ? { kind: node.kind } : {}),
         ...(node?.file ? { file: node.file } : {}),
-        ...(node?.signature ? { signature: node.signature } : {}),
+        ...(node?.signature ? { signature: compactSignature(node.signature) } : {}),
         callers: affected.map((a) => ({ id: a.id, risk: a.risk })),
       };
       if (affected.length === 0) {
@@ -2691,7 +2709,7 @@ export class Verbs {
       id,
       ...(n.name ? { name: n.name } : {}),
       ...(n.qualifiedName ? { qualifiedName: n.qualifiedName } : {}),
-      ...(n.signature ? { signature: n.signature } : {}),
+      ...(n.signature ? { signature: compactSignature(n.signature) } : {}),
       ...(n.type ? { type: n.type } : {}),
       ...(n.file ? { file: n.file } : {}),
       ...(n.span ? { line: n.span.start } : {}),
@@ -5085,7 +5103,7 @@ export class Verbs {
     if (n.type) out.type = n.type;
     if (n.name) out.name = n.name;
     if (n.qualifiedName) out.qualifiedName = n.qualifiedName;
-    if (n.signature) out.signature = n.signature;
+    if (n.signature) out.signature = compactSignature(n.signature);
     if (n.lang) out.lang = n.lang;
     if (n.file) out.file = n.file;
     if (n.span) out.span = n.span;
@@ -5367,7 +5385,8 @@ function askToMarkdown(result: Record<string, unknown>): string {
       parts.push('');
       if (node.file) parts.push(`- **file:** ${node.file}`);
       if (node.kind) parts.push(`- **kind:** ${node.kind}`);
-      if (node.signature) parts.push(`- **signature:** \`${node.signature}\``);
+      if (node.signature)
+        parts.push(`- **signature:** \`${compactSignature(String(node.signature))}\``);
       parts.push('');
 
       const src = (ctx?.source as { text?: string } | undefined)?.text;
