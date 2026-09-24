@@ -27,7 +27,7 @@
  * byte-identical (the gate could diff, but a substring freshness check on the embedded stats is
  * enough and cheaper).
  */
-import { mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -65,25 +65,6 @@ const orphanMd = readdirSync(DOCS)
   .filter((f) => !indexedHrefs.has(f))
   .sort();
 
-// --- the two showcase/guide HTML docs as first-class entries --------------------------------
-const htmlDocs = [
-  'knowledge-crib-user-guide.html',
-  'knowledge-crib-guide.html',
-  'knowledge-crib-showcase.html',
-]
-  .filter((f) => {
-    try {
-      return statSync(join(DOCS, f)).isFile();
-    } catch {
-      return false;
-    }
-  })
-  .map((f) => {
-    const src = readFileSync(join(DOCS, f), 'utf8');
-    const t = src.match(/<title>([^<]*)<\/title>/i);
-    return { href: f, title: t ? t[1].trim() : f, desc: 'Standalone HTML doc' };
-  });
-
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 // Descriptions are lifted VERBATIM from the docs/README.md table, so they are markdown, not text:
@@ -105,15 +86,6 @@ const navRows = indexRows
   .map(
     (r) =>
       `        <li><span class="num">${esc(r.num)}</span> <a href="../${esc(r.href)}">${esc(
-        r.title,
-      )}</a> — <span class="desc">${inline(r.desc)}</span></li>`,
-  )
-  .join('\n');
-
-const htmlRows = htmlDocs
-  .map(
-    (r) =>
-      `        <li><span class="num">★</span> <a href="../${esc(r.href)}">${esc(
         r.title,
       )}</a> — <span class="desc">${inline(r.desc)}</span></li>`,
   )
@@ -181,10 +153,6 @@ ${statsRows}
 ${navRows}
   </ul>
 
-  <h2>Standalone HTML docs</h2>
-  <ul class="docs">
-${htmlRows}
-  </ul>
 ${
   orphanMd.length
     ? `  <h2>Not in the curated index</h2>\n  <ul class="orphans">\n${orphanRows}\n  </ul>\n`
@@ -202,5 +170,5 @@ writeFileSync(OUT, html);
 const pkgCount = (stats.packages ?? '').match(/^(\d+)/)?.[1] ?? '?';
 const langCount = (stats['parser languages'] ?? '').match(/^(\d+)/)?.[1] ?? '?';
 process.stdout.write(
-  `docs:build — wrote ${OUT} (${indexRows.length} indexed docs, ${htmlDocs.length} HTML, ${orphanMd.length} orphans, ${pkgCount} packages, ${langCount} langs)\n`,
+  `docs:build — wrote ${OUT} (${indexRows.length} indexed docs, ${orphanMd.length} orphans, ${pkgCount} packages, ${langCount} langs)\n`,
 );

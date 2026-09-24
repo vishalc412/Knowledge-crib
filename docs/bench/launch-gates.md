@@ -132,8 +132,6 @@ node --input-type=module -e \
 # CI: the invariant + structural tests run at LAUNCH_SCALE_CI (~0.4 of scale) inside <1s
 corepack pnpm@9.15.0 --filter @knowledge-crib/memory exec vitest run src/bench/launch-eval.test.ts
 
-# cross-vendor comparison (same corpus; see §8)
-node scripts/launch-vendor-compare.mjs [--crib-only | --vendor mem0|graphiti|letta | --json]
 ```
 
 The eval is deterministic: rankings and every scored number are byte-identical run to run; no
@@ -212,23 +210,12 @@ earlier full-scale run WITH the violations in place measured G2 at **9.2%** and 
 the 9.2% was inflated by the very token collisions the invariant forbids, which is why the clean
 number is the one above and both are published.
 
-### Cross-vendor comparison (scripts/launch-vendor-compare.mjs)
+### Cross-vendor comparison
 
-Adapters for **Mem0**, **Graphiti**, and **Letta** are committed and wired to their documented
-REST surfaces (credential detection via `MEM0_API_KEY` / `GRAPHITI_BASE_URL` / `LETTA_API_KEY` +
-optional CLIs via `which`). Availability on this operator machine at deciding time:
+Not measured. A comparison harness for Mem0, Graphiti and Letta was written but never ran against a
+vendor (no credentials were available), so it was removed; it remains in git history at `17e3d65f`
+(`scripts/launch-vendor-compare.mjs`). The launch gate stands on its own frozen numbers.
 
-| vendor | status | detail |
-| --- | --- | --- |
-| mem0 | ABSENT | no `MEM0_API_KEY`, no `mem0` CLI on PATH |
-| graphiti | ABSENT | no `GRAPHITI_BASE_URL`, no `graphiti` CLI on PATH |
-| letta | ABSENT | no `LETTA_API_KEY`, no `letta` CLI on PATH |
-
-Per the honesty rule, absent vendors are reported as **"vendor unversioned/absent — comparison
-pending operator credentials"** and are never scored as zero; when credentials exist the same
-corpus runs through the vendor adapter with measured latency and a null cost placeholder until
-the vendor's own usage response supplies pricing. The comparison was therefore **not measured
-today** — the launch gate stands on its own frozen numbers.
 ---
 
 ## RE-MEASURED with the R2-selected ranker (2026-09-04)

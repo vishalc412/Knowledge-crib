@@ -2,7 +2,7 @@
  * capabilities-check — the Gate 1.4 single-capability-manifest gate.
  *
  * Closes the "7-wrong-verb-counts" hole: the tool/operation counts used to live only in prose
- * (docs/knowledge-crib-mcp-api.md) and in hand-maintained name arrays, so each surface change left
+ * (docs/mcp-api.md) and in hand-maintained name arrays, so each surface change left
  * a doc lying with nobody failing a build. Now packages/mcp/src/capabilities.ts is the ONE list —
  * server registration derives its op enums from it and validates the registered names against it
  * (buildServer throws on mismatch), and this gate regenerates the counts FROM the manifest and
@@ -13,7 +13,7 @@
  *   (2) the registered surface (what a client's tools/list would show) === the manifest's tools —
  *       buildServer's own assertion already throws on drift, this re-asserts it through the built
  *       dist the way a release actually ships;
- *   (3) every "N tools / M operations" figure stated in docs/knowledge-crib-mcp-api.md equals the
+ *   (3) every "N tools / M operations" figure stated in docs/mcp-api.md equals the
  *       manifest-derived TOOL_COUNT / OPERATION_COUNT — and at least one figure is stated, so
  *       deleting the count from the doc is a failure, not a loophole.
  *   (4) the client capture-lane matrix (G2.1, packages/cli/src/adapters.ts) is internally
@@ -61,20 +61,20 @@ if (registered.length !== expected.length || registered.some((n, i) => n !== exp
 }
 
 // (3) the count-bearing doc must state the manifest-derived counts, everywhere it states any.
-const DOC_PATH = join(REPO, 'docs', 'knowledge-crib-mcp-api.md');
+const DOC_PATH = join(REPO, 'docs', 'mcp-api.md');
 const doc = readFileSync(DOC_PATH, 'utf8');
 const COUNT_RE = /(\d+) tools \/ (\d+) operations/g;
 const stated = [...doc.matchAll(COUNT_RE)];
 if (stated.length === 0) {
   fail(
-    `docs/knowledge-crib-mcp-api.md states no "N tools / M operations" figure — the surface counts must be stated there and pinned to the manifest`,
+    `docs/mcp-api.md states no "N tools / M operations" figure — the surface counts must be stated there and pinned to the manifest`,
   );
 }
 for (const match of stated) {
   const [, tools, operations] = match;
   if (Number(tools) !== TOOL_COUNT || Number(operations) !== OPERATION_COUNT) {
     fail(
-      `docs/knowledge-crib-mcp-api.md states "${tools} tools / ${operations} operations" but the capability manifest derives ${TOOL_COUNT} tools / ${OPERATION_COUNT} operations — update the doc (or the manifest, if the surface really changed)`,
+      `docs/mcp-api.md states "${tools} tools / ${operations} operations" but the capability manifest derives ${TOOL_COUNT} tools / ${OPERATION_COUNT} operations — update the doc (or the manifest, if the surface really changed)`,
     );
   }
 }

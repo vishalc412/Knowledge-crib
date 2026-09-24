@@ -9,6 +9,8 @@
 from source below). The dated support boundary — what is measured, what is opt-in, known limits — is
 in the [capability matrix](docs/capability-matrix.md).
 
+![crib viz — architecture overview of this repository's own graph](docs/assets/crib-graph-overview.png)
+
 ---
 
 ## Why
@@ -88,7 +90,7 @@ parse → graph → persist as a committable soul (.crib/graph) → derived SQLi
 | `brief` / `memory_recall` / `memory_observe` / `memory` / `memory_graph` | project memory: recall, record, handoff, intakes |
 | `enrich` | host-agent-authored semantic analysis work queue |
 
-Full request/response reference: [docs/knowledge-crib-mcp-api.md](docs/knowledge-crib-mcp-api.md).
+Full request/response reference: [docs/mcp-api.md](docs/mcp-api.md).
 
 ## CLI essentials
 
@@ -107,11 +109,11 @@ crib --help                      # every command
 
 | | |
 |---|---|
-| [User guide](docs/knowledge-crib-user-guide.md) | install, daily workflow, every verb |
-| [Client setup](docs/knowledge-crib-client-setup.md) | wiring each IDE / agent |
-| [CLI reference](docs/knowledge-crib-cli.md) | every command and flag |
-| [MCP API](docs/knowledge-crib-mcp-api.md) | tool request/response specs |
-| [Architecture](docs/knowledge-crib-architecture.md) | system design |
+| [User guide](docs/user-guide.md) | install, daily workflow, every verb |
+| [Client setup](docs/client-setup.md) | wiring each IDE / agent |
+| [CLI reference](docs/cli.md) | every command and flag |
+| [MCP API](docs/mcp-api.md) | tool request/response specs |
+| [Architecture](docs/architecture.md) | system design |
 | [Memory sync](docs/memory-sync.md) | encrypted cross-device sync |
 | [Capability matrix](docs/capability-matrix.md) | what is verified, on what |
 | [All docs](docs/README.md) | full index |

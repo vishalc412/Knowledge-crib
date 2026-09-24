@@ -3,7 +3,7 @@ import { z } from 'zod';
 /**
  * The single capability manifest (Gate 1.4).
  *
- * WHY this exists: the tool/operation counts were stated in prose (docs/knowledge-crib-mcp-api.md),
+ * WHY this exists: the tool/operation counts were stated in prose (docs/mcp-api.md),
  * re-derived by hand in server.test.ts's name array, and implicitly encoded in six `z.enum([...])`
  * op lists in server.ts — seven places that all claimed to describe one surface and drifted
  * independently. This module is the ONE list: server registration derives its op enums from it and
@@ -157,7 +157,7 @@ export const TOOL_COUNT = TOOL_NAMES.length;
 /**
  * The count every doc must quote for operations: each dispatcher contributes `ops.length`, each
  * standalone tool contributes 1 (the tool IS the operation). This is the derivation the
- * "N tools / M operations" prose in docs/knowledge-crib-mcp-api.md is checked against.
+ * "N tools / M operations" prose in docs/mcp-api.md is checked against.
  */
 export const OPERATION_COUNT = CAPABILITIES.reduce(
   (total, c) => total + ('ops' in c ? c.ops.length : 1),
