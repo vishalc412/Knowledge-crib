@@ -224,7 +224,24 @@ assert.match(
   'package.json must define capabilities:check (G1.4 capability-manifest surface + docs count gate)',
 );
 const rerankCheck = readFileSync('scripts/rerank-check.mjs', 'utf8');
-assert.match(rerankCheck, /MIN_MRR_LIFT/, 'rerank-check.mjs must enforce an MRR-improvement floor');
+// A ratchet since 2026-09-24 (docs/bench/rerank-prior.md): the fixture deltas may not fall below
+// a recorded baseline. Pinned so the gate cannot quietly lose its floor — it still has one, it is
+// just the measured baseline rather than "must beat plain RRF".
+assert.match(
+  rerankCheck,
+  /rerank-baseline\.json/,
+  'rerank-check.mjs must ratchet against scripts/rerank-baseline.json',
+);
+assert.match(
+  rerankCheck,
+  /rerankMrrDelta < BASELINE\.mrrDelta - TOLERANCE/,
+  'rerank-check.mjs must fail when the MRR delta falls below the baseline',
+);
+assert.match(
+  rerankCheck,
+  /recallDelta < BASELINE\.recallDelta - TOLERANCE/,
+  'rerank-check.mjs must fail when the recall delta falls below the baseline',
+);
 assert.match(
   rerankCheck,
   /runEval/,

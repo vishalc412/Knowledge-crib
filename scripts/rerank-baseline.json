@@ -1,0 +1,17 @@
+{
+  "_comment": "Ratchet baseline for scripts/rerank-check.mjs. The fixture eval (9 synthetic fixtures, about 40 conceptual pairs) measures the M2.2 structural prior as a small LOSS against plain RRF. The stronger instrument, the 61-task leakage-controlled corpus on this repository served hybrid, measures it as a large WIN: MRR 0.4169 with the prior, 0.3389 without, same tree, same index, same run (docs/bench/rerank-prior.md). So the prior stays on, and the gate stops demanding a fixture improvement the stronger instrument contradicts. It still refuses any change that makes the fixture delta WORSE than recorded here. Lower these numbers only with a new measurement on both instruments; raise them whenever a change improves them.",
+  "measuredOn": "2026-09-24",
+  "fixtures": {
+    "hybridConceptualMrr": 0.683908,
+    "rerankConceptualMrr": 0.670347,
+    "mrrDelta": -0.013561,
+    "hybridConceptualRecall": 0.950079,
+    "rerankConceptualRecall": 0.950045,
+    "recallDelta": -0.000034
+  },
+  "realCorpus": {
+    "corpus": "docs/bench/locate-corpus.json (61 tasks, base d872789840b47e2a2b2b9a5f0751288b6ad0a050, full variant)",
+    "priorOn": { "mrr": 0.4169, "recall1": 0.2178, "recall5": 0.4087, "recall10": 0.5478 },
+    "priorOff": { "mrr": 0.3389, "recall1": 0.1598, "recall5": 0.3809, "recall10": 0.4989 }
+  }
+}
