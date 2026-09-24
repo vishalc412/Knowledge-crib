@@ -10,15 +10,20 @@ import { runEval } from './eval/harness.mjs';
 const BASELINE = JSON.parse(
   readFileSync(new URL('./rerank-baseline.json', import.meta.url), 'utf8'),
 ).fixtures;
-// The eval is deterministic to the digit across machines (CI and local agree), so the tolerance only
-// absorbs the baseline's six-decimal rounding.
-const TOLERANCE = 1e-6;
+// Deterministic within an environment (the two-run check below), but NOT bit-identical across
+// environments: the first hosted run of this ratchet computed a delta below the local baseline by
+// less than 1e-6·100pp on every CI platform, failing a 1e-6 tolerance while printing the same
+// −1.36pp. Environments agree to four decimals (evidence register §4.4), so the tolerance is
+// 1e-4 — 0.01pp of MRR — which absorbs that noise and still catches any change that moves the
+// ranking measurably.
+const TOLERANCE = 1e-4;
 let failed = 0;
 const fail = (msg) => {
   process.stderr.write(`  rerank:check FAIL — ${msg}\n`);
   failed++;
 };
-const pp = (x) => `${(x * 100).toFixed(2)}pp`;
+// Four decimals of pp (six of the raw delta), so a baseline comparison is legible at the tolerance.
+const pp = (x) => `${(x * 100).toFixed(4)}pp`;
 
 // release:verify builds every package before any gate runs, so the harness's dynamic import of the
 // built core + pipeline dist resolves. Two independent runs prove determinism across fresh builds.
