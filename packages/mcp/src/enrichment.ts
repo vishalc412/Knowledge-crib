@@ -1116,7 +1116,18 @@ export class EnrichmentStore {
         ...(groundedCount > 0 ? { grounded: true } : { grounded: false }),
         quality,
       };
-      const path = this.writeArtifact(artifact);
+      // One unwritable item must not abort the batch: the items after it would never be attempted
+      // and the caller would lose the report for the ones already written.
+      let path: string;
+      try {
+        path = this.writeArtifact(artifact);
+      } catch (err) {
+        rejected.push({
+          targetId: item.targetId,
+          reason: `artifact write failed: ${(err as Error).message}`,
+        });
+        continue;
+      }
       this.pruneSuperseded(artifact, path);
       for (const node of artifact.graph.nodes) knownLocalIds.add(node.id);
       accepted.push({
@@ -2046,7 +2057,7 @@ export class EnrichmentStore {
 
   private read(layer: EnrichLayer, targetId: string, liveHash: string): LlmRead {
     const dir = join(this.artifactsRoot(), layer, shard(targetId));
-    const prefix = `${safeName(targetId)}_`;
+    const prefix = `${artifactStem(targetId)}_`;
     if (!existsSync(dir)) return { missing: true, stale: false };
     const candidates = readdirSync(dir)
       .filter((name) => name.startsWith(prefix) && name.endsWith('.json'))
@@ -2058,7 +2069,9 @@ export class EnrichmentStore {
     let artifact: LlmArtifact | undefined;
     for (const name of candidates) {
       const candidate = readJson<LlmArtifact>(join(dir, name));
-      if (candidate?.nodeHash === liveHash) {
+      // Slugs are lossy (`a.b#c` and `a.b/c` share one), so a prefix match can be another target's file.
+      if (candidate?.targetId !== targetId) continue;
+      if (candidate.nodeHash === liveHash) {
         artifact = candidate;
         break;
       }
@@ -2093,13 +2106,14 @@ export class EnrichmentStore {
 
   private pruneSuperseded(artifact: LlmArtifact, keepPath: string): void {
     const dir = dirname(keepPath);
-    const prefix = `${safeName(artifact.targetId)}_`;
+    const prefix = `${artifactStem(artifact.targetId)}_`;
     if (!existsSync(dir)) return;
     for (const name of readdirSync(dir)) {
       const path = join(dir, name);
-      if (path !== keepPath && name.startsWith(prefix) && name.endsWith('.json')) {
-        rmSync(path, { force: true });
-      }
+      if (path === keepPath || !name.startsWith(prefix) || !name.endsWith('.json')) continue;
+      // Never delete another target's artifact that merely shares the lossy slug prefix.
+      if (readJson<LlmArtifact>(path)?.targetId !== artifact.targetId) continue;
+      rmSync(path, { force: true });
     }
   }
 
@@ -2557,8 +2571,23 @@ function artifactPath(
     artifactsRoot,
     layer,
     shard(targetId),
-    `${safeName(targetId)}_${safeName(hash)}.json`,
+    `${artifactStem(targetId)}_${safeName(hash)}.json`,
   );
+}
+
+/** Longest slug kept verbatim. With the `_<hash>.json` suffix and the `.tmp` of an atomic write this
+ *  keeps artifact file names well under the 255-byte limit most filesystems impose. */
+const ARTIFACT_STEM_MAX = 150;
+
+/**
+ * The file-name stem for a target's artifacts. Short ids keep their plain slug (existing artifacts
+ * stay readable); a long id — a nested class under a deep path — is cut and suffixed with a digest
+ * of the FULL id, so it stays unique instead of failing with ENAMETOOLONG on every save.
+ */
+function artifactStem(targetId: string): string {
+  const slug = safeName(targetId);
+  if (slug.length <= ARTIFACT_STEM_MAX) return slug;
+  return `${slug.slice(0, ARTIFACT_STEM_MAX - 17)}~${blake3Hex(targetId).slice(0, 16)}`;
 }
 
 function llmNodeId(targetId: string, localId: string): string {

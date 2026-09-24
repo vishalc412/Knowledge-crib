@@ -382,6 +382,55 @@ function byNewest(a: { ts: string; id: string }, b: { ts: string; id: string }):
   return a.id.localeCompare(b.id);
 }
 
+const CARRY_OVER_NOTES_MAX = 3;
+
+/**
+ * Put the previous session's context into the continuation itself. Agents are told to read the
+ * continuation first and follow it, and it is derived from intakes alone — so a session that left
+ * coordinates and notes but no intake (the Claude hooks path, read later from another IDE) was
+ * announced as "No unfinished work is saved", and the next agent started from zero.
+ */
+function withCarryOver(
+  continuation: ContinuationChoice,
+  lastSession: HandoffLastSession | undefined,
+  pendingCaptures: readonly HandoffPendingCapture[],
+  counts: { pending: number; recent: number },
+): ContinuationChoice {
+  const carryOver: string[] = [];
+  if (lastSession !== undefined) {
+    const who = lastSession.clientId ? ` (${lastSession.clientId})` : '';
+    const where = lastSession.branch ? ` on branch ${lastSession.branch}` : '';
+    const moved = lastSession.movedSince ? ' — the repository has moved since' : '';
+    carryOver.push(
+      `Previous session${who} last active ${lastSession.lastActivity}${where}${moved}.`,
+    );
+    if (lastSession.summary) carryOver.push(`Progress note then: ${lastSession.summary}`);
+    if (lastSession.changedPaths.length > 0) {
+      const more = lastSession.changedPathsTruncated ? ', …' : '';
+      carryOver.push(`It was editing: ${lastSession.changedPaths.join(', ')}${more}`);
+    }
+  }
+  for (const capture of pendingCaptures.slice(0, CARRY_OVER_NOTES_MAX)) {
+    if (capture.observation) carryOver.push(`Note (not yet verified): ${capture.observation}`);
+  }
+  if (counts.pending > CARRY_OVER_NOTES_MAX) {
+    carryOver.push(
+      `${counts.pending - CARRY_OVER_NOTES_MAX} more note(s) in pendingCaptures; ${counts.recent} verified claim(s) in recent.`,
+    );
+  }
+  if (carryOver.length === 0) return continuation;
+  const resumable = continuation.options.some((option) => option.kind === 'resume');
+  if (resumable) return { ...continuation, carryOver };
+  return {
+    ...continuation,
+    question:
+      'No intake is open, but the previous session left context (see carryOver). Continue from it, or start fresh?',
+    rationale:
+      'no intake is resumable, so "fresh" is the default option — but read carryOver, lastSession, pendingCaptures and recent first and carry that context forward; do not treat this project as having no memory',
+    carryOver,
+  };
+}
+
 /**
  * Build the handoff projection. PURE.
  *
@@ -533,7 +582,10 @@ export function buildHandoff(input: HandoffInput): HandoffResponse {
     needsAttention,
     recent,
     intakes,
-    continuation: buildContinuation(intakes),
+    continuation: withCarryOver(buildContinuation(intakes), lastSession, pendingCaptures, {
+      pending: pendingAll.length,
+      recent: active,
+    }),
     ...(lastSession ? { lastSession } : {}),
     degraded: input.lifecycleUnreadable === true ? ['lifecycle-journal-unreadable'] : [],
     counts: {

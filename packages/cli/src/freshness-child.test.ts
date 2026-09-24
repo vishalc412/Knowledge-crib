@@ -163,7 +163,7 @@ describe('staged results — the child’s only durable output', () => {
 
   it('an unparseable stage reads as absent (a torn write is never fatal) and ages out on prune', () => {
     mkdirSync(join(dir, 'freshness', 'staged'), { recursive: true });
-    writeFileSync(join(dir, 'freshness', 'staged', 'fq:torn.json'), '{not json');
+    writeFileSync(join(dir, 'freshness', 'staged', 'fq%3atorn.json'), '{not json');
     expect(readStagedResult(env, 'fq:torn')).toBeUndefined();
     pruneStagedResults(env, 0, () => Date.now() + 1);
     expect(readStagedResultsRaw()).toEqual([]);

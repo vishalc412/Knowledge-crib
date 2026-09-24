@@ -264,6 +264,8 @@ describe('crib intake and session bootstrap', () => {
         { record: { id: record.id, audience: 'team' }, integrity: 'valid', graph: 'indexed' },
       ]);
     },
+    // Eight CLI spawns including a full index: slow Windows runners exceed the 30s default.
+    120_000,
   );
 
   it('creates and checkpoints an intake, then returns it from session bootstrap', () => {

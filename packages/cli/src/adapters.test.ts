@@ -67,10 +67,10 @@ describe('CLIENT_ADAPTERS — registry completeness', () => {
     // writing a file nothing reads: Cursor has no user-home rules file, Copilot's user-level
     // instructions are a VS Code settings key, and VS Code's agent IS Copilot.
     const withGlobal: Record<string, string> = {
-      claude: '/home/u/.claude/CLAUDE.md',
-      codex: '/home/u/.codex/AGENTS.md',
-      gemini: '/home/u/.gemini/GEMINI.md',
-      windsurf: '/home/u/.codeium/windsurf/memories/global_rules.md',
+      claude: join('/home/u', '.claude', 'CLAUDE.md'),
+      codex: join('/home/u', '.codex', 'AGENTS.md'),
+      gemini: join('/home/u', '.gemini', 'GEMINI.md'),
+      windsurf: join('/home/u', '.codeium', 'windsurf', 'memories', 'global_rules.md'),
     };
     for (const id of ALL_CLIENTS) {
       const targets = clientAdapter(id).instructionTargets('global', repo, '/home/u');
@@ -98,7 +98,7 @@ describe('CLIENT_ADAPTERS — registry completeness', () => {
   });
 
   it('only claude has a skill destination (cursor loads .mdc rules, not SKILL.md dirs)', () => {
-    expect(skillDestFor('claude', '/home/u')).toBe('/home/u/.claude/skills');
+    expect(skillDestFor('claude', '/home/u')).toBe(join('/home/u', '.claude', 'skills'));
     for (const id of ALL_CLIENTS) {
       if (id !== 'claude') expect(skillDestFor(id, '/home/u'), `${id}`).toBeNull();
     }
@@ -435,7 +435,7 @@ describe('capture-lane matrix (G2.1) — registry coverage', () => {
         );
         // The global hook surface is what makes capture fire in repositories `crib init` never ran in.
         expect(hooks!.settingsPath?.('global', repo, '/home/u')).toBe(
-          '/home/u/.claude/settings.json',
+          join('/home/u', '.claude', 'settings.json'),
         );
       } else {
         // Honest reporting: no hook surface → null, never a fabricated row.

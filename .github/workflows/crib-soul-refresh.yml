@@ -70,10 +70,26 @@ jobs:
       - name: Build crib
         run: corepack pnpm@9.15.0 build
 
+      # A repository may keep its soul out of Git (.gitignore `.crib/*`, re-including only memory and
+      # bins). Then there is nothing committed to refresh, and `crib update` would refuse a `.crib`
+      # that has no crib.json — so skip rather than fail every merge.
+      - name: Check whether this repository commits its soul
+        id: soul
+        shell: bash
+        run: |
+          if git ls-files --error-unmatch .crib/crib.json >/dev/null 2>&1; then
+            echo "committed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "committed=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::.crib/crib.json is not tracked — this repository does not commit its soul, so there is nothing to refresh"
+          fi
+
       - name: Refresh soul (incremental re-extract; falls back to full index if no anchor)
+        if: steps.soul.outputs.committed == 'true'
         run: node packages/cli/dist/cli.js update .
 
       - name: Commit refreshed soul if changed
+        if: steps.soul.outputs.committed == 'true'
         shell: bash
         run: |
           set -euo pipefail

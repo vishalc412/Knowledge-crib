@@ -27,8 +27,12 @@ afterEach(() => {
 });
 
 describe('runGraphCorpusEvaluation', () => {
-  it('measures the frozen corpus with zero foreign disclosure, deterministically', () => {
+  it('measures the frozen corpus with zero foreign disclosure, deterministically', async () => {
     const first = runGraphCorpusEvaluation({ workDir: workA });
+    // Each run is one long synchronous block. Yield between them: vitest's worker RPC times out
+    // ("Timeout calling onTaskUpdate") when its reply cannot be read for 60s, which two back-to-back
+    // runs reached on slow Windows runners although every assertion passed.
+    await new Promise((resolve) => setImmediate(resolve));
     __resetMemoryLockGuardForTest();
     const second = runGraphCorpusEvaluation({ workDir: workB });
 

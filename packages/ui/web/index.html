@@ -1136,7 +1136,8 @@ class Component extends DCLogic {
     window.addEventListener('resize',this.onViewportResize);
     this.bind();
     this._tick=0;
-    const loop=()=>{ this.step(); this.tween(); this.draw(); this._tick++; this.raf=requestAnimationFrame(loop); };
+    // Schedule the next frame first: a frame that throws must not stop rendering for the rest of the session.
+    const loop=()=>{ this.raf=requestAnimationFrame(loop); try{ this.step(); this.tween(); this.draw(); }catch(err){ if(!this._drawErrorLogged){ this._drawErrorLogged=true; console.error('[kc] frame failed',err); } } this._tick++; };
     this.raf=requestAnimationFrame(loop);
     this.loadOverview();
     this.setState({ready:true});
@@ -1890,7 +1891,8 @@ class Component extends DCLogic {
 
   // ---------- drawing ----------
   draw(){
-    const ctx=this.ctx; if(!ctx)return; const th=this.theme; const dpr=this.dpr;
+    // List presentation hides the canvas (0×0): nothing to paint, and overview geometry would go negative.
+    const ctx=this.ctx; if(!ctx||!(this.W>0&&this.H>0))return; const th=this.theme; const dpr=this.dpr;
     ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,this.W,this.H);
     ctx.fillStyle=th.bg; ctx.fillRect(0,0,this.W,this.H);
     // dot grid

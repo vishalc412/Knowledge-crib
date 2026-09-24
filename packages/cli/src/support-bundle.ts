@@ -206,8 +206,17 @@ export function collectDiagnostics(
 export function redactPaths(text: string, repoRoot?: string, home = homedir()): string {
   let out = text;
   if (repoRoot) {
-    const abs = resolve(repoRoot);
-    out = out.split(abs).join('<repo>');
+    // On Windows `resolve` prefixes a drive and flips separators, and diagnostics may spell the same
+    // root with either separator — so try every spelling, longest first.
+    const spellings = new Set<string>();
+    for (const root of [repoRoot, resolve(repoRoot)]) {
+      spellings.add(root);
+      spellings.add(root.replace(/\\/g, '/'));
+      spellings.add(root.replace(/\//g, '\\'));
+    }
+    for (const root of [...spellings].sort((a, b) => b.length - a.length)) {
+      if (root.length > 1) out = out.split(root).join('<repo>');
+    }
   }
   if (home) out = out.split(home).join('~');
   // ANY user's home, not just this process's. Running the real command surfaced the gap: a home

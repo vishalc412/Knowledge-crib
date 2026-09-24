@@ -413,7 +413,9 @@
   }
 
   /** Rounded-rect subpath on `ctx`. Emits path commands only; the caller chooses fill or stroke. */
-  function rr(ctx, x, y, w, h, r) {
+  function rr(ctx, x, y, w, h, radius) {
+    // arcTo throws on a negative radius, which a degenerate (zero or negative) size produces.
+    const r = Math.max(0, Math.min(radius, Math.abs(w) / 2, Math.abs(h) / 2)) || 0;
     ctx.beginPath();
     ctx.moveTo(x + r, y);
     ctx.arcTo(x + w, y, x + w, y + h, r);

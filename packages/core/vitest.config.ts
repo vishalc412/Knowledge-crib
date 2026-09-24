@@ -3,6 +3,13 @@ import { tmpdir } from 'node:os';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
+  // Same budget as cli/memory/mcp/pipeline: Windows CI runners run individual tests 10-100x slower
+  // than a dev box (a 57ms core test timed out at the 5s default there), so the default is not a
+  // meaningful ceiling. 30s still catches a genuine hang.
+  test: {
+    testTimeout: 30_000,
+    hookTimeout: 30_000,
+  },
   // G3.2 — the embed-install tests dynamic-import an operator-supplied embedder module from a
   // mkdtemp dir under os.tmpdir(). Two vite/node interop traps to defuse:
   //   1. vite's dev-file serving is restricted to the workspace root by default and a dynamic

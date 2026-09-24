@@ -7574,7 +7574,12 @@ function cmdMemoryCaptureHook(args: string[], ctx?: CmdCtx): number {
     ) || clientId;
   const outcome = lifecycleOutcomeOf(payload);
   const eventOffset = outcome?.eventOffset;
-  const idempotencyKey = `hook:${event}:${sessionId ?? 'nosession'}:${eventOffset ?? 'nooffset'}`;
+  const occurredAt = new Date().toISOString();
+  // Claude Code's hook payload carries no event offset. session-start is once per session, so its
+  // key dedupes a crash replay; turn-end needs one record per turn, or every turn deduped into the
+  // FIRST one and the resume anchor never advanced.
+  const turnDiscriminator = eventOffset ?? (event === 'turn-end' ? occurredAt : 'nooffset');
+  const idempotencyKey = `hook:${event}:${sessionId ?? 'nosession'}:${turnDiscriminator}`;
 
   try {
     const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
@@ -7591,7 +7596,6 @@ function cmdMemoryCaptureHook(args: string[], ctx?: CmdCtx): number {
       );
     const deps = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
     if (!deps) return failOpen('memory stores unresolvable — capture skipped, not blocking');
-    const occurredAt = new Date().toISOString();
     const identity =
       deps.identityDirectory?.resolve(resolveServerIdentity(process.env), {
         clientId,

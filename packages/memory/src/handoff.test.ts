@@ -288,3 +288,40 @@ describe('buildHandoff — pending captures read the field the outbox actually c
     expect(out.pendingCaptures[0]?.observation).toBe('looked at the retry path');
   });
 });
+
+describe('buildHandoff — context left by another IDE reaches the continuation', () => {
+  const claudeTurn = {
+    id: 'iev:1',
+    occurredAt: '2026-01-01T00:00:00.000Z',
+    source: { clientId: 'claude-code-hook', sessionId: 'claude-1' },
+    identity: { principalId: DEFAULT_MIGRATION_PRINCIPAL_ID },
+    payload: {
+      event: 'turn-end',
+      repository: { branch: 'main', head: 'abc', changedPaths: ['src/a.ts'] },
+    },
+  };
+
+  it('does not announce "no unfinished work" when the previous session left notes but no intake', () => {
+    const out = buildHandoff(
+      input({
+        lifecycle: [claudeTurn],
+        pending: [{ id: 'cap:1', subject: 'topic:x', claim: 'Next action: split graph.json' }],
+      }),
+    );
+    expect(out.continuation.question).not.toContain('No unfinished work');
+    expect(out.continuation.carryOver).toEqual([
+      'Previous session (claude-code-hook) last active 2026-01-01T00:00:00.000Z on branch main.',
+      'It was editing: src/a.ts',
+      'Note (not yet verified): Next action: split graph.json',
+    ]);
+    expect(out.continuation.rationale).toContain('carryOver');
+  });
+
+  it('leaves the continuation untouched when nothing was left behind', () => {
+    const out = buildHandoff(input());
+    expect(out.continuation.question).toBe(
+      'No unfinished work is saved for this project. Start fresh?',
+    );
+    expect(out.continuation.carryOver).toBeUndefined();
+  });
+});
