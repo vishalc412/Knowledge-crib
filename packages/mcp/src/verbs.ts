@@ -545,6 +545,31 @@ const PUBLIC_VERBS = new Set<string>([
   'memoryImplementations',
 ]);
 
+/**
+ * One page of each list: `limit` rows from `offset`, plus where the next page starts. Without a
+ * `limit` the lists pass through whole (CLI and internal callers that need everything).
+ */
+function pageLists<T extends Record<string, unknown[]>>(
+  lists: T,
+  limitArg: number | undefined,
+  offsetArg: number | undefined,
+): {
+  paged: T;
+  page?: { offset: number; limit: number; truncated: boolean; nextOffset?: number };
+} {
+  if (limitArg === undefined) return { paged: lists };
+  const limit = Math.max(1, Math.floor(limitArg));
+  const offset = Math.max(0, Math.floor(offsetArg ?? 0));
+  const longest = Math.max(0, ...Object.values(lists).map((v) => v.length));
+  const truncated = offset + limit < longest;
+  return {
+    paged: Object.fromEntries(
+      Object.entries(lists).map(([k, v]) => [k, v.slice(offset, offset + limit)]),
+    ) as T,
+    page: { offset, limit, truncated, ...(truncated ? { nextOffset: offset + limit } : {}) },
+  };
+}
+
 export class Verbs {
   private readonly llm: EnrichmentStore;
   private readonly graph: GraphStore;
@@ -2184,7 +2209,10 @@ export class Verbs {
     return this.applyIfHash(args, result);
   }
 
-  detectChanges(args: { since?: string }): Record<string, unknown> {
+  detectChanges(args: { since?: string; limit?: number; offset?: number }): Record<
+    string,
+    unknown
+  > {
     const vcs = this.deps.vcs;
     const manifest = this.deps.soul.getManifest();
     const since = args.since ?? manifest.stats.incrementalSince ?? manifest.repo.vcsHead;
@@ -2268,13 +2296,21 @@ export class Verbs {
         : since === head
           ? 'no commits since the anchor and a clean working tree — the commit range is empty by construction, not surveyed'
           : undefined;
+    // A broad change touches thousands of nodes and edges (~212k tokens on one working tree here);
+    // with `limit` the two graph lists are paged and `counts` reports their full sizes.
+    const { paged, page } = pageLists({ changedSymbols, removedEdges }, args.limit, args.offset);
     return {
       since,
       head,
       changedPaths,
       uncommittedPaths,
-      changedSymbols,
-      removedEdges,
+      ...paged,
+      ...(page
+        ? {
+            page,
+            counts: { changedSymbols: changedSymbols.length, removedEdges: removedEdges.length },
+          }
+        : {}),
       ...(note ? { note } : {}),
     };
   }
@@ -2326,7 +2362,14 @@ export class Verbs {
    *     symbol in the soul: a call into a missing asset. Oracle built-in packages (`DBMS_*`/`UTL_*`/
    *     `APEX_*`/…) are flagged `builtin:true`, never silently hidden.
    */
-  gaps(args: { extractedOnly?: boolean; includeBuiltins?: boolean } = {}): Record<string, unknown> {
+  gaps(
+    args: {
+      extractedOnly?: boolean;
+      includeBuiltins?: boolean;
+      limit?: number;
+      offset?: number;
+    } = {},
+  ): Record<string, unknown> {
     const soul = this.deps.soul;
     const idx = this.deps.index;
     const keep = (e: Edge): boolean => !args.extractedOnly || e.provenance === 'EXTRACTED';
@@ -2516,12 +2559,23 @@ export class Verbs {
       countByFileCategory(unresolvedInjects),
     ]);
 
+    // Each list can run to thousands of rows (this repository: 6,509 unresolved call sites, ~450k
+    // tokens), which no agent context can hold. `summary` always counts the whole of every list.
+    const { paged, page } = pageLists(
+      {
+        unimplemented,
+        packageSpecsWithoutBody,
+        unresolvedCallSites,
+        controllersWithoutRoutes,
+        unresolvedInjects,
+      },
+      args.limit,
+      args.offset,
+    );
+
     return {
-      unimplemented,
-      packageSpecsWithoutBody,
-      unresolvedCallSites,
-      controllersWithoutRoutes,
-      unresolvedInjects,
+      ...paged,
+      ...(page ? { page } : {}),
       summary: {
         unimplemented: unimplemented.length,
         packageSpecsWithoutBody: packageSpecsWithoutBody.length,

@@ -2320,6 +2320,22 @@ describe('gaps verb — missing-asset + unimplemented detection', () => {
     expect(res.summary.byCategory.builtin).toBe(2);
   });
 
+  it('pages every list with limit/offset while the summary counts everything', () => {
+    const full = verbs.gaps() as unknown as GapsResult;
+    const first = verbs.gaps({ limit: 1 }) as unknown as GapsResult & {
+      page: { offset: number; limit: number; truncated: boolean; nextOffset?: number };
+    };
+    expect(first.unimplemented).toEqual(full.unimplemented.slice(0, 1));
+    expect(first.summary).toEqual(full.summary);
+    expect(first.page).toEqual({ offset: 0, limit: 1, truncated: true, nextOffset: 1 });
+    const second = verbs.gaps({ limit: 1, offset: 1 }) as unknown as GapsResult & {
+      page: { truncated: boolean };
+    };
+    expect(second.unimplemented).toEqual(full.unimplemented.slice(1, 2));
+    expect(second.page.truncated).toBe(false);
+    expect((full as unknown as { page?: unknown }).page).toBeUndefined();
+  });
+
   it('infers the expected body file from the spec path (.pks → .pkb)', () => {
     const res = verbs.gaps() as unknown as GapsResult;
     expect(res.packageSpecsWithoutBody.length).toBe(1);

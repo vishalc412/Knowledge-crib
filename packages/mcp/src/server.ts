@@ -189,6 +189,11 @@ function installPinRouter(server: McpServer, pins: RequestPins): void {
 }
 
 /** Build (but do not connect) the MCP server with all verbs registered. */
+
+/** Rows per list that `status op:gaps` returns unless the caller pages with `limit`/`offset`. */
+const GAPS_PAGE_DEFAULT = 25;
+/** Rows per graph list that `detect_changes` returns unless the caller pages. */
+const DETECT_CHANGES_PAGE_DEFAULT = 100;
 export function buildServer(verbs: Verbs, version = '0.1.0', pins?: RequestPins): McpServer {
   const server = new McpServer({ name: 'knowledge-crib', version });
 
@@ -314,12 +319,19 @@ export function buildServer(verbs: Verbs, version = '0.1.0', pins?: RequestPins)
     'detect_changes',
     {
       description:
-        'Dry-run delta report since a git ref. Reports `changedPaths` (committed since the anchor) AND `uncommittedPaths` (working tree), both folded into `changedSymbols`/`removedEdges`, so it is usable as a PRE-commit check. A `note` means the report is degraded or narrowed in scope — an empty result carrying one is not a clean bill of health. Run BEFORE committing.',
-      inputSchema: { since: z.string().optional() },
+        'Dry-run delta report since a git ref. Reports `changedPaths` (committed since the anchor) AND `uncommittedPaths` (working tree), both folded into `changedSymbols`/`removedEdges` (paged: `limit`, default 100; `counts` gives the full sizes), so it is usable as a PRE-commit check. A `note` means the report is degraded or narrowed in scope — an empty result carrying one is not a clean bill of health. Run BEFORE committing.',
+      inputSchema: {
+        since: z.string().optional(),
+        limit: z.number().int().min(1).max(1000).optional(),
+        offset: z.number().int().min(0).optional(),
+      },
     },
     async (a) => {
       verbs.recordToolInvocation?.('detect_changes');
-      return TOOL_RESULT(verbs.detectChanges(a));
+      // Paged by default: a broad change lists thousands of nodes and edges.
+      return TOOL_RESULT(
+        verbs.detectChanges({ ...a, limit: a.limit ?? DETECT_CHANGES_PAGE_DEFAULT }),
+      );
     },
   );
 
@@ -1017,11 +1029,13 @@ export function buildServer(verbs: Verbs, version = '0.1.0', pins?: RequestPins)
     'status',
     {
       description:
-        'Server and graph state, selected by `op`. health (default): is the project indexed. stats: live per-verb call counts, latency and ifHash cache hit rate for this process (in-memory only). gaps: what the graph is MISSING — procedures declared with no body, package specs whose body file is absent, and call sites pointing at symbols the crib has never seen. Check gaps before trusting the graph for line-level work.',
+        'Server and graph state, selected by `op`. health (default): is the project indexed. stats: live per-verb call counts, latency and ifHash cache hit rate for this process (in-memory only). gaps: what the graph is MISSING — procedures declared with no body, package specs whose body file is absent, and call sites pointing at symbols the crib has never seen; `summary` counts everything, lists are paged (`limit`, default 25; `offset` from `page.nextOffset`). Check gaps before trusting the graph for line-level work.',
       inputSchema: {
         op: opSchema('status'),
         extractedOnly: z.boolean().optional(),
         includeBuiltins: z.boolean().optional(),
+        limit: z.number().int().min(1).max(500).optional(),
+        offset: z.number().int().min(0).optional(),
       },
     },
     async (a) => {
@@ -1033,7 +1047,10 @@ export function buildServer(verbs: Verbs, version = '0.1.0', pins?: RequestPins)
         case 'stats':
           return TOOL_RESULT(verbs.getStats().snapshot());
         case 'gaps':
-          return TOOL_RESULT(verbs.gaps(rest as never));
+          // Paged by default: the full lists do not fit an agent's context (see Verbs.gaps).
+          return TOOL_RESULT(
+            verbs.gaps({ limit: GAPS_PAGE_DEFAULT, ...(rest as Record<string, unknown>) } as never),
+          );
         default:
           return TOOL_RESULT(BAD_REQUEST(`unknown op ${op}`));
       }
