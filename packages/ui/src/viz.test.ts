@@ -290,6 +290,49 @@ describe('buildVizOverview + LLM cluster label preference (outcome F + E)', () =
     expect(JSON.stringify(first)).toBe(JSON.stringify(second));
   });
 
+  it('buildVizOverview reports enriched symbols beside the full symbol count', () => {
+    dir = mkdtempSync(join(tmpdir(), 'crib-ui-enriched-'));
+    const soul = new SoulStore(join(dir, '.crib'), {
+      manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }),
+    });
+    soul.load();
+    const a = sym('app/src/a.ts', 'A.run', 1);
+    const b = sym('app/src/b.ts', 'B.run', 1);
+    const c = sym('lib/src/c.ts', 'C.run', 1);
+    soul.putNodes([a, b, c]);
+    soul.commit('2026-01-01T00:00:00.000Z');
+    // One fresh symbol analysis: the module still owns both symbols; one is enriched.
+    const artifactPath = join(
+      dir,
+      '.crib',
+      'graph',
+      'semantic',
+      'artifacts',
+      'symbol',
+      '00',
+      'a.json',
+    );
+    mkdirSync(dirname(artifactPath), { recursive: true });
+    writeFileSync(
+      artifactPath,
+      `${JSON.stringify({
+        version: 1,
+        layer: 'symbol',
+        targetId: a.id,
+        nodeHash: a.hash,
+        schemaVersion: soul.getManifest().schemaVersion,
+        builtAt: '2026-01-01T00:00:00.000Z',
+        grounded: true,
+        analysis: { purpose: 'Runs A', confidence: 0.9 },
+        graph: { nodes: [], edges: [] },
+        evidence: [],
+      })}\n`,
+    );
+    const app = buildVizOverview(soul).modules.find((m) => m.pathPrefix === 'app');
+    expect(app?.counts.symbols).toBe(2);
+    expect(app?.enrichedSymbols).toBe(1);
+  });
+
   it('buildVizGraph prefers the LLM cluster name (overlay) over the heuristic label', () => {
     dir = mkdtempSync(join(tmpdir(), 'crib-ui-llm-'));
     const soul = new SoulStore(join(dir, '.crib'), {

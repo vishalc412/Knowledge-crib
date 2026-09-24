@@ -122,6 +122,9 @@ export interface VizModule {
   }>;
   clusterIds: string[];
   color: string;
+  /** Symbols with a fresh LLM analysis. Always a subset of `counts.symbols`: enrichment annotates
+   *  extracted symbols and never removes them. */
+  enrichedSymbols: number;
 }
 
 export interface VizOverview {
@@ -520,6 +523,7 @@ export function buildVizOverview(soul: SoulStore): VizOverview {
     topSymbols: m.topSymbols,
     clusterIds: m.clusterIds,
     color: CLUSTER_PALETTE[i % CLUSTER_PALETTE.length] ?? '#64748b',
+    enrichedSymbols: m.coverage?.freshSymbols ?? 0,
   }));
   return {
     schemaVersion: soul.getManifest().schemaVersion,

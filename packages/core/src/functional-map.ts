@@ -49,7 +49,7 @@ export interface FunctionalModule {
   purpose?: FunctionalPurpose;
   /** LLM enrichment coverage over the module's symbols+files+clusters. Present when an overlay was
    *  available (always, internally) — the overview surfaces it; callers may ignore. */
-  coverage?: { fresh: number; pending: number; pct: number };
+  coverage?: { fresh: number; pending: number; pct: number; freshSymbols: number };
 }
 
 export interface FunctionalMap {
@@ -199,6 +199,7 @@ export function buildFunctionalMap(
       const e = overlay.entries.get(s.id);
       if (e && !e.stale) fresh++;
     }
+    const freshSymbols = fresh;
     for (const f of moduleFiles) {
       const e = overlay.entries.get(f.id);
       if (e && !e.stale) fresh++;
@@ -211,6 +212,7 @@ export function buildFunctionalMap(
       fresh,
       pending: Math.max(0, totalTargets - fresh),
       pct: totalTargets > 0 ? Math.round((fresh / totalTargets) * 100) : 0,
+      freshSymbols,
     };
 
     modules.push({

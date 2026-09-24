@@ -1557,7 +1557,7 @@ class Component extends DCLogic {
       id:m.id, isModule:true, moduleId:m.id,
       label:m.name, pathPrefix:m.pathPrefix, purpose:m.purpose||'',
       color:m.color||'#5b8cff',
-      count:(m.counts&&m.counts.symbols)||0, degree:0, importance:(m.counts&&m.counts.symbols)||0,
+      count:(m.counts&&m.counts.symbols)||0, enrichedSymbols:m.enrichedSymbols||0, degree:0, importance:(m.counts&&m.counts.symbols)||0,
       kinds:new Map(), clusterIds:m.clusterIds||[],
       x:0,y:0,w:0,h:0, muted:false, topMembers:[],
     }));
@@ -2109,9 +2109,14 @@ class Component extends DCLogic {
       ctx.textAlign='left';ctx.textBaseline='middle';
       ctx.fillStyle=th.label;ctx.font='700 '+(13*typeScale).toFixed(1)+"px 'IBM Plex Sans', system-ui, sans-serif";
       const title=block.isModule?this.formatRailLabel(block.label||block.id):String(block.label||block.id).replace(/^cluster:/,'');
-      ctx.fillText(KCGraphModel.ellipsize(ctx,title,w-30*spacing),x+16*spacing,y+20*spacing);
+      // Enrichment annotates a subset of the module's symbols; say how many beside the title so the
+      // extracted total on the meta line is never mistaken for what enrichment kept.
+      const enrichedLabel=block.isModule&&block.enrichedSymbols?block.enrichedSymbols.toLocaleString()+' enriched':'';
+      let titleRoom=w-30*spacing;
+      if(enrichedLabel){ const titleFont=ctx.font; ctx.font='500 '+(10.5*typeScale).toFixed(1)+"px 'IBM Plex Sans', system-ui, sans-serif"; const badgeW=ctx.measureText(enrichedLabel).width; ctx.fillStyle=th.sub||'#8b97a8'; ctx.textAlign='right'; ctx.fillText(enrichedLabel,x+w-16*spacing,y+20*spacing); ctx.textAlign='left'; ctx.font=titleFont; ctx.fillStyle=th.label; titleRoom=Math.max(24,titleRoom-badgeW-8*spacing); }
+      ctx.fillText(KCGraphModel.ellipsize(ctx,title,titleRoom),x+16*spacing,y+20*spacing);
       ctx.fillStyle=th.sub||'#8b97a8';ctx.font='500 '+(10.5*typeScale).toFixed(1)+"px 'IBM Plex Sans', system-ui, sans-serif";
-      const meta=block.isModule?(block.count+' symbols · '+(block.clusterIds?block.clusterIds.length:0)+' clusters'):block.isBack?'Back to every module':block.isNode?(Math.round(block.degree)+' caller'+(Math.round(block.degree)===1?'':'s')):(block.count+' nodes · '+(block.muted?'summary':Math.round(block.degree)+' links'));
+      const meta=block.isModule?(block.count.toLocaleString()+' symbols · '+(block.clusterIds?block.clusterIds.length:0).toLocaleString()+' clusters'):block.isBack?'Back to every module':block.isNode?(Math.round(block.degree)+' caller'+(Math.round(block.degree)===1?'':'s')):(block.count+' nodes · '+(block.muted?'summary':Math.round(block.degree)+' links'));
       ctx.fillText(KCGraphModel.ellipsize(ctx,meta,w-30*spacing),x+16*spacing,y+37*spacing);
       ctx.fillStyle=th.sub||'#8b97a8';
       const purpose=block.purpose||(block.isBack?'Return to the architecture map':block.muted?'Additional uncategorized symbols':(this.KLABEL[block.topKind]||block.topKind)+' functionality');

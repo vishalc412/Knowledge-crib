@@ -204,8 +204,14 @@ export interface EnrichLayerCounts {
 export interface EnrichScopeInfo {
   pathPrefix: string;
   label: string;
+  /** Gate-eligible symbols with no fresh analysis — what enrichment will actually queue. */
   pending: number;
+  /** Every extracted symbol the module owns. Enrichment never removes any of them. */
   symbols: number;
+  /** Symbols that clear the importance gate and are therefore enrichment targets. */
+  eligible: number;
+  /** Symbols with a fresh saved analysis. */
+  enriched: number;
   files: number;
   clusters: number;
 }
@@ -1785,76 +1791,74 @@ export class EnrichmentStore {
   }
 
   /**
-   * Rank the top-5 repo path prefixes by pending symbol count for the graphify-style picker.
-   * Monorepo descent: if the largest first-component bucket holds >80% of symbols (e.g. every target
-   * under `packages/`), re-group by the first TWO components so `packages/cli`, `packages/core` show
-   * as distinct rows instead of one useless `packages` row.
+   * Rank the top-5 modules by pending symbol count for the graphify-style picker.
+   *
+   * Modules come from the same functional map the viz draws, so the picker and the overview name
+   * the same module with the same totals (a Gradle project owns its nested browser workspace; a
+   * monorepo descends to `packages/cli`, `packages/core`, ...). `symbols` is every extracted symbol
+   * the module owns; `eligible` is the subset the importance gate queues; `pending` is the eligible
+   * subset still missing or stale. Reporting the gated subset as if it were the module made an
+   * enriched module look like it had lost most of its nodes.
    */
   private scopes(): EnrichScopeInfo[] {
     const symbols = [...this.soul.iterate('symbol')];
     if (symbols.length === 0) return [];
+    const modules = buildFunctionalMap(this.soul).modules.filter((m) => m.pathPrefix !== '');
+    if (modules.length === 0) return [];
 
-    // Precompute pending symbol ids once (one disk read per symbol) — scopes() runs once per run.
-    const pendingIds = new Set<string>();
+    const importance = this.importanceMap();
+    const floor = this.gateInfo().minImportance;
+    const owner = (file: string | undefined): string | undefined => {
+      if (!file) return undefined;
+      let best: string | undefined;
+      for (const m of modules) {
+        const p = m.pathPrefix;
+        if ((file === p || file.startsWith(`${p}/`)) && (!best || p.length > best.length)) best = p;
+      }
+      return best;
+    };
+
+    const tally = new Map<
+      string,
+      { symbols: number; eligible: number; pending: number; enriched: number }
+    >();
+    for (const m of modules)
+      tally.set(m.pathPrefix, { symbols: 0, eligible: 0, pending: 0, enriched: 0 });
     for (const s of symbols) {
+      const prefix = owner(s.file);
+      const t = prefix === undefined ? undefined : tally.get(prefix);
+      if (!t) continue;
+      t.symbols++;
+      // One disk read per owned symbol — scopes() runs once per picker call.
       const r = this.read('symbol', s.id, s.hash);
-      if (r.missing || r.stale) pendingIds.add(s.id);
+      if (!r.missing && !r.stale) t.enriched++;
+      if ((importance.get(s.id)?.importance ?? 0) < floor) continue;
+      t.eligible++;
+      if (r.missing || r.stale) t.pending++;
     }
 
-    const buckets = this.groupByPathPrefix(symbols, 1);
-    if (buckets.length === 0) return [];
-    const total = symbols.length;
-    const largest = [...buckets].sort((a, b) => b.symbols.length - a.symbols.length)[0];
-    const effective =
-      largest && largest.symbols.length > total * 0.8
-        ? this.groupByPathPrefix(symbols, 2)
-        : buckets;
-
-    const files = [...this.soul.iterate('file')];
-    const clusters = [...this.soul.iterate('cluster')];
-
-    const infos = effective.map((bucket) => {
-      const { pathPrefix, symbols: syms } = bucket;
-      const pending = syms.filter((s) => pendingIds.has(s.id)).length;
-      const fileCount = files.filter(
-        (f) => f.file && (f.file === pathPrefix || f.file.startsWith(`${pathPrefix}/`)),
-      ).length;
-      const clusterCount = clusters.filter((c) =>
-        this.clusterMembers(c).some(
-          (m) => m.file && (m.file === pathPrefix || m.file.startsWith(`${pathPrefix}/`)),
-        ),
-      ).length;
-      const label = pathPrefix.split('/').pop() || '(root)';
-      return {
-        pathPrefix,
-        label,
-        pending,
-        symbols: syms.length,
-        files: fileCount,
-        clusters: clusterCount,
-      };
-    });
-
-    return infos
-      .sort((a, b) => b.pending - a.pending || a.pathPrefix.localeCompare(b.pathPrefix))
+    return modules
+      .map((m) => {
+        const t = tally.get(m.pathPrefix)!;
+        return {
+          pathPrefix: m.pathPrefix,
+          label: m.name || m.pathPrefix.split('/').pop() || m.pathPrefix,
+          pending: t.pending,
+          symbols: t.symbols,
+          eligible: t.eligible,
+          enriched: t.enriched,
+          files: m.counts.files,
+          clusters: m.clusterIds.length,
+        };
+      })
+      .filter((info) => info.symbols > 0)
+      .sort(
+        (a, b) =>
+          b.pending - a.pending ||
+          b.symbols - a.symbols ||
+          a.pathPrefix.localeCompare(b.pathPrefix),
+      )
       .slice(0, 5);
-  }
-
-  private groupByPathPrefix(
-    symbols: Node[],
-    depth: number,
-  ): Array<{ pathPrefix: string; symbols: Node[] }> {
-    const map = new Map<string, Node[]>();
-    for (const n of symbols) {
-      const p = n.file;
-      if (!p) continue;
-      const parts = p.split('/');
-      const prefix = parts.slice(0, depth).join('/');
-      if (!prefix || parts.length < depth) continue;
-      if (!map.has(prefix)) map.set(prefix, []);
-      map.get(prefix)!.push(n);
-    }
-    return [...map.entries()].map(([pathPrefix, syms]) => ({ pathPrefix, symbols: syms }));
   }
 
   /** True when a saved artifact's target is in-scope (for the scoped overview). */
