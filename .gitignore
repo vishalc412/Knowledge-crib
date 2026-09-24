@@ -62,8 +62,15 @@ outputs/
 # ledger — the product's central promise, and the path `.gitattributes` declares the `kcrib-memory`
 # merge driver for. Ignoring it wholesale would have made team memory impossible to share, which is
 # the opposite of what this repo exists to do.
+#
+# `.crib/bins/` is re-included the same way and for the same reason: it is durable work-product
+# knowledge owned by the repository (measurements, open decisions, corrections), not build output.
+# Its contract lives in `.crib/bins/README.md`. Note that tracking it puts it in scope for
+# `scripts/credential-check.mjs`, which lists files with `git ls-files` — so re-run that gate AFTER
+# `git add`, since a PASS taken before staging describes the old tree.
 .crib/*
 !.crib/memory/
+!.crib/bins/
 
 # Codex tool state — machine-local, same reasoning.
 .codex/

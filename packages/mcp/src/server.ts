@@ -362,7 +362,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0', pins?: RequestPins)
     'brief',
     {
       description:
-        "START HERE for any question about this codebase - ask it before reading files. Searches BOTH the code and the AUTHORED MEANING layer, then interleaves them, so a conceptual question ('how do I debug a parser that hangs') finds the module that answers it even when they share no words. Returns code hits, doc-section instructions and trusted memories as SEPARATE typed groups. Each hit carries a one-line snippet plus `grounding` (semantic = authored purpose is in `llm`; if `inherited` is set that purpose describes the owning file/cluster named in `via`, NOT the hit itself) and `semanticMatch` when authored meaning RANKED it rather than merely decorating it. Two self-reports: `coverage` = share of hits carrying prose; `retrieval.matched` = share the semantic layer actually found - the honest signal, since coverage saturates once most files are described. `cursor` pages; `maxTokens` (default 2000) trims; `ifHash` collapses a repeat to ~30 bytes.",
+        'START HERE for codebase questions. Searches code and authored meaning, returning code hits, doc instructions, grounded claims, and completed plan implementations as separate typed groups. Implementation hits cite the plan archive, Git HEAD, changed paths, receipts, and integrity. `maxTokens` trims; `ifHash` collapses an unchanged repeat.',
       inputSchema: {
         q: z.string(),
         paths: z.array(z.string()).optional(),
@@ -480,7 +480,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0', pins?: RequestPins)
     'memory',
     {
       description:
-        'Memory ledger operations, selected by `op`. get: one record by id (needs id; withEvidence for full evidence; follows legacy-ID aliases, and memory-2 records answer with their v2 fields - visibility, propositionKey, validTime/transactionTime, lineage - instead of v1 fields). search: ranked search over the ledger (q, sources, targetIds, limit, maxTokens) - the same projection memory_recall uses, including effective/alias-restored verdicts and conflict groups. supersede: replace a record with a successor (needs id + actor, and either successor=an existing record id or claim=a new claim text) - writes the v2 successor plus a supersede decision. delete: tombstone a record (needs id + actor) - appends a retract decision, never destroys the line. history: bi-temporal timeline for one key (needs key; asOf for a point-in-time read). sync: read-only cross-device sync report (status counts; a `request` of push/pull is rejected - sync writes run only via the CLI `crib memory sync`, never behind an agent session). outbox: read-only capture-outbox drain report (no args) - pending/done/dead counts, pending captures with their retry counts, and drained entries with their distill decision, rationale, and verified flag. status: ledger counts by trust/evidence/lifecycle plus recall-eligible, quarantined, and pending. audit: read-only health report - drifted verdicts, conflict groups, a secret re-scan, trust distribution, locally quarantined records. capture: episodic capture to the candidate tier (needs subject, observation, actor) - loose refs in files/symbols are auto-anchored to a source-quote evidence item when they resolve; the candidate is pending trust and never enters normal recall. feedback: record LOCAL feedback on a record (needs subject, signal, actor); a `contradicted` signal quarantines only when backed by admissible counterEvidence, and never retracts team memory. intake_checkpoint: record progress on a piece of work (needs id, phase, summary, nextSafeAction, actor); phase `done` or `cancelled` CLOSES it so it stops showing as work to resume. Handoff marks unfinished work idle for two weeks or more as stale instead of resumable. To READ memory for a task use `memory_recall`; to WRITE a fully-formed grounded claim use `memory_observe`.',
+        'Memory ledger operations, selected by `op`. get/search access grounded claims. implementations lists or searches completed plan archives in a distinct typed group (optional id or q); each hit reports archive integrity. intake_* operations capture and checkpoint durable work. Handoff reports unfinished work. To READ grounded claims use memory_recall; to WRITE a candidate use memory_observe.',
       inputSchema: {
         op: opSchema('memory'),
         id: z.string().optional(),
@@ -718,6 +718,14 @@ export function buildServer(verbs: Verbs, version = '0.1.0', pins?: RequestPins)
           return TOOL_RESULT(
             verbs.memoryIntakeGet({
               id: a.id,
+              ...(a.ifHash !== undefined ? { ifHash: a.ifHash } : {}),
+            }),
+          );
+        case 'implementations':
+          return TOOL_RESULT(
+            verbs.memoryImplementations({
+              ...(a.id !== undefined ? { id: a.id } : {}),
+              ...(a.q !== undefined ? { q: a.q } : {}),
               ...(a.ifHash !== undefined ? { ifHash: a.ifHash } : {}),
             }),
           );

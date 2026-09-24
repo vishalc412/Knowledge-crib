@@ -205,7 +205,13 @@ describe('MemoryStore factories + shape', () => {
     expect(s.role).toBe('team');
     expect(s.rootDir).toBe(join(crib, 'memory', 'team'));
     expect(s.lockFilePath).toBe(join(crib, '.lock'));
-    expect(s.collections).toEqual(['records', 'decisions', 'receipts', 'intakes']);
+    expect(s.collections).toEqual([
+      'records',
+      'decisions',
+      'receipts',
+      'intakes',
+      'implementations',
+    ]);
     expect(s.hasManifest).toBe(false);
     expect(s.manifestPath()).toBeUndefined();
   });
@@ -225,6 +231,7 @@ describe('MemoryStore factories + shape', () => {
       'outbox',
       'dead',
       'intakes',
+      'implementations',
       'graph',
       'graph-jobs',
     ]);

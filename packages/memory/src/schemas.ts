@@ -18,6 +18,9 @@ import graphResolutionV2Schema from './schema/graph-resolution-v2.schema.json' w
   type: 'json',
 };
 import graphResolutionSchema from './schema/graph-resolution.schema.json' with { type: 'json' };
+import implementationRecordSchema from './schema/implementation-record.schema.json' with {
+  type: 'json',
+};
 import intakeCheckpointSchema from './schema/intake-checkpoint.schema.json' with { type: 'json' };
 import intakeSchema from './schema/intake.schema.json' with { type: 'json' };
 import manifestSchema from './schema/manifest.schema.json' with { type: 'json' };
@@ -40,6 +43,7 @@ export const MEMORY_MANIFEST_SCHEMA = manifestSchema as Record<string, unknown>;
 export const ALIAS_SCHEMA = aliasSchema as Record<string, unknown>;
 export const SYNC_EVENT_SCHEMA = syncEventSchema as Record<string, unknown>;
 export const INTAKE_SCHEMA = intakeSchema as Record<string, unknown>;
+export const IMPLEMENTATION_RECORD_SCHEMA = implementationRecordSchema as Record<string, unknown>;
 export const INTAKE_CHECKPOINT_SCHEMA = intakeCheckpointSchema as Record<string, unknown>;
 export const GRAPH_ENTITY_SCHEMA = graphEntitySchema as Record<string, unknown>;
 export const GRAPH_EXTRACTION_JOB_SCHEMA = graphExtractionJobSchema as Record<string, unknown>;
@@ -62,6 +66,7 @@ export const VENDORED_MEMORY_SCHEMAS: Record<string, Record<string, unknown>> = 
   'alias.schema.json': ALIAS_SCHEMA,
   'sync-event.schema.json': SYNC_EVENT_SCHEMA,
   'intake.schema.json': INTAKE_SCHEMA,
+  'implementation-record.schema.json': IMPLEMENTATION_RECORD_SCHEMA,
   'intake-checkpoint.schema.json': INTAKE_CHECKPOINT_SCHEMA,
   'graph-entity.schema.json': GRAPH_ENTITY_SCHEMA,
   'graph-extraction-job.schema.json': GRAPH_EXTRACTION_JOB_SCHEMA,
