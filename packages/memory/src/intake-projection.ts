@@ -202,6 +202,11 @@ export interface ContinuationChoice {
   recommended?: string;
   /** why there is, or is not, a recommendation — never a bare default. */
   rationale: string;
+  /**
+   * What the previous session left behind that is not an intake: its coordinates, progress note,
+   * and undistilled notes. Carry these into the new session whichever option is chosen.
+   */
+  carryOver?: string[];
 }
 
 /** `fresh` is always offered: starting new work is a legitimate choice, not a fallback. */
