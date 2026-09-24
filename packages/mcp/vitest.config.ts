@@ -14,11 +14,12 @@ export default defineConfig({
     // Files run one at a time. Measured 2026-09-24 on one machine at one load: the parallel run
     // exited 1 three times out of three on the worker-IPC timeout above (490/490 passing each time),
     // and the serial run exited 0, at 86s against ~77s. It is also what stopped both Windows CI
-    // cells. The precise mechanism is NOT established: no test blocks its worker anywhere near the
-    // 60s RPC window (the longest is ~31s), and the suspected shared lock was ruled out
-    // (graph-eval isolates its memory home). What is measured is that parallel files trigger it
-    // and serial files do not, at a ~10s cost. Revisit if a cause is found.
+    // cells. Mechanism (reproduced 2026-09-24 with 70s of synchronous tests): Vitest runs sync tests
+    // back to back with microtask-only yields, so the worker never reads the onTaskUpdate reply and
+    // the 60s RPC timer fires once a FILE's sync tests exceed 60s — verbs.test.ts took 84s on a
+    // Windows runner. vitest.setup.ts yields one macrotask per test, which removes it.
     fileParallelism: false,
+    setupFiles: ['./vitest.setup.ts'],
     testTimeout: 30_000,
     // Several suites `beforeEach` a full indexRepo + index build, so the hook budget has to move with
     // the test budget or the hook times out first and reads as an unrelated failure.
