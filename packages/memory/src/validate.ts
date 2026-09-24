@@ -247,7 +247,7 @@ export function assertValidGraphResolutionDecision(decision: GraphResolutionDeci
   }
 }
 
-/** ADR-003 (Gate 4) D1 — validate a sync envelope against `sync-event.schema.json`. The
+/** Cross-device sync — validate a sync envelope against `sync-event.schema.json`. The
  *  `schemaVersion` check mirrors the `mem:` posture: it lives OUTSIDE the compiled schema so an
  *  unknown envelope version fails closed with the same `{unknownSchemaVersion}` shape as records,
  *  and so the dispatch stays consistent with how records refuse coercion. */

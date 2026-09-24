@@ -6,10 +6,9 @@
  * WHY THIS EXISTS
  * `docs/bench/perf-gates.md:33` carries the row "One-file watch update → queryable | < 5 s p95 |
  * **not measured** | **BLOCKED** (no E2E watch fixture wired)", and `perf-gates.md:80` repeats it.
- * `docs/program/developer-trust-plan.md:127` states the same acceptance target as "**update
- * visibility ≤2 s** on the specified workload". So the tree carried a plan acceptance criterion
- * with no reproducible command behind it, and two thresholds — 2 s (plan) and 5 s (perf-gates.md
- * and `packages/cli/src/watch.ts:71-73`). This script supplies the missing instrument and reports
+ * The developer-trust plan stated the same acceptance target as "**update visibility ≤2 s** on the
+ * specified workload". So the tree carried an acceptance criterion with no reproducible command
+ * behind it, and two thresholds — 2 s (plan) and 5 s (perf-gates.md and `packages/cli/src/watch.ts`). This script supplies the missing instrument and reports
  * against BOTH thresholds WITHOUT choosing between them (see THRESHOLDS below).
  *
  * WHAT IT ACTUALLY MEASURES

@@ -13,7 +13,7 @@
  * The soul's in-memory Map insertion order is therefore byte-identical to the serial loop, so every
  * order-sensitive downstream phase (resolve/link/Louvain cluster) iterates the same sequence.
  *
- * WHY NOT WORKER THREADS — investigated + measured (see parse-pool.ts, ADR-001). Worker threads are
+ * WHY NOT WORKER THREADS — investigated + measured (see parse-pool.ts). Worker threads are
  * NET-NEGATIVE for crib's parse workload: (1) a fresh worker isolate has cold V8 JIT, so the regex
  * extractors run ~2-3× slower per file than on the warm main thread, eating the parallelism gain;
  * (2) `structuredClone` of the {nodes,edges} results across the isolate boundary adds transfer cost;

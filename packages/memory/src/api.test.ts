@@ -14,7 +14,7 @@ import type { Node } from '@knowledge-crib/soul-schema';
  *   - `supersede`: lineage on both sides + the lifecycle decision, history preserved;
  *   - `delete`: tombstone — excluded from search, PRESENT in history/audit;
  *   - `history`: point-in-time projection (asOf overlays decisions, validTime half-open);
- *   - `sync`: honest not-available naming Gate 4;
+ *   - `sync`: honest not-configured response;
  *   - `audit`: verdict transitions, promotions, supersessions, quarantines.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

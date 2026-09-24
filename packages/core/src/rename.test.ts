@@ -1,12 +1,29 @@
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { contentHash, edgeId, idFor } from '@knowledge-crib/soul-schema';
 import type { Edge, Node } from '@knowledge-crib/soul-schema';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { newManifest } from './manifest.js';
 import { applyRenamePlan, buildRenamePlan } from './rename.js';
 import { SoulStore } from './soul-store.js';
+
+/** Injects a write failure for one path suffix. chmod cannot: root ignores file modes. */
+const failWrite = vi.hoisted(() => ({ suffix: '' }));
+vi.mock('node:fs', async (importOriginal) => {
+  const real = await importOriginal<typeof import('node:fs')>();
+  return {
+    ...real,
+    writeFileSync: (...args: Parameters<typeof real.writeFileSync>) => {
+      if (failWrite.suffix && String(args[0]).endsWith(failWrite.suffix)) {
+        throw Object.assign(new Error(`EACCES: permission denied, open '${args[0]}'`), {
+          code: 'EACCES',
+        });
+      }
+      return real.writeFileSync(...args);
+    },
+  };
+});
 
 let root: string;
 let soul: SoulStore;
@@ -222,9 +239,9 @@ describe('applyRenamePlan (G5.1)', () => {
 
   it('rolls back atomically when one write fails — the net effect is nothing changed', () => {
     const plan = planFor('verifyToken', 'checkToken', ['src/auth.ts', 'src/caller.ts']);
-    // files apply in sorted order: src/auth.ts < src/caller.ts. Make the LAST one unwritable AFTER
-    // the plan was taken (phase 1 only needs read access, so the stale check still passes).
-    chmodSync(join(root, 'src/caller.ts'), 0o444);
+    // files apply in sorted order: src/auth.ts < src/caller.ts. Make the LAST write fail AFTER
+    // the plan was taken (phase 1 only reads, so the stale check still passes).
+    failWrite.suffix = join('src', 'caller.ts');
     try {
       const result = applyRenamePlan(plan, root, plan.planId);
       expect(result.ok).toBe(false);
@@ -236,7 +253,7 @@ describe('applyRenamePlan (G5.1)', () => {
       expect(readFileSync(join(root, 'src/caller.ts'), 'utf8')).toContain('verifyToken');
       expect(readFileSync(join(root, 'src/auth.ts'), 'utf8')).not.toContain('checkToken');
     } finally {
-      chmodSync(join(root, 'src/caller.ts'), 0o644);
+      failWrite.suffix = '';
     }
   });
 

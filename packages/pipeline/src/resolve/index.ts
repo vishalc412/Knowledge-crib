@@ -118,11 +118,6 @@ export function runResolve(
   return agg;
 }
 
-interface CallSite {
-  callee: string;
-  line: number;
-}
-
 /**
  * Stamp `meta.recursive = true` on every callable whose `meta.calls` includes a call that resolves to
  * itself. Pure over the soul (reads + mutates node `meta` only). See {@link runResolve} for the

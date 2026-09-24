@@ -120,7 +120,7 @@ export function aggregateDiagnostics(
  *  - `concurrency` (default, when `parallel !== false`): bounded async pool — overlaps readFile I/O
  *    on the event loop, persists in discovery order. ~1.2-1.3× measured, deterministic, no workers.
  *  - `workers` (opt-in via `KCRIB_PARALLEL=workers`, default fleet only): worker-thread pool. Net-
- *    negative for crib's small-file workload (cold-JIT + clone cost — see ADR-001 + parse-pool.ts),
+ *    negative for crib's small-file workload (cold-JIT + clone cost — see parse-pool.ts),
  *    retained for the future huge-file case. Ignored when `parallel === false`.
  *  - `serial` (`parallel === false`): the original in-order loop. Used by incremental `crib update`
  *    (1-3 changed files), determinism cross-checks, and custom-extractor runs (workers can't receive

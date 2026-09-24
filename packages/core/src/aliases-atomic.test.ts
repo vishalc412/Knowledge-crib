@@ -15,7 +15,7 @@
  * DISCRIMINATION. The primary assertion — that the target is never opened for writing and IS reached
  * by a rename — fails against the pre-fix implementation (which opened the target with `'w'` and
  * never renamed). That was verified by reverting the body to `writeFileSync(path, …)` and watching
- * this test go red; see docs/program/evidence-register.md row WP1-D1h.
+ * this test go red.
  *
  * WHY MOCKING `node:fs` IS SAFE HERE. This file imports `./aliases.js` and nothing else, and the
  * graph it pulls in is `./aliases.js` → `./atomic-write.js` (three Node builtins) → `./graph-layout.js`.

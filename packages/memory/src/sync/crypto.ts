@@ -1,5 +1,5 @@
 /**
- * ADR-003 (Gate 4) D7 — event-blob encryption: AES-256-GCM per event, one symmetric key, fail-closed
+ * Cross-device sync — event-blob encryption: AES-256-GCM per event, one symmetric key, fail-closed
  * key resolution. No new dependencies; randomness (`randomBytes`) feeds only the per-blob nonce,
  * never an id or hash (the frozen-seed law).
  *

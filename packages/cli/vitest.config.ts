@@ -22,7 +22,7 @@ export default defineConfig({
   // in `mcp` that exited 1 while reporting 490/490 passed. Every one of them passed when run alone;
   // the only variable was what else was on the CPU. The `~1.0s` above is a quiet-box measurement of
   // the slowest *test* and says nothing about a package under four-way load, which is why the budget
-  // now lives in those three configs too. See docs/program/logs/test-suite-2026-09-23.log.
+  // now lives in those three configs too.
   //
   // NOTE: these MUST live under `test:` — Vitest reads its options from that key, and a top-level
   // `testTimeout` is silently swallowed by Vite as an unknown root option. Putting them at the root

@@ -490,7 +490,7 @@ describe('TypeScriptExtractor — schema 1.2 deep-extraction fidelity', () => {
 
 // ─── F11: call resolution must not fabricate confident edges ─────────────────
 //
-// The audit (docs/audits/2026-09-05) found `enqueueFreshness`'s `now` PARAMETER resolving, at
+// An audit found `enqueueFreshness`'s `now` PARAMETER resolving, at
 // confidence 1, to two unrelated symbols named `now` — one a class property in the same file, one a
 // function in a different file. A deterministic graph can still be deterministically wrong, and a
 // confident wrong edge is worse than an openly unresolved one: `gaps` reports the second, while the

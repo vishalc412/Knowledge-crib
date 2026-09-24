@@ -642,47 +642,6 @@ class Parser {
     }
   }
 
-  /**
-   * Parse a parameter list from the current `(` up to its matching `)`. Captures the LAST name of
-   * each parameter as its name (skips types, annotations, generics, array dims, `final`, varargs).
-   */
-  private parseParamList(): string[] {
-    if (!this.isOp('(')) return [];
-    this.next(); // (
-    const params: string[] = [];
-    let pdepth = 1;
-    let lastName: string | undefined;
-    while (!this.atEnd() && pdepth > 0) {
-      const tk = this.peek();
-      if (tk.type === 'OP' && tk.value === '(') {
-        pdepth++;
-        this.next();
-        continue;
-      }
-      if (tk.type === 'OP' && tk.value === ')') {
-        pdepth--;
-        this.next();
-        if (pdepth === 0 && lastName) params.push(lastName);
-        // a `)` at param-depth 0 ends the current param (no more names); reset handled below.
-        continue;
-      }
-      if (pdepth === 1 && tk.type === 'OP' && tk.value === ',') {
-        if (lastName) params.push(lastName);
-        lastName = undefined;
-        this.next();
-        continue;
-      }
-      if (pdepth === 1 && tk.type === 'NAME' && !isModifier(tk.value)) {
-        // a bare name at param-depth 1 — the last one before `,`/`)`/`[`/`...` is the param name.
-        lastName = tk.value;
-        this.next();
-        continue;
-      }
-      this.next();
-    }
-    return params;
-  }
-
   /** Parse a comma-separated list of dotted type names (bases / implements / throws). */
   private parseDottedNameList(stopKeywords: string[], stopOps: string[] = ['{', ';']): string[] {
     const out: string[] = [];
@@ -1171,7 +1130,6 @@ class BodyParser {
   private parseStmts(): JavaStmt[] {
     const out: JavaStmt[] = [];
     while (this.i < this.end) {
-      const tk = this.peek();
       if (this.isOp(';') || this.isOp(',')) {
         this.next();
         continue;

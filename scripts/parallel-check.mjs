@@ -15,13 +15,13 @@
  *       slower than the dev box don't flake the gate; it still fails on a serial-parity regression.
  *   (3) WORKER OPT-IN: `KCRIB_PARALLEL=workers` runs + commits a byte-identical soul (the retained
  *       worker-thread pool still works, even though it is net-negative for small files and therefore
- *       not the default — see ADR-001).
+ *       not the default).
  *   (4) WIRING: parse-concurrent.ts exists + runParse routes to it by default + the worker pool is
  *       env-gated (anchored to executable source syntax, not bare words).
  *
  * The "≥ 2×" in the original plan row is unsatisfiable for crib's parse workload via any in-process
  * mechanism: worker threads lose to cold-V8-JIT + structuredClone transfer cost; bounded concurrency
- * is capped by the I/O fraction (~25%). See ADR-001 for the full empirical finding. This gate pins
+ * is capped by the I/O fraction (~25%). This gate pins
  * the honest, measured contract.
  *
  * release:verify builds every package before any gate runs, so the dynamic imports of the built

@@ -10,14 +10,9 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { SoulStore, dossierToMarkdown, newManifest, readDossier } from '@knowledge-crib/core';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { indexRepo } from './pipeline.js';
-
-const LOAN_FIXTURE = fileURLToPath(
-  new URL('../../parsers/fixtures/plsql/loan_rule_engine.pkb', import.meta.url),
-);
 
 let repo: string;
 let crib: string;

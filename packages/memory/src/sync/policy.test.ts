@@ -1,5 +1,5 @@
 /**
- * D10 admission-matrix tests: every cell of the filter, checked against the ADR table, plus the
+ * Sync admission-matrix tests: every cell of the filter, checked against the policy table, plus the
  * id-derivation refusal and the ambiguous-policy refusal (a refusal, never a warning).
  */
 import { describe, expect, it } from 'vitest';

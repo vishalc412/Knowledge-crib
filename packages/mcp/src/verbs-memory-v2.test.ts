@@ -632,7 +632,7 @@ describe('memorySync', () => {
       expect(res.request).toBe(request);
       expect(res.status).toBe('rejected');
       expect(String(res.message)).toContain('crib memory sync');
-      expect(String(res.message)).toContain('D12');
+      expect(String(res.message)).toContain('network side effects');
     }
   });
 });

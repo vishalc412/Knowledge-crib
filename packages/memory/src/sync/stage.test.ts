@@ -1,5 +1,5 @@
 /**
- * The write-site staging port (ADR-003 D3/D4): every non-engine store write stages its own sync
+ * The write-site staging port: every non-engine store write stages its own sync
  * event INSIDE the caller's lock hold — a tombstone written between two pushes must reach the
  * other devices instead of resurrecting on them. Honest gates, one test each: team skipped (D2 —
  * git IS its backend), un-initialized skipped (the push sweep heals), no derivable repo id

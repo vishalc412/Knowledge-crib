@@ -1,7 +1,7 @@
 /**
  * Cross-process mutual exclusion for {@link CribLock}.
  *
- * The audited defect (docs/audits/2026-09-05, F02) was not in the freshness queue that surfaced it
+ * The original defect was not in the freshness queue that surfaced it
  * but in this lock: `acquire()` classified a VANISHED lock file as stale, and the reclaim path then
  * unlinked unconditionally before creating. Two contenders racing inside a holder's release window
  * each deleted the other's freshly created lock and both entered the critical section, so an

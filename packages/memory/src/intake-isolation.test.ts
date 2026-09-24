@@ -1,5 +1,5 @@
 /**
- * R03 (docs/audits/2026-09-05/post-merge-reaudit.md) — durable intakes are subject to the SAME
+ * Durable intakes are subject to the SAME
  * principal boundary as memory records.
  *
  * An earlier repair gave versioned records a principal guard at the gather point

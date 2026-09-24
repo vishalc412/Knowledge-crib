@@ -282,7 +282,6 @@ export function buildRenamePlan(args: BuildRenamePlanArgs): RenamePlanOutcome {
   const inbound = extracted.edges.filter(
     (e) => e.dst === target.id && RENAME_RELS.has(e.rel as Rel),
   );
-  const exactFiles = new Set<string>([defFile]);
   const affected = new Map<string, RenameAffected>();
   for (const e of inbound) {
     const src = soul.getNode(e.src);
@@ -358,7 +357,6 @@ export function buildRenamePlan(args: BuildRenamePlanArgs): RenamePlanOutcome {
   const scanned = scanFiles ? { files: scanFiles, skippedBinary: 0 } : walkTextFiles(repoRoot);
   const candidates = scanned.files;
   const skippedBinary = scanned.skippedBinary;
-  const regex = wordBoundaryRegex(token);
   const filePlans: RenameFilePlan[] = [];
   const counts = { exact: 0, inferred: 0, edits: 0 };
   for (const relPath of [...resolvedFiles, ...candidates.filter((f) => !resolvedFiles.has(f))]) {
@@ -422,10 +420,8 @@ export function buildRenamePlan(args: BuildRenamePlanArgs): RenamePlanOutcome {
       edits: hitLines.length,
       sites: deduped,
     });
-    for (const line of hitLines) {
-      if (isExactFile) counts.exact++;
-      else counts.inferred++;
-    }
+    if (isExactFile) counts.exact += hitLines.length;
+    else counts.inferred += hitLines.length;
     counts.edits += hitLines.length;
   }
   if (skippedBinary > 0) notes.push(`${skippedBinary} binary file(s) skipped by the scan`);

@@ -83,9 +83,6 @@ const PARAM_BINDING: Record<string, string> = {
 /** Security annotations on a handler method → `meta.security` (the access-control contract). */
 const SECURITY_ANNOS = new Set(['PreAuthorize', 'PostAuthorize', 'Secured', 'RolesAllowed']);
 
-/** Spring Data query-method annotations → `meta.query` (the derived/read query contract). */
-const QUERY_ANNOS = new Set(['Query', 'Modifying', 'Procedure']);
-
 export interface SpringPassInput {
   classDefs: Array<{ def: JavaDef; id: string; qualifiedName: string }>;
   fieldDefs: Array<{ def: JavaDef; id: string; ownerId: string; ownerQ: string }>;

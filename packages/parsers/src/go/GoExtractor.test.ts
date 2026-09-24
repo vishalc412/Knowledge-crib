@@ -332,7 +332,6 @@ describe('GoExtractor — Track 3 (statement/condition/CFG)', () => {
 
   it('for loop → inLoop:true on the body action + a branch:LOOP condition', async () => {
     const { nodes, edges } = await runGuarded();
-    const lbl = label({ nodes, edges } as ExtractResult);
     const loopCond = idFor({ kind: 'condition', file: GUARDED_PATH, line: 16 });
     // one condition with branch:'LOOP', predicate = the continuation cond.
     const loopConds = nodes.filter((n) => n.kind === 'condition' && n.span?.start === 16);

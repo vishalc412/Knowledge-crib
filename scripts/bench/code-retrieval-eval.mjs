@@ -556,10 +556,10 @@ function decide() {
 
   const anyMeasurable = criteria.some((c) => c.discriminable);
   return {
-    rule: 'docs/program/wp4-implementation-spec.md §10.5',
+    rule: 'no-change-on-tie (a negative result ships as a negative result)',
     verdict: anyMeasurable
       ? 'evaluated'
-      : 'no-change — the hybrid arms were not measurable, and §10.5 step 6 biases a tie toward no change; step 7: a negative result ships as a negative result',
+      : 'no-change — the hybrid arms were not measurable; a tie is biased toward no change, and a negative result ships as a negative result',
     criteria,
     note: anyMeasurable
       ? null

@@ -1,5 +1,5 @@
 /**
- * The ADR-003 (Gate 4) sync event envelope (D1) — the ONE id grammar of cross-device sync.
+ * The cross-device sync event envelope — the ONE id grammar of cross-device sync.
  *
  *   `evt:<blake3Hex(canonical({ kind, store, repoId?, body }))>`
  *

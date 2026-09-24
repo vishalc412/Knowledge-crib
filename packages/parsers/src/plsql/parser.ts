@@ -113,9 +113,6 @@ class Parser {
   }
 
   // --- cursor helpers ---
-  private peek(): Token {
-    return this.toks[this.pos] ?? EOF_TOKEN;
-  }
   private at(): Token {
     return this.toks[this.pos] ?? EOF_TOKEN;
   }
