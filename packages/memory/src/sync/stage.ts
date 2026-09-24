@@ -1,6 +1,6 @@
 import type { MemoryStore } from '../store.js';
 /**
- * ADR-003 (Gate 4) — the WRITE-SITE staging port. The push sweep (bootstrap.ts derive-and-diff)
+ * Cross-device sync — the WRITE-SITE staging port. The push sweep (bootstrap.ts derive-and-diff)
  * heals a crash between a store write and its stage on the NEXT push, but a tombstone written
  * between two pushes on device A is invisible to device B until A's next push — and worse, a
  * delete that never syncs resurrects on every other device. The fix is to stage AT the write site,

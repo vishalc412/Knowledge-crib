@@ -7,8 +7,8 @@
  *   FAIL (1)         a requirement has evidence that it is NOT met;
  *   UNAVAILABLE (2)  a requirement has no evidence yet — never read as a pass.
  *
- * Requirements (docs/program/ui-remediation plan, Phase 6 step 5), each read from a JSON artifact
- * in the evidence directory (default docs/audits/2026-09-23/a11y):
+ * Requirements (UI remediation plan, Phase 6 step 5), each read from a JSON artifact
+ * in the evidence directory (default docs/a11y):
  *   checks.json      exit codes of the unit/browser/security/package commands, written by CI;
  *   benchmark.json   the large-graph benchmark against the Phase 0 baseline;
  *   issue-log.json   every accessibility finding with its WCAG level and status;
@@ -177,7 +177,7 @@ function readJson(dir, file) {
 
 function main(argv) {
   const dirFlag = argv.indexOf('--dir');
-  const dir = resolve(dirFlag >= 0 ? argv[dirFlag + 1] : 'docs/audits/2026-09-23/a11y');
+  const dir = resolve(dirFlag >= 0 ? argv[dirFlag + 1] : 'docs/a11y');
   let gate;
   try {
     gate = evaluateUiReleaseGate({

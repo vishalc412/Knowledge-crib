@@ -1,5 +1,5 @@
 /**
- * F14 (docs/audits/2026-09-05) — the optional shared HTTP daemon's request boundary.
+ * The optional shared HTTP daemon's request boundary.
  *
  * The audit POSTed a JSON-RPC `initialize` to `crib serve --http` carrying
  * `Host: audit-untrusted.example` / `Origin: https://audit-untrusted.example` and got HTTP 200 with
@@ -121,7 +121,7 @@ describe('serveHttp request boundary (end to end)', () => {
         headers: {
           'content-type': 'application/json',
           accept: 'application/json, text/event-stream',
-          // The exact headers recorded in docs/audits/2026-09-05/evidence/http-boundary.json.
+          // The exact headers of the original DNS-rebinding probe.
           host: 'audit-untrusted.example',
           origin: 'https://audit-untrusted.example',
         },

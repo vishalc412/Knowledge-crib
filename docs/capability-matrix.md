@@ -32,13 +32,13 @@ Nothing below has been exercised on Linux or Windows. That is not a hedge — no
 |---|---|---|---|
 | Deterministic code graph (index, query, context, impact) | verified | on | [`STATS.md`](STATS.md), full suite green |
 | `review` — change review from the graph | verified | on | [`bench/review-cost.md`](bench/review-cost.md) |
-| Always-fresh reads while editing (`serve --watch`) | verified, 805-file scale | opt-in | [reference watch run](audits/2026-09-05/evidence/repair/full-watch-results.json) |
-| Durable agent memory (record → admit → recall) | verified | opt-in (`crib memory init`) | [audit §R02/R03](audits/2026-09-05/post-merge-reaudit.md) |
-| Session resume after an IDE timeout | protocol verified; runtime certification in progress | on when memory is initialised | [audit §R06](audits/2026-09-05/post-merge-reaudit.md) |
+| Always-fresh reads while editing (`serve --watch`) | verified, 805-file scale | opt-in | reference watch run (2026-09-05 audit) |
+| Durable agent memory (record → admit → recall) | verified | opt-in (`crib memory init`) | 2026-09-05 re-audit §R02/R03 |
+| Session resume after an IDE timeout | protocol verified; runtime certification in progress | on when memory is initialised | 2026-09-05 re-audit §R06 |
 | On-device semantic recall | verified | **opt-in** (`crib embed setup`) | [`bench/onnx-model-ladder.md`](bench/onnx-model-ladder.md) |
-| Background freshness worker (`auto` mode) | verified with caveats | opt-in | [worker recovery](audits/2026-09-05/evidence/repair/worker-recovery.json) |
-| Memory home (web UI) | verified | opt-in (`crib viz`) | [audit §R08](audits/2026-09-05/post-merge-reaudit.md) |
-| Encrypted cross-device sync | synthetic soak only | opt-in | [sync soak](audits/2026-09-05/evidence/reaudit/sync-soak.json) |
+| Background freshness worker (`auto` mode) | verified with caveats | opt-in | worker-recovery run (2026-09-05 audit) |
+| Memory home (web UI) | verified | opt-in (`crib viz`) | 2026-09-05 re-audit §R08 |
+| Encrypted cross-device sync | synthetic soak only | opt-in | sync soak (2026-09-05 audit) |
 | Team memory over Git | implemented; not multi-user tested | opt-in | — |
 | Authenticated multi-tenancy | **out of scope, permanently** — a decided product boundary, enforced by refusing any non-loopback bind | — | [`SECURITY.md`](../SECURITY.md), `http-boundary.test.ts` |
 
@@ -158,7 +158,7 @@ regression is the only condition under which the arithmetic changes.
 A machine that has not run `crib embed setup` cannot build vectors at all: `crib index --vectors`
 refuses rather than silently embedding with the char-ngram fallback, which R1 measured as worse than
 pure lexical. Building vectors is also not free — see the cost note in
-[`audits/2026-09-20`](audits/2026-09-20/graph-memory-rag-audit.md) — and the embedded text recipe is
+the 2026-09-20 graph/memory/RAG audit — and the embedded text recipe is
 versioned, so an index built by an older recipe is refused on reopen rather than ranked across two
 different vector spaces.
 
@@ -404,6 +404,6 @@ These are open, disclosed rather than fixed. None is a surprise waiting to be fo
   authorized resume on a native host of each platform. A protocol probe, a WSL run or a receipt for
   a different candidate package closes none of them.
 
-Until those exist, this page stays as written. Historical audit reports under
-[`audits/2026-09-05/`](audits/2026-09-05/) remain immutable — they record what was true on their own
-date; this page is the current companion to them.
+Until those exist, this page stays as written. The audit reports and raw evidence cited above were
+removed from the working tree to keep the repository lean; they remain unchanged in git history
+under `docs/audits/` at commit `17e3d65f`.

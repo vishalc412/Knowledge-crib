@@ -107,7 +107,6 @@ describe('updateRepo (M6 incremental, git-anchored)', () => {
 
   it('returns null when the indexed anchor was rebased away — full re-index, never a crash (WP4.4)', async () => {
     await indexAndCommit();
-    const orphan = git(repo, ['rev-parse', 'HEAD']); // this is what the index stamped as vcsHead
     // Rewrite history: amend replaces the commit, and the indexed anchor stops resolving.
     writeFileSync(join(repo, 'src', 'a.ts'), "export function greet(): string { return 'hey'; }\n");
     git(repo, ['add', '-A']);

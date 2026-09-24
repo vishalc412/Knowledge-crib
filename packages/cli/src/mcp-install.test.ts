@@ -126,6 +126,7 @@ describe('installMcp — codex (TOML, snake_case, absolute path, project + globa
     expect(r.args).toEqual(['serve', repo]); // codex has no interpolation → absolute path
     const toml = readFileSync(join(repo, '.codex', 'config.toml'), 'utf8');
     expect(toml).toContain('[mcp_servers.knowledge-crib]');
+    expect(toml.startsWith('#!')).toBe(false);
     // tomlString applies backslash- + quote-escaping + wraps in quotes. On win32 RESOLVED_BIN is
     // `D:\usr\local\bin\crib` → serialized `command = "D:\\usr\\local\\bin\\crib"` (valid TOML).
     // The earlier `command = "${BIN}"` asserted the raw posix path → mismatch on win32.

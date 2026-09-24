@@ -1,9 +1,9 @@
-# Memory sync — the operator guide (Gate 4, ADR-003)
+# Memory sync — the operator guide
 
 Cross-device sync for the crib memory stores: an immutable, content-addressed event
 protocol pushed to **your own storage**, encrypted at rest, with no service operated by
-crib. This doc is the operator-facing contract behind
-[ADR-003](adr/ADR-003-cross-device-sync.md); the decisions it cites (D1–D12) live there.
+crib. This doc is the operator-facing contract; the design decisions it cites are labelled
+D1–D12.
 
 ```
 crib memory init-sync   # configure a store + seed the baseline (syncs NOTHING)

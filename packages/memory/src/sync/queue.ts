@@ -1,5 +1,5 @@
 /**
- * ADR-003 (Gate 4) D3 + D4 — the outbound sidecar queue. Store-root sidecars, NOT new
+ * Cross-device sync — the outbound sidecar queue. Store-root sidecars, NOT new
  * MemoryCollections (D3): `<storeRoot>/sync-outbox.jsonl` + `<storeRoot>/sync-state.json` sit
  * deliberately outside the closed collection union (no manifest count-key churn, no BM25 corpus
  * pollution, no FTS hazard) and outside the merge driver's `*.jsonl` claim.

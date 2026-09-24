@@ -23,7 +23,7 @@ import { indexRepo } from '@knowledge-crib/pipeline';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 /**
- * Gate 4 — the sync surfaces (ADR-003 D12), driven end-to-end against the BUILT `dist/cli.js` over
+ * The sync surfaces, driven end-to-end against the BUILT `dist/cli.js` over
  * a temp indexed repo (the harness memory-portable.test.ts uses). What this pins:
  *
  *   - `init-sync` seeds the D5 baseline and syncs NOTHING; the config file carries a key REFERENCE

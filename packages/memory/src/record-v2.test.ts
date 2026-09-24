@@ -624,7 +624,7 @@ describe('loader + store acceptance of mixed v1/v2 records', () => {
     const read = team.readCollection('records');
     expect(read.errors).toHaveLength(0);
     expect(read.entries[0]?.id).toBe(v2.id);
-    // D10 (ADR-003): the SAME collection refuses a private-projecting v2 record — private never
+    // the SAME collection refuses a private-projecting v2 record — private never
     // enters git, at the write gate, for every writer.
     expect(() =>
       team.upsertEntry('records', v2Record({ visibility: 'private', claim: 'a private claim' })),

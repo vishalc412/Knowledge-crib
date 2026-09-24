@@ -38,19 +38,6 @@ export interface ScipExportResult {
   notes: string[];
 }
 
-/** `Descriptor.Suffix` values, by the numbers `scip.proto` assigns them. */
-const SUFFIX_NO = {
-  namespace: 1,
-  type: 2,
-  term: 3,
-  method: 4,
-  'type-parameter': 5,
-  parameter: 6,
-  meta: 7,
-  local: 8,
-  macro: 9,
-} as const;
-
 /** `SymbolInformation.Kind` numbers for the crib node `type` values worth mapping. */
 const KIND_NO = new Map<string, number>([
   ['class', 7],
@@ -128,13 +115,6 @@ export function scipSymbolFor(node: Node, opts: ScipExportOptions): string {
     descriptors,
     local: false,
   });
-}
-
-/** Encode one `Descriptor`. */
-function writeDescriptor(w: Writer, d: ScipDescriptor): void {
-  w.string(1, d.name);
-  if (d.disambiguator) w.string(2, d.disambiguator);
-  w.int32(3, SUFFIX_NO[d.suffix]);
 }
 
 /**

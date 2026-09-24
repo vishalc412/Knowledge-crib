@@ -63,7 +63,6 @@ export class PythonExtractor implements Extractor {
   name = 'lang:python';
   capabilities: Capabilities = { imports: true, calls: true, inheritance: true, types: 'none' };
 
-  private static readonly EXTS = ['.py'];
   /** `.py` / `.pyi` stubs; `.pyc` is bytecode (skipped by discovery anyway). */
   private static readonly SUPPORTED = ['.py', '.pyi'];
 

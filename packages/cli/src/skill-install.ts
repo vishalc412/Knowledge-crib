@@ -16,7 +16,6 @@
  * install` is the one command that makes LLM-graph generation available in any Claude Code install.
  */
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync } from 'node:fs';
-import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { type ClientId, skillDestFor } from './adapters.js';
@@ -57,12 +56,6 @@ export interface SkillInstallResult {
   written: boolean;
   /** Note for the user (e.g. unsupported combo, missing skill). Non-fatal. */
   note?: string;
-}
-
-/** Default install target: Claude Code's user-level skills dir. Kept for back-compat with callers
- *  that pre-date the per-client registry; new code should pass `client` / use {@link skillDestFor}. */
-export function defaultSkillsRoot(): string {
-  return join(homedir(), '.claude', 'skills');
 }
 
 /** List every bundled skill (each subfolder of `skills/` containing a SKILL.md). */

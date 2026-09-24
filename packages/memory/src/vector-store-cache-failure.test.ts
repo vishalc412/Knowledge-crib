@@ -33,7 +33,7 @@
  *
  * DISCRIMINATION. Against the pre-fix bodies these tests go red on the assertions that matter: the
  * silent write-back catch yields `cacheFailures() === 0` and an empty observer log (verified by
- * restoring that body; see docs/program/evidence-register.md row WP1-D1i).
+ * restoring that body).
  */
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';

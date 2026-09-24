@@ -1,5 +1,5 @@
 /**
- * R01 (docs/audits/2026-09-05/post-merge-reaudit.md) — the freshness lease must have ONE owner,
+ * The freshness lease must have ONE owner,
  * and no acknowledged refresh task may vanish when its owner is killed.
  *
  * The audit started 8 real worker processes twelve times and watched 5-8 of them per trial believe

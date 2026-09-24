@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://knowledge-crib.dev/schema/memory-1/sync-event.schema.json",
   "title": "SyncEvent",
-  "description": "The ADR-003 (Gate 4) cross-device sync event envelope (D1): one immutable, content-addressed event wrapping a canonical memory entry. deviceId/principalId/ts are envelope metadata only — they never enter the evt: id seed, so two devices deriving an event for the same claim produce the SAME id (the dedupe backbone). No seq, no prev-chaining (D1 ruling).",
+  "description": "The cross-device sync event envelope: one immutable, content-addressed event wrapping a canonical memory entry. deviceId/principalId/ts are envelope metadata only — they never enter the evt: id seed, so two devices deriving an event for the same claim produce the SAME id (the dedupe backbone). No seq, no prev-chaining (D1 ruling).",
   "type": "object",
   "required": [
     "id",

@@ -238,7 +238,7 @@ describe('CsharpExtractor — degradation + id-stability (gate)', () => {
 
 describe('CsharpExtractor — Track 3 if/else + loops (guarded procedure)', () => {
   it('emits ONE condition node per IF (keyed by the if-line) + per-branch statement nodes', async () => {
-    const { nodes, edges } = await runGuarded();
+    const { nodes } = await runGuarded();
     const conds = nodes.filter((n) => n.kind === 'condition');
     // one condition for the IF (line 7, branch THEN, predicate "x > 0")
     const ifCond = conds.find((c) => c.span?.start === 7);

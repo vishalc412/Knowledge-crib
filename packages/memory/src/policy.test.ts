@@ -156,7 +156,6 @@ describe('policy loading', () => {
 describe('policy / profile hashing (drift detection)', () => {
   it('is stable across key-order changes (canonical key-sorted blake3)', () => {
     const p1 = profile({ assertions: [{ name: 'a', kind: 'exit-code', codes: [0] }] });
-    const p2: GateProfile = { ...p1, permittedEnv: [...p1.permittedEnv].reverse() };
     // same semantic content → same hash regardless of array order WITHIN the same field is NOT
     // guaranteed (arrays are ordered), but identical objects always hash the same.
     expect(profileHash(p1)).toBe(profileHash({ ...p1 }));

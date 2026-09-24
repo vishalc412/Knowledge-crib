@@ -461,7 +461,6 @@ export class RefreshCoordinator {
     const start = capture ?? this.captureSource();
     this.busy = true;
     let candidate: ReaderBundle | undefined;
-    let discard = false;
     let published = false;
     try {
       candidate = await this.buildBundle(start);
@@ -469,16 +468,12 @@ export class RefreshCoordinator {
       // Shutdown owns no new readers. A candidate that completed after close is still invisible,
       // so discard it through the normal exactly-once cleanup path rather than resurrecting a
       // bundle after the server has released its request pins and transport.
-      if (this.closed) {
-        discard = true;
-        return;
-      }
+      if (this.closed) return;
       // WP4.4 — the candidate is INVISIBLE until the source re-check agrees with the capture it was
       // built from. A save that landed mid-build means the bundle answers a question the tree has
       // already stopped asking: discard + reschedule, never publish-then-patch.
       const now = this.captureSource();
       if (!captureEquals(now, start)) {
-        discard = true;
         this.reschedule = true;
         this.opts.onWarn?.(
           'source changed during refresh — candidate discarded, a new cycle is queued',

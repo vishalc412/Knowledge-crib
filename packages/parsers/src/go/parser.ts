@@ -1812,7 +1812,6 @@ export function collectImports(tokens: Token[]): { pkg: string; imports: GoImpor
   let pkg = '';
   let i = 0;
   const isOp = (k: number, v: string) => tokens[k]?.type === 'OP' && tokens[k]?.value === v;
-  const isName = (k: number, v: string) => tokens[k]?.type === 'NAME' && tokens[k]?.value === v;
 
   while (i < tokens.length) {
     const tk = tokens[i]!;

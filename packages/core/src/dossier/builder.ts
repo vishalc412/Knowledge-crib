@@ -427,10 +427,6 @@ function controlFlow(
   return groups;
 }
 
-function str(s: string): string {
-  return s;
-}
-
 /** Sort adjacent briefs by a stable label (qualifiedName → name → id). */
 function byLabel(a: AdjacentBrief, b: AdjacentBrief): number {
   const la = a.qualifiedName ?? a.name ?? a.id;

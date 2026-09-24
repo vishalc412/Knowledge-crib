@@ -81,7 +81,7 @@ import {
   BENCH_SCALE_FAST,
   type CaptureOutboxEntry,
   type ConflictGroup,
-  // ── Gate 4 — cross-device sync surfaces (ADR-003 D12) ──
+  // ── cross-device sync surfaces ──
   DEFAULT_MIGRATION_PRINCIPAL_ID,
   DEFAULT_RETENTION_POLICY_ID,
   type DistillVerifyContext,
@@ -448,7 +448,7 @@ const VALUE_FLAGS = new Set([
   '--hops',
   '--predicate',
   '--cursor',
-  // Gate 4 sync/purge subcommands (`crib memory init-sync|sync|purge`): their positionals are
+  // Sync/purge subcommands (`crib memory init-sync|sync|purge`): their positionals are
   // mem: ids and their flag values are env names / urls — never paths, so every value-taking
   // flag they add must be stripped alongside its value (the fixed subcommand-token pattern).
   '--confirm',
@@ -3530,10 +3530,9 @@ async function cmdDoctor(args: string[], ctx?: CmdCtx): Promise<number> {
     });
   }
 
-  // 13. Durability model (WP1 obligation 2: "surface unsupported guarantees explicitly"). The store
-  //     now flushes the temp file, renames, then flushes the parent directory — but what that BUYS
-  //     depends on the platform, and until this check existed the limit lived only in
-  //     `docs/design/02-lld.md`'s failure table (docs-only is exactly the defect D1-f names).
+  // 13. Durability model ("surface unsupported guarantees explicitly"). The store flushes the temp
+  //     file, renames, then flushes the parent directory — but what that BUYS depends on the
+  //     platform, so the limit is reported here rather than left in documentation.
   //
   //     Three-valued on purpose. `fsync` on darwin is a host-to-device flush, NOT a platter flush —
   //     `man 2 fsync` verbatim: "the drive itself may not physically write the data to the platters…
@@ -7054,7 +7053,7 @@ async function cmdMemory(args: string[], ctx?: CmdCtx): Promise<number> {
         'additional operations: backup create|verify|restore; sync compact [--dry-run] [--json]\n',
       );
       return EXIT.OK;
-    // Gate 4 — cross-device sync (ADR-003 D12): init-sync / sync / purge / conflicts / resolve.
+    // Cross-device sync: init-sync / sync / purge / conflicts / resolve.
     case 'init-sync':
       return cmdMemoryInitSync(rest, ctx);
     case 'sync':
@@ -7176,7 +7175,6 @@ async function cmdMemoryDistill(args: string[], ctx?: CmdCtx): Promise<number> {
   }
 
   const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
-  const rt = openSoul(resolved);
   const repoId = readRepoId(resolved.cribDir);
   if (!repoId) {
     process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
@@ -7722,7 +7720,7 @@ function cmdMemoryCaptureHook(args: string[], ctx?: CmdCtx): number {
   }
 }
 
-// ─── Gate 4 — cross-device sync surfaces (ADR-003 D12, docs/memory-sync.md) ──────
+// ─── cross-device sync surfaces (docs/memory-sync.md) ──────
 
 /**
  * The shared preamble of the Gate-4 memory sync surfaces: the portable {@link MemoryApi} + the
@@ -8480,7 +8478,7 @@ async function cmdMemoryPurge(args: string[], ctx?: CmdCtx): Promise<number> {
   const { api, repoId, env } = opened;
   const actor =
     stringFlag(args, '--actor') ?? env.KCRIB_PRINCIPAL_ID ?? DEFAULT_MIGRATION_PRINCIPAL_ID;
-  // Per-scope routes (ADR-003 D6/D11): the local and global stores can be synced to DIFFERENT
+  // Per-scope routes: the local and global stores can be synced to DIFFERENT
   // backends with DIFFERENT keys, so each scope's remote delete leg must resolve from ITS OWN
   // config. A scope with no config (or an unresolvable key) simply has no route — the purge still
   // completes locally and the report states the remote was untouched.
@@ -10428,7 +10426,7 @@ function applyLocalFeedback(
     },
     counterEvidence: input.claimKind ? input.counterEvidence : [],
     now: () => new Date().toISOString(),
-    // ADR-003 D3/D4: the feedback row and (on suppression) the quarantine decision stage for
+    // The feedback row and (on suppression) the quarantine decision stage for
     // cross-device sync INSIDE the same lock hold that writes them — a contradicted-feedback
     // quarantine must survive to the next device, or it resurrects there.
     syncStage: {
@@ -10567,7 +10565,7 @@ function findRecordKind(
 
 /** `crib memory audit [--repair-local]` — report validation drift, conflicts, and trust distribution. */
 /**
- * D10 (ADR-003) — private memory never enters Git. The team store IS a git repo, so a `private`
+ * private memory never enters Git. The team store IS a git repo, so a `private`
  * record that has landed in a team shard file is a D10 violation sitting in history. The audit
  * walks the team store's shard files (JSONL, one entry per line) READ-ONLY and reports any
  * memory-2 record stamped `visibility: 'private'` by file + line + id. Unparseable lines are
@@ -10730,7 +10728,7 @@ function cmdMemoryAudit(args: string[], ctx?: CmdCtx): number {
     ts: fb.ts,
     ...(fb.context ? { context: fb.context } : {}),
   }));
-  // D10 (ADR-003) — private memory never enters Git: scan the team store's shard files READ-ONLY.
+  // private memory never enters Git: scan the team store's shard files READ-ONLY.
   // Empty + honest: `no private records in team shards` is a clean result, not a missing check.
   const teamPrivate = scanTeamPrivateLines(deps.team.rootDir);
   process.stdout.write(
@@ -11108,23 +11106,23 @@ function printHelp(): void {
       '  crib merge-driver %O %A %B %P            git custom merge driver for .crib chunks',
       '  crib install-hooks [path]                wire post-commit + .gitattributes + merge driver',
       '  crib export [--format F] [--procedure P] [--extracted-only] [--redact|--no-redact] render graph: rules|mermaid|graph.json|report|llm',
-      '  crib viz [path] [--port N]               serve the offline web UI (Claude Design DC graph) + open browser',
+      '  crib viz [path] [--port N]               serve the offline graph + memory web UI and open the browser',
       '  crib enrich [path] [--budget-tokens N]    semantic work queue; --next (token-packed batch) | run --provider <name> [--max-tokens N --max-batches N --concurrency N] | --auto [--provider <name>] | --save <file> | --overview | --scopes | --prune-stale [--apply]',
       '  crib memory <init|handoff|recall|implementations|graph|backup|sync|evaluate|activate|propose|attest>   persistent memory, implemented plans, and recovery',
       '  crib intake <create|checkpoint|list|show|complete|implement|share>   durable intent and implemented-plan archives',
       '  crib session bootstrap [--json]       restore the deterministic resume brief for this project',
       '  crib audit-llm [path]                    re-verify every LLM artifact against the soul (grounding moat); exits non-zero on ungrounded/drift',
       '  crib mcp <install|list|remove> [--ide <claude|cursor|vscode|codex|windsurf|gemini|all>] [--global] [--bin <path>] [path]',
-      '                                          auto-wire the MCP server into each IDE config (REQ-2)',
+      '                                          auto-wire the MCP server into each IDE config',
       '  crib adapters <install|list|remove> [--client <id|all>] [--scope project|global]',
-      '  crib adapters hooks <install|list|remove> [--client <id|all>]   lane-2 capture hooks (Claude Code settings.json, project scope)',
-      '                                          write the vendor-neutral agent-memory protocol into each client instruction file (W8)',
+      '                                          write the vendor-neutral agent-memory protocol into each client instruction file',
+      '  crib adapters hooks <install|list|remove> [--client <id|all>]   memory capture hooks (Claude Code settings.json, project scope)',
       '  crib skill <install|list> [name] [--dest <dir>] [--client <claude>]   install bundled skills (default ~/.claude/skills)',
       '  crib setup [path] [--no-embed]           THE one command: index + hooks + MCP for every client + the mandatory protocol in every instruction file + the on-device model + memory stores + doctor. Nothing to run afterwards.',
       '  crib init [path] [--ide <id|all|detected>]   5-minute onboarding: index + install-hooks + mcp install + adapters + the semantic model + next-steps hero (defaults to every client; --ide detected wires only what is in use; --no-embed skips the model download)',
       '  crib doctor [path]                       setup health check: node/corepack/index-freshness/hooks/IDE-wiring/memory-loop/stale-builds/embed-tier/freshness/post-commit-hook/multimodal-adapters (✓/✗ + fix hints)',
       "  crib rerank <setup [--model <id>] [--yes] [--list] | status>   second-stage cross-encoder: reorders the top candidates by scoring (query, text) PAIRS, which a bi-encoder structurally cannot do. Reuses the embed tier's ONNX runtime. OFF by default and measured before trusted (node scripts/eval/code-vector-eval.mjs --rerank)",
-      "  crib embed setup [--model small|base|large] [--yes]   ONE command to the semantic tier: generates + pins an adapter, then proves it ranks. --list shows the measured size/quality ladder; --yes allows the one-time runtime install and model download; --from <dir> adopts a pre-fetched bundle (air-gapped)',",
+      '  crib embed setup [--model small|base|large] [--yes]   ONE command to the semantic tier: generates + pins an adapter, then proves it ranks. --list shows the measured size/quality ladder; --yes allows the one-time runtime install and model download; --from <dir> adopts a pre-fetched bundle (air-gapped)',
       '  crib embed <install <model-dir>|status>   on-device embedder tier: install --model-id <id> --model-version <ver> [--entry <file>] | status (tier report; --accept-remote-policy opts into the remote tier)',
       '  crib freshness [<mode>|worker|service|hook|convert-hook]   index freshness: manual|watch|auto | supervised worker install/status/uninstall | durable queue',
       '',

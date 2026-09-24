@@ -4,7 +4,7 @@
  * the content hash; the parse phase re-reads lazily via ExtractCtx (cached per file).
  */
 import { type Stats, readFileSync, readdirSync, statSync } from 'node:fs';
-import { join, sep } from 'node:path';
+import { join } from 'node:path';
 import type { SoulStore } from '@knowledge-crib/core';
 import type { FileMeta } from '@knowledge-crib/parsers';
 import { idFor } from '@knowledge-crib/soul-schema';
@@ -228,8 +228,4 @@ function safeRead(abs: string): string {
   } catch {
     return '';
   }
-}
-
-function toPosix(p: string): string {
-  return sep === '/' ? p : p.split(sep).join('/');
 }

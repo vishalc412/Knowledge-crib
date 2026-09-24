@@ -1,5 +1,5 @@
 /**
- * ADR-003 (Gate 4) D8 — decision-level conflicts: two devices appending INCOMPATIBLE retirement
+ * Cross-device sync — decision-level conflicts: two devices appending INCOMPATIBLE retirement
  * decisions for one subject. Never resolved automatically (never LWW, never first-writer-wins);
  * surfaced in sync status + `crib memory audit` until a human appends an explicit
  * supersede/retract via `crib memory resolve` (D8: resolution is append-only, and the resolving

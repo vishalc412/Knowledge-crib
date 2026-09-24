@@ -1,211 +1,135 @@
 # Knowledge-crib
 
-> A portable **"project soul"** for AI coding agents — a local-first knowledge graph that digs deep
-> like GitNexus and indexes broadly like Graphify, persisted as the project's memory: cross-IDE,
-> agent-agnostic, incrementally upgraded as the project evolves. Delivered as **one fast MCP server**
-> (not a skill). Greenfield, all-new, **Apache-2.0**.
+> A local-first knowledge graph and memory layer for AI coding agents, served over **one MCP
+> server**. Index a repository once; every agent — Claude Code, Cursor, Copilot, Codex, Windsurf,
+> Gemini — gets call graphs, blast radius, doc↔code links and durable project memory in a fraction
+> of the tokens it would spend re-reading files.
 
-**Status:** `0.1.0` release candidate — certification is currently **NO-GO** (see the launch
-decision in [docs/launch/developer-launch-decision.md](docs/launch/developer-launch-decision.md));
-not yet tagged/published. Before adopting, read
-the dated [capability matrix](docs/capability-matrix.md): what is measured vs unverified, what is
-default vs opt-in, and the known limits carried into launch. Drift-prone counts (packages,
-languages, test surface, MCP tool count) live in one generated source —
-[docs/STATS.md](docs/STATS.md) — refreshed by `pnpm docs:stats`; reference it instead of restating
-a number here.
+**Status:** `0.1.0` release candidate · Apache-2.0 · Node ≥ 22.5 · not yet published to npm (install
+from source below). The dated support boundary — what is measured, what is opt-in, known limits — is
+in the [capability matrix](docs/capability-matrix.md).
+
+![crib viz — architecture overview of this repository's own graph](docs/assets/crib-graph-overview.png)
 
 ---
 
 ## Why
-AI coding agents break things and burn tokens because they lack durable, architectural context.
-They re-read files every session to rebuild understanding. Knowledge-crib indexes a project **once**
-into a queryable graph (the *soul*), then serves it to any agent over MCP — so the agent gets full
-project context **fast**, with **far fewer tokens**, and stops making architecture-breaking changes.
 
-### The token-cost benefit, concretely
-The default `query`/`context`/`dossier` response is deliberately **lightweight**: a one-line
-snippet per hit plus, when an LLM analysis exists, a 5-field pointer (`provenance` / `model` /
-`stale` / `confidence` / `purpose`) — **not** the multi-KB analysis+graph+evidence blob. On the
-self-index a `query` hit carrying an LLM artifact is ~1.3 KB by default vs ~10.3 KB with the full
-blob — **~7.7× smaller per hit**, so a 10-hit discovery call costs ~90 KB (~23 K tokens) less than
-folding the full brief. The full brief is still one flag away (`--with-llm` / `withLlm: true`) when
-you actually want it. This is the difference between "the crib pays for itself" and "the crib adds
-cost": lean by default, deep on demand.
+Agents re-read files every session to rebuild an understanding of the codebase. That is slow,
+expensive, and still misses architecture: who calls this, what breaks if it changes, what was
+decided last week. Knowledge-crib parses the project into a committable graph (the **soul**), builds
+a fast local index from it, and answers those questions directly.
 
-### Measured, not projected (run it yourself)
-Two reproducible harnesses measure the real token and dollar gap against Knowledge-crib's own
-indexed source (current self-index topology: `crib status` — the numbers below were measured on
-2026-07-16; re-running the harness reprints them against today's tree). Prices: input $3, output
-$15, cache-write $3.75, cache-read $0.30 per 1M tokens (Sonnet-class list; overridable via env).
+Measured on this repository (reproduce with the commands shown):
 
-**One cross-package task** — "understand the query pipeline" — answered two ways
-(`node scripts/crib-ab-task.mjs`):
+| workload | without crib | with crib | saving |
+|---|---|---|---|
+| one cross-package task (`pnpm ab:task`) | 26,286 tokens | 1,415 tokens | **18.6×** |
+| six discovery queries (`pnpm bench`) | 151,072 tokens | 3,339 tokens | **45.2×** |
 
-| path | strategy | context tokens | cold cost (cache cleared) | warm 6-turn cost |
-|---|---|---|---|---|
-| no-crib | grep + read 3 whole defining files | 26,286 | $0.0789 | $0.591 |
-| crib | `query`+`neighbors` (snippets + graph edges) | 1,415 | $0.0042 | $0.0074 |
-| **saving** | | **18.58×** | **18.58×** | **79.61×** |
+CI enforces a ≥ 3× floor (`pnpm budget:check`). The deterministic core — parse, graph, impact,
+search — never needs a network, and the server itself makes no model calls.
 
-**Six discovery queries across the whole graph** (`node scripts/crib-bench.mjs`):
-
-| | crib default tokens | raw file-read tokens | vs raw | crib $/task | no-crib $/task (churn) | no-crib $/task (cached) |
-|---|---|---|---|---|---|---|
-| **6 queries total** | 3,339 | 151,072 | **45.24×** leaner | $0.0175 | $3.399 | $0.793 |
-| **cost saving** | | | | | **193.91×** cheaper | **45.25×** cheaper |
-
-The "cache cleared" column is the honest floor: every token priced as fresh input, so the dollar
-gap equals the token gap exactly — **you can't be billed for tokens you never needed to read.**
-Caching only widens it (193.91× vs 45.25×). These same numbers gate CI (`node scripts/budget-check.mjs`
-requires ≥3× cost saving) and a cache-stability regression test
-(`node scripts/crib-cache-stability.test.mjs`) — both green. Full reports: `pnpm bench` /
-`pnpm ab:task` (or pass `--out <path>` for a markdown file).
-
-Two existing tools each prove half and serve as **design inspiration only (no code copied)**:
-- **GitNexus** — how to dig deep (impact, call chains, type resolution).
-- **Graphify** — how to index broadly and portably (any input → a queryable graph).
-
-## The one-sentence model
-**Parse → graph → persist as a committable "soul" → build a fast index from it → serve to agents over MCP.**
-
-## Architecture
-- **GraphStore** — `.crib/graph` is the sole graph source of truth. `extracted/` holds deterministic
-  JSONL; `semantic/` holds grounded model-authored artifacts. The composite view joins both; a
-  working overlay + materialized layers keep large graphs fast to open without changing the store.
-- **Memory** — `@knowledge-crib/memory`: a durable agent-memory ledger (observe → evaluate/admit →
-  recall, bi-temporal so records can be superseded, not silently edited), team memory over Git,
-  and opt-in encrypted cross-device sync. Sessions can resume after an IDE timeout via intake
-  checkpoints.
-- **IndexStore** — derived SQLite + FTS5 query layer; gitignored and rebuildable from GraphStore.
-  **Code search is lexical by default** (BM25 over names, signatures, headings, files and rehydrated
-  bodies, plus a static synonym table). Vector retrieval over the code graph is opt-in per index
-  (`crib index --vectors`) and is **not yet measured on a labelled code corpus** — see the
-  [capability matrix](docs/capability-matrix.md).
-- **Semantic recall — of the MEMORY LEDGER, not of code.** On-device ONNX embeddings behind
-  `crib embed setup` (opt-in) rank *memory records*: the default `large` model reaches 81.1%
-  paraphrase recall / 0.881 MRR **on a frozen corpus of 500 labelled queries over 307 memory
-  records**, with no Python and no network after download; a machine without it serves the
-  char-ngram fallback (~2.6% paraphrase recall). Those numbers describe `memory recall` and say
-  nothing about code search. The measured ladder — including the corpus it was measured on — is in
-  [docs/bench/onnx-model-ladder.md](docs/bench/onnx-model-ladder.md).
-- **Freshness** — `crib serve --watch` re-indexes on save (verified at 805-file scale) and a
-  background `--auto` worker keeps the soul fresh while you work.
-
-The deterministic core (parse / graph / impact / search) **never needs a network**, and the server
-itself **makes no model calls** — LLM enrichment is opt-in and authored by the host agent through
-the bundled `/crib-enrich` skill, so the server stays provider-neutral.
-
-## Repo layout
-```
-knowledge-crib/                 # pnpm workspace — 8 packages (canonical counts: docs/STATS.md)
-  packages/
-    soul-schema/   # JSON Schema + TS types (the contract)
-    core/          # GraphStore, SoulStore, materialize, manifest, validation
-    memory/        # durable agent memory: ledger, admission, team-over-Git, encrypted sync
-    parsers/       # offline extractors — 11 incl. TS, Java, Python, C#, Go, Rust, PHP, PL/SQL, Markdown, Mule, agent artifacts
-    pipeline/      # discover → extract → resolve → link → cluster → index
-    mcp/           # the MCP server (17 tools / 47 operations)
-    cli/           # 36 verbs: index | setup | doctor | update | serve | embed | memory | viz | …
-    ui/            # offline graph visualization + memory home (`crib viz`)
-  docs/            # the spec package; START with docs/capability-matrix.md
-```
-
-## Install
-
-### One command, nothing left to do
+## Quick start
 
 ```bash
 git clone https://github.com/KnowledgeCrib/knowledge-crib.git && cd knowledge-crib
-corepack pnpm@9.15.0 bootstrap          # or: node scripts/bootstrap.mjs <your-repo>
+corepack pnpm@9.15.0 bootstrap /path/to/your/repo
 ```
 
-That installs workspace dependencies, builds every package, puts `crib` on your PATH, and then runs
-`crib setup` against the target repository — which indexes it, wires the git hooks, writes the MCP
-server config for **every** client, writes the mandatory agent protocol into **every** client's
-instruction file (`CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `.windsurfrules`,
-`.github/copilot-instructions.md`, `.cursor/rules/crib.mdc`), downloads and integrity-pins the
-on-device embedding model, creates the team + local memory stores, and finishes with the health
-check. There is no second step.
+`bootstrap` installs dependencies, builds every package, puts `crib` on your `PATH`, and runs
+`crib setup` on the target repository. Setup indexes it, installs the git hooks, writes the MCP
+config and the agent protocol for every supported client, installs the on-device embedding model,
+creates the memory stores, and finishes with `crib doctor`. Restart your editor and the
+`knowledge-crib` MCP server is available.
 
-Two things are worth knowing before you run it, because both are downloads:
+Already have `crib` on your `PATH`?
 
-| flag | what it changes |
+```bash
+crib setup .     # index + hooks + MCP wiring + agent protocol + model + memory + health check
+crib doctor .    # ✓/✗ health check with fix hints
+```
+
+| setup flag | effect |
 |---|---|
-| *(default)* | installs the `large` embedding model — **~2.1 GB**, one time, offline afterwards |
-| `--embed-model small` | a ~97 MB model instead (lower paraphrase recall; see the ladder above) |
-| `--no-embed` (or `KCRIB_NO_EMBED=1`) | no model at all — recall stays lexical (~2.6% on paraphrases) |
-| `--embed-from <dir>` | adopt a pre-fetched bundle instead of downloading (air-gapped hosts) |
+| *(default)* | installs the `large` embedding model (~2.1 GB, one time, offline afterwards) |
+| `--embed-model small` | ~97 MB model, lower paraphrase recall |
+| `--no-embed` / `KCRIB_NO_EMBED=1` | no model — memory recall stays lexical |
+| `--embed-from <dir>` | adopt a pre-fetched model bundle (air-gapped hosts) |
+| `crib init --ide detected` | wire only the clients this machine actually uses |
 
-The model weights are **not** committed to this repository — they are ~2.1 GB of third-party
-artifacts under their own licences. `crib setup` fetches them for you on first run and pins them
-through crib's integrity manifest; after that every query is offline.
+## How it works
 
-### In an already-installed environment
-
-```bash
-crib setup .       # the whole thing: index + hooks + MCP + protocol + model + memory + doctor
-crib doctor .      # ✓/✗ setup health check with fix hints
+```
+parse → graph → persist as a committable soul (.crib/graph) → derived SQLite/FTS5 index → MCP
 ```
 
-`crib init .` is the subset that stops before the memory stores and the health check, and
-`crib init --ide detected` narrows the wiring to the clients this machine appears to run.
+- **Soul** (`.crib/graph`) — deterministic JSONL extracted from the code, plus grounded
+  model-authored analysis kept in a separate layer. Commit it; it merges with a bundled git driver.
+- **Index** — derived SQLite + FTS5, gitignored and rebuildable. Code search is BM25 by default;
+  vector retrieval over code is opt-in (`crib index --vectors`).
+- **Memory** — a bi-temporal ledger of reusable, evidence-backed claims (team memory over Git,
+  local memory per machine, opt-in encrypted cross-device sync) and resumable work intakes.
+- **Freshness** — git hooks, `crib serve --watch`, or a background worker keep the index current.
+- **Languages** — TypeScript/JavaScript, Python, Java, C#, Go, Rust, PHP, PL/SQL, Markdown,
+  MuleSoft, and agent artifacts (skills, rules, instructions). Counts live in
+  [docs/STATS.md](docs/STATS.md).
 
-### Manual workspace install
+## MCP tools
 
-Knowledge-crib is a pnpm workspace. The recommended way to make the `crib` CLI available globally is to link the workspace `cli` package, not to install a separate copy from a registry. Linking keeps the global binary pointing at your local checkout so workspace dependencies resolve correctly.
+| tool | use it for |
+|---|---|
+| `query` | find code and docs by concept (BM25, optional vectors) |
+| `context` / `source` / `dossier` | everything about one symbol, its body, or a persisted deep brief |
+| `impact` | blast radius (`dir: "up"`), dependencies, owners, shortest path |
+| `neighbors` | raw graph adjacency and doc↔symbol links |
+| `review` / `detect_changes` | what a change touches, who calls it, prior decisions about it |
+| `rename` | call-graph-aware rename: dry-run plan, then apply by `planId` |
+| `explain` | taint/dataflow findings for one callable (TS/JS) |
+| `overview` / `status` | architecture summary, index health, coverage gaps |
+| `brief` / `memory_recall` / `memory_observe` / `memory` / `memory_graph` | project memory: recall, record, handoff, intakes |
+| `enrich` | host-agent-authored semantic analysis work queue |
+
+Full request/response reference: [docs/mcp-api.md](docs/mcp-api.md).
+
+## CLI essentials
 
 ```bash
-cd knowledge-crib
+crib index .                     # full index
+crib update .                    # incremental, since the last indexed commit
+crib query "session refresh"     # search
+crib impact <symbol> --dir up    # who breaks if this changes
+crib serve . --watch             # MCP server on stdio, edits queryable without re-indexing
+crib viz .                       # offline graph + memory UI in the browser
+crib memory recall "<topic>"     # recall team + local memory
+crib --help                      # every command
+```
+
+## Documentation
+
+| | |
+|---|---|
+| [User guide](docs/user-guide.md) | install, daily workflow, every verb |
+| [Client setup](docs/client-setup.md) | wiring each IDE / agent |
+| [CLI reference](docs/cli.md) | every command and flag |
+| [MCP API](docs/mcp-api.md) | tool request/response specs |
+| [Architecture](docs/architecture.md) | system design |
+| [Memory sync](docs/memory-sync.md) | encrypted cross-device sync |
+| [Capability matrix](docs/capability-matrix.md) | what is verified, on what |
+| [All docs](docs/README.md) | full index |
+
+## Development
+
+```bash
+corepack enable
 corepack pnpm@9.15.0 install
-corepack pnpm@9.15.0 build
-corepack pnpm@9.15.0 release:verify
-
-# One-time: create the global bin directory and add it to your PATH
-corepack pnpm@9.15.0 setup
-# Then restart your terminal (or `source ~/.zshrc`) so `crib` resolves.
-
-corepack pnpm@9.15.0 --dir packages/cli link --global
-crib --help
+corepack pnpm@9.15.0 verify          # build + tests + lint + boundary/credential/license checks
+corepack pnpm@9.15.0 release:verify  # the full release gate CI runs
 ```
 
-Do **not** run `pnpm add -g knowledge-crib` from inside the workspace — pnpm may create broken relative symlinks in the global install because the package declares workspace dependencies.
-
-Then, in any project you want indexed:
-
-```bash
-crib setup .       # everything: index + hooks + MCP + protocol + model + memory + doctor
-crib doctor .      # ✓/✗ setup health check with fix hints
-```
-
-New team member? Start with the self-contained
-[**Team User Guide (HTML)**](docs/knowledge-crib-user-guide.html) or the full
-[user guide](docs/knowledge-crib-user-guide.md).
-
-Beta installer bundles for macOS and Windows can be built with
-`corepack pnpm@9.15.0 installer:build`; see
-[`docs/knowledge-crib-beta-installers.md`](docs/knowledge-crib-beta-installers.md). The generated
-`install.sh` / `install.ps1` finish the same way `bootstrap` does: if you run them from inside a git
-repository they install the CLI **and** run `crib setup` on it. `KCRIB_NO_SETUP=1` installs the
-binary only.
-
-## Develop
-```bash
-corepack pnpm@9.15.0 install
-corepack pnpm@9.15.0 release:verify
-```
-
-Requires Node >= 22.5 and pnpm 9.15.0 via Corepack.
-
-## Document index (read in order)
-See [`docs/README.md`](docs/README.md) for the complete specification and guide index, and
-[`docs/capability-matrix.md`](docs/capability-matrix.md) for the dated support boundary.
-
-## Community
-
-- [Contributing](CONTRIBUTING.md)
-- [Security policy](SECURITY.md)
-- [Code of Conduct](CODE_OF_CONDUCT.md)
+See [CONTRIBUTING.md](CONTRIBUTING.md). Security reports: [SECURITY.md](SECURITY.md).
 
 ## License
-Apache-2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE). GitNexus and Graphify are credited as design
-inspiration only — no code is derived from either.
+
+Apache-2.0 — see [LICENSE](LICENSE) and [NOTICE](NOTICE). GitNexus and Graphify are credited as
+design inspiration only; no code is derived from either.

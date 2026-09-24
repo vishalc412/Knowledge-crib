@@ -1,5 +1,5 @@
 /**
- * ADR-003 (Gate 4) D10 — the sync admission matrix. Pure, table-driven, no I/O: which entries may
+ * Cross-device sync — the sync admission matrix. Pure, table-driven, no I/O: which entries may
  * leave the device, per target class. Ambiguous policy is a REFUSAL, not a warning — an unknown
  * retention-policy id means no committed schedule governs the record's handling, and refusing is
  * the honest posture (D10: "ambiguous policy is a refusal, not a warning").
@@ -37,7 +37,7 @@ export interface SyncAdmission {
  */
 const KNOWN_RETENTION_POLICY_IDS: readonly string[] = [DEFAULT_RETENTION_POLICY_ID];
 
-// The admission matrix (D10), table-driven so every cell is reviewable against the ADR text.
+// The admission matrix, table-driven so every cell is reviewable in one place.
 const GIT_SHARD_VISIBILITY: readonly MemoryVisibility[] = ['workspace'];
 const GIT_SHARD_SENSITIVITY: readonly string[] = ['public', 'internal'];
 const REMOTE_VISIBILITY: readonly MemoryVisibility[] = ['private', 'workspace'];
@@ -118,7 +118,9 @@ export function admissionForSync(
   const known = KNOWN_RETENTION_POLICY_IDS.includes(retentionPolicyId);
   if (!known) return { admitted: false, reason: 'ambiguous-policy' };
   if (targetClass === 'git-shard') {
-    if (visibility !== 'workspace') return { admitted: false, reason: 'private-visibility' };
+    if (!GIT_SHARD_VISIBILITY.includes(visibility)) {
+      return { admitted: false, reason: 'private-visibility' };
+    }
     if (!GIT_SHARD_SENSITIVITY.includes(sensitivity)) {
       return { admitted: false, reason: 'sensitivity' };
     }

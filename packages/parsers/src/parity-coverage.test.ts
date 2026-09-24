@@ -302,7 +302,6 @@ describe('Task 8 — MuleSoft capability honesty (config language, no type syste
     );
 
     const kinds = new Set(r.nodes.map((n) => n.kind));
-    const types = new Set(r.nodes.map((n) => n.type));
     // flow is a symbol node typed `flow`
     expect(
       r.nodes.some((n) => n.kind === 'symbol' && n.type === 'flow' && n.name === 'getOrders'),

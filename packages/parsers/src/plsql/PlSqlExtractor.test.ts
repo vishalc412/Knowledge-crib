@@ -364,7 +364,6 @@ describe('PlSqlExtractor — schema-1.2 behavior constructs (Workstream B/G gold
 
   it('emits a cursor node (with cursorQuery) + declares + a loop iterates edge', async () => {
     const { nodes, edges } = await runLoan();
-    const label = loanLabel({ nodes, edges } as ExtractResult);
     const cur = nodes.find((n) => n.kind === 'cursor' && n.name === 'c_app');
     expect(cur).toBeDefined();
     expect(cur?.cursorQuery).toContain('SELECT amount, status, credit_score');
@@ -385,7 +384,6 @@ describe('PlSqlExtractor — schema-1.2 behavior constructs (Workstream B/G gold
 
   it('emits an explanation node from the comment block above the procedure + a describes edge', async () => {
     const { nodes, edges } = await runLoan();
-    const label = loanLabel({ nodes, edges } as ExtractResult);
     const expl = nodes.find((n) => n.kind === 'explanation');
     expect(expl).toBeDefined();
     expect(expl?.commentRef?.file).toBe(LOAN_PATH);
@@ -728,7 +726,6 @@ describe('PlSqlExtractor — WS-7 SQL data-flow edges (cursor reads + FK referen
     );
     const label = labelOf(r);
     const child = r.nodes.find((n) => n.kind === 'table' && n.name === 'loan_applications')!;
-    const parent = r.nodes.find((n) => n.kind === 'table' && n.name === 'applicants')!;
     expect(child.meta?.foreignKeys).toEqual([
       { columns: ['amount'], refTable: 'applicants', refColumns: ['id'] },
     ]);

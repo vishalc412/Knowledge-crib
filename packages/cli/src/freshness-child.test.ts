@@ -1,5 +1,5 @@
 /**
- * WP5.1–WP5.5 — the supervisor/child split of FreshnessWorker (docs/launch/requirements-register.md).
+ * The supervisor/child split of FreshnessWorker.
  *
  * What is pinned here (red lines):
  *   - the child's ONLY output is a STAGED RESULT, and the supervisor ACTIVATES it under its
@@ -402,7 +402,7 @@ describe('FreshnessWorker supervisor — durable cancellation (WP5.5)', () => {
   });
 
   it('a request matching neither an active nor a queued task is LEFT for a later claim window', async () => {
-    const root = registeredRoot();
+    registeredRoot();
     requestCancellation(env, 'fq:not-yet-enqueued');
     const h = makeWorker();
     await h.worker.start();

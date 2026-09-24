@@ -159,34 +159,28 @@ function parsePnpmWorkspacePatterns(content: string): string[] {
 function parseCargoMembers(content: string): string[] {
   const out: string[] = [];
   let inWorkspace = false;
-  let inMembers = false;
-  let bracketDepth = 0;
+  // null = not in `members`; otherwise whether the array's opening `[` has been seen yet.
+  let members: { opened: boolean } | null = null;
   for (const line of content.split(/\r?\n/)) {
-    const trimmed = line.trim();
-    if (/^\[workspace\]/.test(trimmed)) {
-      inWorkspace = true;
-      inMembers = false;
-      continue;
-    }
-    if (trimmed.startsWith('[')) {
-      inWorkspace = false;
+    let rest = line.replace(/#.*$/, '').trim();
+    if (members === null && /^\[\[?[^\]]*\]\]?$/.test(rest)) {
+      inWorkspace = rest === '[workspace]';
       continue;
     }
     if (!inWorkspace) continue;
-    if (/^members\s*=/.test(trimmed)) {
-      const after = trimmed.slice(trimmed.indexOf('=') + 1).trim();
-      if (after.startsWith('[')) {
-        inMembers = true;
-        bracketDepth = 1;
-        collectCargoMembers(after.slice(1), out);
-        if (after.includes(']')) inMembers = false;
-      } else {
-        // multi-line `members =\n  [...]` — wait for bracket on a later line
-        inMembers = true;
-      }
-      continue;
+    if (members === null) {
+      if (!/^members\s*=/.test(rest)) continue;
+      members = { opened: false };
+      rest = rest.slice(rest.indexOf('=') + 1).trim();
     }
-    if (inMembers) collectCargoMembers(trimmed, out);
+    if (!members.opened) {
+      if (!rest.startsWith('[')) continue;
+      members.opened = true;
+      rest = rest.slice(1);
+    }
+    const close = rest.indexOf(']');
+    collectCargoMembers(close === -1 ? rest : rest.slice(0, close), out);
+    if (close !== -1) members = null;
   }
   return out;
 }
@@ -194,7 +188,7 @@ function parseCargoMembers(content: string): string[] {
 function collectCargoMembers(segment: string, out: string[]): void {
   for (const tok of segment.split(/[\s,\[\]]+/)) {
     const v = stripQuotes(tok.trim());
-    if (v && v !== '') out.push(v);
+    if (v) out.push(v);
   }
 }
 

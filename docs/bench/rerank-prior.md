@@ -25,7 +25,7 @@ The 61-task, leakage-controlled locate corpus (`docs/bench/locate-corpus.json`) 
 `crib query` path on this repository at the corpus base commit `d8727898`. The tree used is the one
 WP4 R3 indexed with vectors (`multilingual-e5-large`), and every run reports
 `servedLexically: false`. The two arms differ in one variable only: the prior, switched off by
-`docs/program/tools/no-rerank-preload.mjs`. Same tree, same index, same machine, run back to back.
+`scripts/bench/no-rerank-preload.mjs`. Same tree, same index, same machine, run back to back.
 
 | 61-task corpus, `full` variant | MRR | R@1 | R@5 | R@10 |
 | --- | --- | --- | --- | --- |
@@ -34,8 +34,8 @@ WP4 R3 indexed with vectors (`multilingual-e5-large`), and every run reports
 | Δ (on − off) | **+7.80pp** | +5.80pp | +2.78pp | +4.89pp |
 
 The two other query variants point the same way. On `subject` the prior is ahead on MRR (0.2939 vs
-0.2823) but behind on R@5 and R@10. On `no-scope`, MRR is 0.2584 vs 0.2205. Raw outputs:
-`docs/program/logs/rerank-prior-c{1,2}-2026-09-24.json`.
+0.2823) but behind on R@5 and R@10. On `no-scope`, MRR is 0.2584 vs 0.2205. Raw outputs
+(`rerank-prior-c{1,2}-2026-09-24.json`) are preserved in git history under `docs/program/logs/` at `d571ebc4`.
 
 **Validity check.** The prior-on arm reproduces WP4 R3's published C1 exactly (MRR 0.4169). That shows
 the probe measures the same path the published number did, before its prior-off number is believed.
@@ -62,7 +62,7 @@ not explain the red: without blame the delta is −2.40pp.
 
 ## Limits
 
-- One repository and one corpus. The corpus was authored on this repository, and `docs/program/wp4-implementation-spec.md` §10.8(7)
+- One repository and one corpus. The corpus was authored on this repository, and the code-retrieval program spec (§10.8(7))
   records that its discriminating power is concentrated on one frequently changed file
   (`packages/cli/src/cli.ts`). The churn control (MRR 0.5012) still beats both arms, so neither
   arm clears WP4's clause 1. This result compares the two arms; it does not certify either.

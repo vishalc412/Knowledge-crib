@@ -636,10 +636,7 @@ export function graphPath(
   for (const a of p.current) {
     const subject = canonicalRef(p, a.subject);
     const object = canonicalRef(p, a.object);
-    for (const [node, other] of [
-      [subject, object],
-      [object, subject],
-    ] as const) {
+    for (const node of [subject, object]) {
       let edges = byId.get(node);
       if (!edges) {
         edges = [];

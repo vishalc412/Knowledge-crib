@@ -1227,9 +1227,9 @@ function isCribManagedFile(path: string): boolean {
     }
     return true;
   }
-  // Codex config.toml: the TOML managed block is all crib ever writes there. `spliceManaged`
-  // prepends its own `#!/bin/sh` shebang on a fresh file (the shell-hook writer it reuses), so that
-  // line is stripped too — it is crib's output, and a bare shebang carries no client evidence.
+  // Codex config.toml: the TOML managed block is all crib ever writes there. Earlier releases also
+  // prepended a `#!/bin/sh` line on a fresh file, so that line is stripped too — it is crib's
+  // output, and a bare shebang carries no client evidence.
   const tomlBegin = text.indexOf(TOML_BEGIN);
   if (tomlBegin !== -1) {
     const tomlEnd = text.indexOf(TOML_END, tomlBegin);

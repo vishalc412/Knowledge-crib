@@ -1,5 +1,5 @@
 /**
- * ADR-003 (Gate 4) D6 — the {@link SyncObjectStore} port: memory stays pure and the driver is
+ * Cross-device sync — the {@link SyncObjectStore} port: memory stays pure and the driver is
  * injected (mirroring `MemorySoulPort`). v1 backends:
  *
  *   - `file` — a user-owned directory / mounted volume. `putObject` is temp→rename atomic; keys map

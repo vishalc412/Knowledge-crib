@@ -3584,39 +3584,6 @@ describe('semantic inheritance reaches behaviour nodes, not just symbols', () =>
     }>;
   }
 
-  function authorFile(path: string, purpose: string) {
-    const batch = verbs.enrichNext({ layer: 'file', limit: 60 }) as unknown as EnrichNextResult;
-    const targetId = `file:${path}`;
-    expect(batch.items.some((i) => i.targetId === targetId)).toBe(true);
-    const save = verbs.enrichSave({
-      batchId: batch.batchId,
-      items: [
-        {
-          targetId,
-          model: 'test-model',
-          analysis: {
-            purpose,
-            responsibilities: [],
-            businessRules: [],
-            inputs: [],
-            outputs: [],
-            sideEffects: [],
-            errorBehavior: [],
-            invariants: [],
-            preconditions: [],
-            postconditions: [],
-            risks: [],
-            whatToDistrust: [],
-            confidence: 0.8,
-          },
-          graph: { nodes: [], edges: [] },
-          evidence: [{ soulId: targetId, why: 'unit test fixture' }],
-        },
-      ],
-    }) as unknown as EnrichSaveResult;
-    expect(save.rejected).toEqual([]);
-  }
-
   /** Author a SYMBOL-layer artifact, so the symbol step of the chain can be tested in isolation
    *  from the file step (a file artifact would ground the statement either way). */
   function authorSymbol(targetId: string, purpose: string) {

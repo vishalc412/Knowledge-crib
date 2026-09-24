@@ -81,7 +81,7 @@ export interface ContradictedSuppressionInput {
   /** the canonical "now" used for the decision `ts` (the decision id excludes `ts` → idempotent). */
   now: () => string;
   /**
-   * The sync-staging port (ADR-003 D3/D4): when supplied, each store write this wrapper performs
+   * The sync-staging port: when supplied, each store write this wrapper performs
    * is staged for cross-device sync INSIDE the same lock hold — a `feedback.append` event for the
    * feedback row, and (on suppression) a `decision.append` event for the quarantine decision.
    * Callers inject it by closing over {@link stageSyncableWrite} with their principal/env — the
@@ -198,7 +198,7 @@ export function applyContradictedFeedback(
     ...(input.feedback.meta ? { meta: input.feedback.meta } : {}),
   };
   // The verdict is computed FIRST (pure) so the lock hold covers only the writes + their sync
-  // stages — the store write and its sidecar stage are ONE lock hold (ADR-003 D4).
+  // stages — the store write and its sidecar stage are ONE lock hold.
   const suppression = contradictedSuppression(input);
   local.withLock(() => {
     local.upsertEntry('feedback', feedback);

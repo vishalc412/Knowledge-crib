@@ -677,7 +677,7 @@ export function applyVerifiedDecision(
   }
 
   // Then the queue-lifecycle bookkeeping: meta stamp + done, under one same-store lock hold.
-  const done = local.withLock(() => {
+  local.withLock(() => {
     const stamped: CaptureOutboxEntry = {
       ...entry,
       meta: { ...entry.meta, ...meta },

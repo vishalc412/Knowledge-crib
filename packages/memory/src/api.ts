@@ -419,7 +419,7 @@ export function believedLifecycle(
   return { lifecycle, quarantined };
 }
 
-// ─── sync (Gate 4 — the port-injected engine surface, ADR-003 D12) ───────────
+// ─── sync (the port-injected engine surface) ───────────
 
 /** The honest response when sync is not configured for the requested stores: nothing was read,
  *  written, or transferred. */
@@ -433,8 +433,8 @@ export interface SyncResult {
   request: Record<string, unknown>;
 }
 
-/** The honest not-configured shape (ADR-003 D12: reworded from the Gate-4 placeholder — the engine
- *  EXISTS now; what is missing is this repo's configuration). PURE. */
+/** The honest not-configured shape: the engine exists; what is missing is this repo's sync
+ *  configuration. PURE. */
 export function syncNotConfigured(request: Record<string, unknown> = {}): SyncResult {
   return {
     ok: false,
@@ -3508,7 +3508,7 @@ export class MemoryApi {
     };
   }
 
-  // ── sync (Gate 4 — the port-injected engine surface, ADR-003 D12) ─────────
+  // ── sync (the port-injected engine surface) ─────────
 
   /**
    * Run the sync engine across the participant stores (local + global — team is never a
@@ -3952,7 +3952,7 @@ export class MemoryApi {
           scope === 'local' ? (opts.syncRepoId ?? store.readManifest()?.repo?.id) : undefined;
         const state = loadSyncState(store.rootDir);
         const acks: string[] = [];
-        for (const { recordId, entry } of purgedEntries) {
+        for (const { entry } of purgedEntries) {
           // The record collections hold only record envelopes (validated on write), so the payload
           // narrowing holds by construction — the matched entry IS the previously-pushed payload.
           const evtId = deriveEventId(
@@ -4541,13 +4541,13 @@ export class MemoryApi {
    * rather than individual public verbs so a new record-returning API cannot accidentally bypass
    * principal isolation.
    *
-   * The two implementations must AGREE, and they did not (WP1 item 15). `gatherRecall` refuses an
+   * The two implementations must AGREE, and they once did not. `gatherRecall` refuses an
    * unstamped record when the boundary is engaged; this predicate admitted it unconditionally, so
    * `get`/`history`/`ledger`/`audit` disclosed another principal's unmigrated record in full while
    * `search` refused it — measured with two principals in one store: engaged, `search` returned only
    * the caller's record and `ledger().total` counted all 5 records, `history(foreignSubject)`
    * returned a record, `audit(foreignSubject).found` was true. The audit that first found the split
-   * (F03, `docs/audits/2026-09-05/launch-audit.md`) closed the STAMPED case — the ownership
+   * closed the STAMPED case — the ownership
    * comparison below is that repair — and its action named the remainder: "require migration or
    * quarantine for unstamped legacy records in shared deployments". This is that requirement, keyed
    * off the same switch rather than a second policy.

@@ -22,7 +22,7 @@ import type { Verbs } from './verbs.js';
  *                        the manifest, not a hand-maintained route list).
  *   manifest ↔ docs    : scripts/capabilities-check.mjs regenerates the "N tools / M operations"
  *                        figures from TOOL_COUNT / OPERATION_COUNT and fails when
- *                        docs/knowledge-crib-mcp-api.md states different numbers.
+ *                        docs/mcp-api.md states different numbers.
  */
 
 function toolsOf(spy: Record<string, unknown>) {

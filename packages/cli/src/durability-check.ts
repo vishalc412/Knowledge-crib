@@ -1,7 +1,6 @@
 /**
- * The `crib doctor` durability line — the surface that makes WP1 obligation 2's *"surface unsupported
- * guarantees explicitly"* observable, instead of a documented limit that lives only in
- * `docs/design/02-lld.md`.
+ * The `crib doctor` durability line — the surface that makes *"surface unsupported guarantees
+ * explicitly"* observable, instead of a limit that lives only in documentation.
  *
  * WHY THIS IS ITS OWN MODULE. The check is three-valued (`fileFlush`, `dirFlush`, `powerLossDurable`)
  * and the whole point is that the sentence shown to an operator matches the capability the platform
