@@ -307,7 +307,33 @@ export class SqliteIndexStore implements IndexStore {
       for (const edge of soul.iterateEdges()) this.insertEdge(edge);
     });
     insertMany();
+    const extracted = soul.getManifest().generation?.extracted;
+    if (extracted !== undefined) this.recordCodeGeneration(extracted);
     if (this.embedder) this.buildVectors(soul, repoRoot);
+  }
+
+  /**
+   * Record the `generation.extracted` this code projection matches. Every code-graph commit bumps
+   * that counter, whereas an enrichment save rewrites the same manifest while bumping only
+   * `generation.semantic`. Readers compare against this value, not the manifest's mtime, so an
+   * authored-meaning save cannot make an unchanged code index look stale.
+   */
+  recordCodeGeneration(extracted: number): void {
+    this.db
+      .prepare('INSERT OR REPLACE INTO code_meta (k, v) VALUES (?, ?)')
+      .run('extracted', String(extracted));
+  }
+
+  /** The `generation.extracted` this code projection was built at, or undefined if unrecorded. */
+  codeGeneration(): number | undefined {
+    try {
+      const row = this.db.prepare('SELECT v FROM code_meta WHERE k = ?').get('extracted') as
+        | { v: string }
+        | undefined;
+      return row === undefined ? undefined : Number.parseInt(row.v, 10);
+    } catch {
+      return undefined; // table absent - an index built before this existed
+    }
   }
 
   applyDelta(changed: IndexDelta, repoRoot: string): void {
@@ -813,6 +839,8 @@ export class SqliteIndexStore implements IndexStore {
         targetId UNINDEXED, layer UNINDEXED, purpose, detail
       );
       CREATE TABLE IF NOT EXISTS semantic_meta (k TEXT PRIMARY KEY, v TEXT NOT NULL);
+      -- Which code-graph generation (manifest.generation.extracted) nodes/edges project.
+      CREATE TABLE IF NOT EXISTS code_meta (k TEXT PRIMARY KEY, v TEXT NOT NULL);
     `);
   }
 
@@ -891,6 +919,7 @@ export class SqliteIndexStore implements IndexStore {
       DROP TABLE IF EXISTS edges;
       DROP TABLE IF EXISTS nodes;
       DROP TABLE IF EXISTS fts_map;
+      DELETE FROM code_meta;
     `);
     // Every cached statement was compiled against the tables just dropped.
     this.stmtCache.clear();

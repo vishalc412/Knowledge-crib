@@ -225,6 +225,8 @@ const STATES: AuditState[] = [
       await page.route('**/graph.json', (route) => route.fulfill({ status: 503, body: 'down' }));
     },
     go: async (page) => {
+      // The full graph is deferred until a graph view needs it; Focus is the first such view.
+      await page.locator('[data-kc-command="focus"]').click();
       await expect(page.getByRole('alert').first()).toBeVisible();
     },
   },

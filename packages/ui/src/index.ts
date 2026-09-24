@@ -4,7 +4,7 @@
  * snapshot served at `/overview.json`; `vizAssetsDir` locates the static browser assets served by
  * `crib viz`.
  */
-export { buildVizGraph, buildVizOverview, vizAssetsDir } from './viz.js';
+export { buildVizGraph, buildVizOverview, createVizModuleViews, vizAssetsDir } from './viz.js';
 export type {
   VizGraph,
   VizNodeData,
@@ -12,4 +12,6 @@ export type {
   VizCluster,
   VizOverview,
   VizModule,
+  VizModuleView,
+  VizModuleViewCluster,
 } from './viz.js';

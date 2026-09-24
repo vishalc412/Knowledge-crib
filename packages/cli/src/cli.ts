@@ -246,7 +246,12 @@ import type {
   WorkspaceLayout,
 } from '@knowledge-crib/pipeline';
 import { blake3Hex } from '@knowledge-crib/soul-schema';
-import { buildVizGraph, buildVizOverview, vizAssetsDir } from '@knowledge-crib/ui';
+import {
+  buildVizGraph,
+  buildVizOverview,
+  createVizModuleViews,
+  vizAssetsDir,
+} from '@knowledge-crib/ui';
 import {
   ALL_CLIENTS,
   type AdapterScope,
@@ -2562,6 +2567,8 @@ async function cmdUpdate(args: string[], ctx?: CmdCtx): Promise<number> {
       // again, so refusing to open a stale one here would make the incremental path unreachable.
       index = openIndexOnly(rt, vectorEmbedder, { allowStale: true });
       index.applyDelta(result.delta, resolved.repoRoot);
+      const extracted = rt.soul.getManifest().generation?.extracted;
+      if (extracted !== undefined) index.recordCodeGeneration?.(extracted);
     } catch {
       index = buildIndex(rt, vectorEmbedder); // full buildFromSoul from the just-updated soul
     }
@@ -4340,6 +4347,10 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
     memoryDeps ? vizMemoryLayer(rt.soul, memoryDeps) : undefined,
   );
   const overview = buildVizOverview(rt.soul);
+  const moduleViews = createVizModuleViews(graph, overview);
+  // Serialized once: the full graph is 100+ MB on a large repository, and re-stringifying it for
+  // every request cost the same again each time the browser asked.
+  let graphBody: string | undefined;
   const assets = vizAssetsDir();
   const memoryApi = memoryDeps
     ? createMemoryApi(rt.soul, rt.repoRoot, resolved.cribDir, memoryDeps)
@@ -4368,13 +4379,25 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
       }
       const requestUrl = new URL(req.url ?? '/', 'http://127.0.0.1');
       if (requestUrl.pathname === '/graph.json') {
+        graphBody ??= JSON.stringify(graph);
         res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify(graph));
+        res.end(graphBody);
         return;
       }
       if (requestUrl.pathname === '/overview.json') {
         res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify(overview));
+        return;
+      }
+      // A module drill-in needs only that module's cluster cards; serving them from the graph the
+      // server already holds lets the browser open a module without the full graph download.
+      if (requestUrl.pathname === '/overview/module.json') {
+        const moduleId = requestUrl.searchParams.get('id');
+        if (!moduleId) throw new VizHttpError(400, 'missing id');
+        const view = moduleViews(moduleId);
+        if (!view) throw new VizHttpError(404, 'unknown module');
+        res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify(view));
         return;
       }
       if (requestUrl.pathname === '/source') {

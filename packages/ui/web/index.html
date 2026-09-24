@@ -89,6 +89,10 @@
   .kc-rail-stat { padding:9px; border:1px solid var(--kc-line); border-radius:8px; background:var(--kc-fill); }
   .kc-rail-stat strong { display:block; color:var(--kc-text); font:700 15px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; }
   .kc-rail-stat span { display:block; margin-top:3px; color:var(--kc-muted); font:500 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; }
+  .kc-visually-hidden { position:absolute !important; width:1px !important; height:1px !important; padding:0 !important; margin:-1px !important; overflow:hidden !important; clip:rect(0,0,0,0) !important; white-space:nowrap !important; border:0 !important; }
+  .kc-search input { box-sizing:border-box !important; }
+  .kc-search-icon { top:50% !important; bottom:auto !important; transform:translateY(-50%); }
+  [data-kc-search-shortcut] { top:50% !important; bottom:auto !important; transform:translateY(-50%); }
   .kc-rail-section { display:flex; align-items:center; justify-content:space-between; margin:0 4px 7px; min-height:32px; color:var(--kc-muted); font:700 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; letter-spacing:.06em; text-transform:uppercase; }
   .kc-rail-item { width:100%; min-height:32px; display:flex; align-items:center; gap:8px; padding:7px 8px; border:1px solid transparent; border-radius:7px; background:transparent; color:var(--kc-text); text-align:left; cursor:pointer; font-family:'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; }
   .kc-rail-item:hover { background:var(--kc-fill); border-color:var(--kc-line); }
@@ -129,18 +133,16 @@
   @media (max-width: 1279px) { [data-kc-presentation="split"] { display:none; } }
   @media (max-width: 760px) { .kc-presentation button, .kc-result-row button, .kc-result-head button, .kc-result-pager button, .kc-result-empty button, .kc-blast-table button { min-height:44px; } }
   @media (max-width: 900px) {
-    .kc-topbar { gap: 8px !important; padding: 0 10px !important; }
+    [data-kc-shell="signal-console"] { grid-template-rows:max-content minmax(0,1fr) 26px !important; }
+    .kc-topbar { gap: 8px !important; padding: 7px 10px !important; flex-wrap:wrap !important; height:auto !important; min-height:58px; row-gap:7px !important; }
     .kc-brand { flex: 0 0 34px !important; min-width: 34px !important; overflow: hidden !important; }
     .kc-brand-stats { display: none !important; }
     .kc-brand-title { position:absolute !important; width:1px !important; height:1px !important; margin:-1px !important; overflow:hidden !important; clip:rect(0 0 0 0) !important; white-space:nowrap !important; }
-    .kc-search input { width: 188px !important; }
+    .kc-search { order:10; flex:1 1 100% !important; max-width:none !important; }
+    .kc-search input { width:100% !important; }
+    .kc-command-segment button, .kc-presentation button { padding-left:8px !important; padding-right:8px !important; }
     .kc-hide-compact { display: none !important; }
-    /* Memory is the product's primary surface, not a convenience like Tour or Blast radius. It
-       previously carried `kc-hide-compact` and vanished below 900px, leaving NO way to reach the
-       memory ledger on a narrow window — and the panel itself fits fine, so the feature was
-       unreachable rather than unusable. It collapses to its icon instead. */
     .kc-memory-btn { padding: 0 10px !important; }
-    .kc-memory-label { display: none !important; }
   }
   /* Below ~620px the toolbar needs more width than the window has (measured: 651px of controls in
      a 375px viewport), so its trailing items — Memory among them — were laid out past the right
@@ -182,9 +184,9 @@
       <button data-kc-presentation="split" onClick="{{ showSplit }}" aria-pressed="{{ splitPressed }}">Split</button>
     </div>
 
-    <div class="kc-search" style="position:relative; display:flex; flex-direction:column; justify-content:center; align-items:stretch; flex:1 1 auto; max-width:520px; min-width:150px;">
-      <label for="kc-graph-search" style="font:600 12px/1 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; color:var(--kc-text-secondary); margin-bottom:3px;">Search graph</label>
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="position:absolute; left:11px; bottom:9px; pointer-events:none; opacity:0.7; color:var(--kc-text-primary);"><circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" stroke-width="2"></circle><path d="M20 20L16 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
+    <div class="kc-search" style="position:relative; display:flex; align-items:center; flex:1 1 auto; max-width:520px; min-width:150px;">
+      <label for="kc-graph-search" class="kc-visually-hidden">Search graph</label>
+      <svg class="kc-search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="position:absolute; left:11px; pointer-events:none; opacity:0.7; color:var(--kc-text-primary);"><circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" stroke-width="2"></circle><path d="M20 20L16 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
       <input id="kc-graph-search" ref="{{ searchRef }}" onInput="{{ onSearch }}" placeholder="Search code, docs, tables…" style="width:100%; height:32px; padding:0 50px 0 34px; border-radius:8px; border:1px solid var(--kc-border-control); background:var(--kc-bg); color: {{ t.text }}; font:500 14px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; outline:none;">
       <span data-kc-search-shortcut style="position:absolute; right:8px; bottom:7px; padding:2px 6px; border-radius:5px; border:1px solid var(--kc-border-separator); background:var(--kc-fill); color:var(--kc-muted); pointer-events:none; font:600 12px 'IBM Plex Mono',monospace;">{{ searchShortcut }}</span>
       <div data-kc-search-live role="status" aria-live="polite" style="position:absolute; width:1px; height:1px; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap;">{{ searchAnnouncement }}</div>
@@ -196,9 +198,9 @@
     <div style="flex:1;"></div>
 
     <button class="kc-memory-btn" data-kc-memory-trigger onClick="{{ toggleMemory }}" aria-expanded="{{ memExpanded }}" title="Memory ledger — what the agents recorded, and what went stale when the code moved" style="height:36px; padding:0 13px; display:flex; align-items:center; gap:7px; border-radius:9px; border:1px solid {{ memBorder }}; background: {{ memBg }}; color: {{ memFg }}; font:600 12.5px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; cursor:pointer;">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 5h16M4 10h16M4 15h10M4 20h7" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="3" stroke="currentColor" stroke-width="2"></rect><path d="M8 7h8M8 11h8M8 15h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
       <span class="kc-memory-label">Memory</span>
-      <span data-kc-memory-badge style="min-width:16px; padding:1px 5px; border-radius:20px; background:var(--kc-surface-floating); border:1px solid var(--kc-border-separator); color:var(--kc-text-risk); text-align:center; font:700 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">{{ memoryBadge }}</span>
+      <sc-if value="{{ memoryBadge }}" hint-placeholder-val="{{ true }}"><span data-kc-memory-badge style="min-width:16px; padding:1px 5px; border-radius:20px; background:var(--kc-surface-floating); border:1px solid var(--kc-border-separator); color:var(--kc-text-risk); text-align:center; font:700 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">{{ memoryBadge }}</span></sc-if>
     </button>
 
      <button data-kc-theme-toggle onClick="{{ toggleTheme }}" title="{{ themeToggleLabel }}" aria-label="{{ themeToggleLabel }}" style="width:36px; height:36px; flex:none; display:flex; align-items:center; justify-content:center; border-radius:9px; border:1px solid var(--kc-border-control); background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer;">
@@ -219,8 +221,8 @@
     </div>
     <div class="kc-rail-body">
       <div class="kc-rail-stats">
-        <div class="kc-rail-stat"><strong>{{ railNodeCount }}</strong><span>nodes</span></div>
-        <div class="kc-rail-stat"><strong>{{ railEdgeCount }}</strong><span>edges</span></div>
+        <div class="kc-rail-stat"><strong>{{ railNodeCount }}</strong><span>code nodes</span></div>
+        <div class="kc-rail-stat"><strong>{{ railEdgeCount }}</strong><span>code edges</span></div>
       </div>
       <h3 class="kc-rail-section"><span>Modules</span><span>{{ railModuleCount }}</span></h3>
       <sc-for list="{{ moduleList }}" as="m" hint-placeholder-count="8">
@@ -663,7 +665,8 @@
               <div style="margin-top:8px;">
                 <div data-kc-mem-work-summary style="font-size:12px; color: {{ t.sub }}; margin:0 2px 6px;">{{ mem.resumeView.summary }}</div>
                 <div data-kc-mem-resume-list tabindex="-1" style="outline:none;">
-                  <sc-for list="{{ mem.resumeView.choices }}" as="c" hint-placeholder-count="3">
+                  <h3 style="margin:8px 2px 5px; font-size:12px; color:{{ t.text }};">In progress</h3>
+                  <sc-for list="{{ mem.resumeView.activeChoices }}" as="c" hint-placeholder-count="3">
                     <button data-kc-mem-choice="{{ c.intakeId }}" onClick="{{ c.onOpen }}" style="display:block; width:100%; text-align:left; padding:8px 9px; border-radius:8px; border:1px solid {{ t.border }}; background: {{ t.chip }}; margin-bottom:5px; cursor:pointer; font-family:'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">
                       <div style="display:flex; align-items:center; gap:6px;">
                         <span style="padding:2px 7px; border-radius:5px; font-size:12px; font-weight:700; color:var(--kc-text-interactive); background:var(--kc-tint-code);">{{ c.status }}</span>
@@ -675,8 +678,16 @@
                       <sc-if value="{{ c.cautions }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color:var(--kc-text-review); margin-top:3px; word-break:break-word;">{{ c.cautions }}</div></sc-if>
                     </button>
                   </sc-for>
-                  <sc-if value="{{ mem.resumeView.empty }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color: {{ t.sub }}; padding:4px 2px;">No work in progress.</div></sc-if>
-                  <sc-if value="{{ mem.resumeView.closedLabel }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color: {{ t.sub }}; padding:2px 2px 4px;">{{ mem.resumeView.closedLabel }}</div></sc-if>
+                  <sc-if value="{{ mem.resumeView.activeEmpty }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color: {{ t.sub }}; padding:4px 2px;">No work in progress.</div></sc-if>
+                  <h3 style="margin:12px 2px 5px; font-size:12px; color:{{ t.text }};">Finished or cancelled</h3>
+                  <sc-for list="{{ mem.resumeView.closedChoices }}" as="c" hint-placeholder-count="2">
+                    <button data-kc-mem-choice="{{ c.intakeId }}" onClick="{{ c.onOpen }}" style="display:block; width:100%; text-align:left; padding:8px 9px; border-radius:8px; border:1px solid {{ t.border }}; background: {{ t.chip }}; margin-bottom:5px; cursor:pointer; font-family:'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">
+                      <span style="font-size:12px; font-weight:700; color:{{ t.sub }};">{{ c.status }}</span>
+                      <span style="font-size:12px; font-weight:600; color:{{ t.text }}; word-break:break-word;">{{ c.title }}</span>
+                      <span style="display:block; font-size:12px; color:{{ t.sub }}; margin-top:2px;">{{ c.activityLabel }}</span>
+                    </button>
+                  </sc-for>
+                  <sc-if value="{{ mem.resumeView.closedEmpty }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color: {{ t.sub }}; padding:4px 2px;">No finished work yet.</div></sc-if>
                 </div>
                 <!-- the resume closes the detail on success, so the outcome lands here, at the
                      list level — the same visible-notice pattern the pending view uses -->
@@ -1062,7 +1073,7 @@ class Component extends DCLogic {
   KIND = { file:'#7c8aa5', symbol:'#5b8cff', method:'#6f9bff', function:'#8aa8ff', class:'#5b8cff', interface:'#a78bfa', 'doc-section':'#34d399', table:'#f59e0b', column:'#fbbf24', statement:'#2dd4bf', condition:'#f87171',
            // producer-emitted kinds (viz.ts deriveNodeKind + enums.ts) that were missing → gray + 'undefined' tooltip
            enum:'#a78bfa', type:'#22d3ee', getter:'#8aa8ff', setter:'#8aa8ff', property:'#6f9bff', 'media-seg':'#fbbf24', explanation:'#34d399' };
-  KLABEL = { file:'File', symbol:'Symbol', method:'Method', function:'Function', class:'Class', interface:'Interface', 'doc-section':'Doc', table:'Table', column:'Column', statement:'SQL', condition:'Condition',
+  KLABEL = { file:'File', symbol:'Symbol', method:'Method', function:'Function', class:'Class', interface:'Interface', 'doc-section':'Doc', table:'Table', column:'Column', statement:'Statement', condition:'Condition',
            enum:'Enum', type:'Type', getter:'Getter', setter:'Setter', property:'Property', 'media-seg':'Media', explanation:'Explanation' };
   REL = { calls:'#6f9bff', imports:'#7c8aa5', inherits:'#a78bfa', implements:'#a78bfa', describes:'#34d399', references:'#34d399', 'member-of':'#646f80', executes:'#2dd4bf', reads:'#38bdf8', writes:'#0ea5e9', 'guarded-by':'#f87171' };
   PHRASE = { calls:'calls', imports:'imports', inherits:'inherits from', implements:'implements', describes:'documents', references:'mentions', 'member-of':'part of', executes:'runs', reads:'reads from', writes:'writes to', 'guarded-by':'guarded by' };
@@ -1108,7 +1119,7 @@ class Component extends DCLogic {
 
   constructor(props){ super(props); this.canvasRef=React.createRef(); this.miniRef=React.createRef(); this.tipRef=React.createRef(); this.rootRef=React.createRef(); this.searchRef=React.createRef(); this.inspectorToggleRef=React.createRef(); this.resultListRef=React.createRef(); this.view={cx:0,cy:0,k:1}; this._fitOnResize=false; this.alpha=1; this.hoverId=null; this.highlight=null; this._explorerTrail=[]; this._listScroll=0; this._explorerCache=null;
     // graph state — initialised empty so the RAF draw loop no-ops safely before loadGraph() resolves.
-    this.nodes=[]; this.edges=[]; this.clusters=[]; this.byId={}; this.deg={}; this.adj={}; this.revDep={}; this.archAdj={}; this.graphIndexes={membersByCluster:{},incidentByNode:{},archAdj:{}}; this.anchors={}; this.layoutScale=1; this.stats=''; this.largeGraph=false; this.previewNodeIds=[]; this.previewNodeIdsByModule={}; this.overview=[]; this._overviewAll=[]; this.overviewOverflow=0; this.overviewById={}; this.overviewEdges=[]; this.overviewZoom=1; this._sourceSeq=0; this._sourceAbort=null; this._searchProjection=null; this._memSeq=0; this._memAbort=null;
+    this.nodes=[]; this.edges=[]; this.clusters=[]; this.byId={}; this.deg={}; this.adj={}; this.revDep={}; this.archAdj={}; this.graphIndexes={membersByCluster:{},incidentByNode:{},archAdj:{}}; this.anchors={}; this.layoutScale=1; this.stats=''; this.graphStats=null; this._graphLoaded=false; this._graphPromise=null; this.largeGraph=false; this.previewNodeIds=[]; this.previewNodeIdsByModule={}; this.overview=[]; this._overviewAll=[]; this.overviewOverflow=0; this.overviewById={}; this.overviewEdges=[]; this.overviewZoom=1; this._sourceSeq=0; this._sourceAbort=null; this._searchProjection=null; this._memSeq=0; this._memAbort=null;
     this._modality='pointer'; this._inerted=new Set(); this._inspectorKey=null; this._inspectorReturn=null; this._railReturn=null; this._themeChosen=false;
     this.state={...this.state, theme:this.initialTheme(), compact:this.matchesQuery(this.COMPACT_QUERY), singleKeys:this.storedSingleKeys()};
   }
@@ -1127,7 +1138,7 @@ class Component extends DCLogic {
     this._tick=0;
     const loop=()=>{ this.step(); this.tween(); this.draw(); this._tick++; this.raf=requestAnimationFrame(loop); };
     this.raf=requestAnimationFrame(loop);
-    this.loadGraph();
+    this.loadOverview();
     this.setState({ready:true});
   }
   componentDidUpdate(){
@@ -1215,18 +1226,59 @@ class Component extends DCLogic {
   searchShortcut(){ const nav=typeof navigator!=='undefined'?navigator:{}; const platform=(nav.userAgentData&&nav.userAgentData.platform)||nav.platform||nav.userAgent||''; return /mac|iphone|ipad|ipod/i.test(platform)?'⌘K':'Ctrl K'; }
 
   // ---------- data ----------
-  async loadGraph(){
+  async loadOverview(){
     this.setState({loading:true,error:null});
     try {
-      // Parallel fetch of the overview snapshot (/overview.json). Old servers don't serve it →
-      // the .catch(()=>null) degrades to the existing cluster-card path exactly (vizModules null).
-      const [res, ovRes] = await Promise.all([
-        fetch('/graph.json'),
-        fetch('/overview.json').then(r => r.ok ? r.json() : null).catch(() => null),
-      ]);
+      const res=await fetch('/overview.json');
+      if(!res.ok) throw new Error(res.status+' '+res.statusText);
+      const overview=await res.json();
+      this.vizModules=Array.isArray(overview.modules)?overview.modules:null;
+      if(!this.vizModules || !this.vizModules.length){ await this.loadGraph(); return; }
+      this.graphStats=overview.stats||null;
+      this._explorerCache=null;
+      this.largeGraph=true;
+      this.buildOverview();
+      this.stats=this.graphStats?this.formatGraphStats(this.graphStats):'';
+      this.setState({loading:false,mode:'overview'});
+    } catch (_err) {
+      // Older viz servers serve graph.json alone.
+      await this.loadGraph();
+    }
+  }
+  formatGraphStats(stats){
+    if(!stats)return '';
+    const codeNodes=stats.codeNodes??stats.nodes??0;
+    const codeEdges=stats.codeEdges??stats.edges??0;
+    const semanticNodes=stats.semanticNodes??0;
+    const memoryNodes=typeof stats.memoryNodes==='number'?' · '+stats.memoryNodes.toLocaleString()+' memory':'';
+    return codeNodes.toLocaleString()+' code nodes · '+codeEdges.toLocaleString()+' code edges · '+semanticNodes.toLocaleString()+' semantic'+memoryNodes;
+  }
+  loadGraph(){
+    if(this._graphLoaded)return Promise.resolve();
+    if(!this._graphPromise)this._graphPromise=this.fetchGraph().finally(()=>{this._graphPromise=null;});
+    return this._graphPromise;
+  }
+  // Start downloading the full graph while the user reads a module's cards, without parsing it:
+  // the browser buffers the body off the main thread, so the next drill-in skips the download and
+  // the page stays responsive meanwhile.
+  prefetchGraph(){
+    if(this._graphLoaded||this._graphPromise||this._graphResponse)return;
+    const idle=window.requestIdleCallback||((fn)=>setTimeout(fn,200));
+    idle(()=>{
+      if(this._graphLoaded||this._graphPromise||this._graphResponse)return;
+      const pending=fetch('/graph.json');
+      this._graphResponse=pending;
+      pending.catch(()=>{ if(this._graphResponse===pending)this._graphResponse=null; });
+    });
+  }
+  async fetchGraph(){
+    this.setState({loading:true,error:null});
+    try {
+      const pending=this._graphResponse; this._graphResponse=null;
+      const res=await (pending||fetch('/graph.json'));
       if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
       const g = await res.json();
-      this.vizModules = ovRes && Array.isArray(ovRes.modules) ? ovRes.modules : null;
+      this.graphStats=g.stats||this.graphStats;
       const nodes = (g.nodes || []).map(item => {
         const d = item.data || item;
         return {
@@ -1319,14 +1371,15 @@ class Component extends DCLogic {
       this.anchors = ca;
       nodes.forEach(n=>{ const a=ca[n.cluster] || ca[Object.keys(ca)[0]] || {x:0,y:0}; const ang=Math.random()*Math.PI*2, r=70+Math.random()*130*previewScale; n.x=a.x+Math.cos(ang)*r; n.y=a.y+Math.sin(ang)*r; });
       nodes.forEach(n=>{ const base={file:10,class:9,interface:8,method:7,function:7,symbol:8,'doc-section':8.5,table:10,column:6.5,statement:6.5,condition:6.5,enum:8,type:8,getter:7,setter:7,property:7,'media-seg':7,explanation:7}[n.kind]||7; n.r=base+Math.min(this.deg[n.id],9)*0.85; });
-      this.stats = g.stats ? (g.stats.nodes + ' nodes · ' + g.stats.edges + ' edges · ' + g.stats.clusters + ' clusters') : (nodes.length + ' nodes · ' + edges.length + ' edges · ' + this.clusters.length + ' clusters');
+      this.stats=this.graphStats?this.formatGraphStats(this.graphStats):(nodes.length+' code nodes · '+edges.length+' code edges');
       const warmSteps = Math.min(120, Math.max(30, Math.floor(90000 / (N || 1))));
       for (let i=0; i<warmSteps; i++) { this.alpha = Math.max(0.15, this.alpha); this.step(); }
       this.fit();
       this.alpha = 0.15;
       // Overview is the default for every graph that has overview blocks — the architecture first,
       // then a click into a module. Focus stays one button away.
-      this.setState({loading:false, mode:this.overview.length?'overview':'focus'});
+      this._graphLoaded=true;
+      this.setState({loading:false, mode:this.state.mode==='overview'&&this.overview.length?'overview':'focus'});
     } catch (err) {
       this.setState({error: String(err && err.message || err), loading:false});
     }
@@ -1345,7 +1398,7 @@ class Component extends DCLogic {
     const ld=(this.props.linkDistance ?? 1.6);
     const largeGraph = ns.length > 1800;
     const forceScale = this.largeGraph ? 1 : this.layoutScale;
-    const activeEdges=this.visibleEdges(new Set(ns.map(n=>n.id)));
+    const activeEdges=this.visibleEdges();
     for(const n of ns){ n.fx=0; n.fy=0; }
     if(!largeGraph){
       for(let i=0;i<ns.length;i++){ const a=ns[i]; if(hid[a.kind])continue;
@@ -1354,7 +1407,7 @@ class Component extends DCLogic {
           const f=(4200*forceScale)/d2; const ux=dx/d, uy=dy/d; a.fx+=ux*f; a.fy+=uy*f; b.fx-=ux*f; b.fy-=uy*f; } }
     }
     const L={'member-of':46,calls:92,imports:108,describes:124,references:138,implements:92,executes:70,reads:78,writes:78,'guarded-by':64};
-    const visibleIds = new Set(ns.map(n=>n.id));
+    const visibleIds = this.visibleIdSet();
     for(const e of activeEdges){ if(!visibleIds.has(e.src)||!visibleIds.has(e.dst))continue; const a=this.byId[e.src], b=this.byId[e.dst]; if(hid[a.kind]||hid[b.kind])continue;
       let dx=b.x-a.x, dy=b.y-a.y, d=Math.sqrt(dx*dx+dy*dy)||0.01; const tl=(L[e.rel]||95)*ld*forceScale; const f=(d-tl)*0.052; const ux=dx/d, uy=dy/d;
       a.fx+=ux*f; a.fy+=uy*f; b.fx-=ux*f; b.fy-=uy*f; }
@@ -1490,7 +1543,8 @@ class Component extends DCLogic {
     if(this.selectedModule){
       const mod = mods.find(m=>m.id===this.selectedModule);
       if(!mod){ this.selectedModule=null; return this.buildModuleOverview(); }
-      this.buildClusterOverview(mod.clusterIds && mod.clusterIds.length ? mod.clusterIds : null);
+      if(this._graphLoaded) this.buildClusterOverview(mod.clusterIds && mod.clusterIds.length ? mod.clusterIds : null);
+      else this._overviewAll=this.moduleViewBlocks(this._moduleViews&&this._moduleViews[mod.id]);
       // Prepend a back affordance and re-layout the whole set so the back card owns the first slot.
       const back = { id:'module:back', isBack:true, label:'← all modules', color:'#64748b',
         count:0, degree:0, importance:0, kinds:new Map(), topKind:'symbol', muted:false, topMembers:[],
@@ -1511,9 +1565,13 @@ class Component extends DCLogic {
     const nodeModule = new Map();
     for(const n of this.nodes) nodeModule.set(n.id, this.moduleForFile(n.file));
     blocks.forEach((block)=>{
-      block.topMembers=this.nodes.filter((node)=>nodeModule.get(node.id)===block.id)
-        .sort((a,b)=>(b.importance||0)-(a.importance||0)).slice(0,2)
-        .map((node)=>({id:node.id,kind:node.kind,label:node.qualified||node.label||node.id}));
+      const module=mods.find(m=>m.id===block.id);
+      block.topMembers=this._graphLoaded
+        ? this.nodes.filter((node)=>nodeModule.get(node.id)===block.id)
+          .sort((a,b)=>(b.importance||0)-(a.importance||0)).slice(0,2)
+          .map((node)=>({id:node.id,kind:node.kind,label:node.qualified||node.label||node.id}))
+        : (module&&module.topSymbols||[]).slice(0,2)
+          .map((node)=>({id:node.id,kind:'symbol',label:node.qualifiedName||node.name||node.id}));
     });
     const edgeMap = new Map();
     for(const e of this.edges){
@@ -1553,11 +1611,50 @@ class Component extends DCLogic {
 
   selectModule(id){
     if(!this.vizModules) return;
+    // The canvas overview needs only the module's cards; List and Split enumerate its symbols.
+    if(!this._graphLoaded&&this.effectivePresentation()==='graph'){ this.openModuleView(id); return; }
+    if(!this._graphLoaded){ this.loadGraph().then(()=>{if(this._graphLoaded)this.selectModule(id);}); return; }
     this.selectedModule=id; this._cand=null; this._nb=[]; this._nIdx=null;
     this.buildOverview();
     this.view={cx:0,cy:0,k:0.95}; this._vt=null;
     this.setState({selectedId:null,selectedClusterId:null,selectedTrail:[],mode:'overview',inspectorOpen:false,listPage:0});
     this.reheat(0.35);
+  }
+  // Open a module from its server-side projection (/overview/module.json, a few KB) instead of
+  // downloading and indexing the whole graph first. Falls back to the full graph when the server
+  // predates the endpoint. A later click wins over an earlier in-flight one.
+  async openModuleView(id){
+    const seq=this._moduleSeq=(this._moduleSeq||0)+1;
+    this._moduleViews=this._moduleViews||{};
+    let view=this._moduleViews[id];
+    if(!view){
+      this.setState({loading:true,error:null});
+      try{
+        const res=await fetch('/overview/module.json?id='+encodeURIComponent(id));
+        if(!res.ok)throw new Error(res.status+' '+res.statusText);
+        view=await res.json();
+        this._moduleViews[id]=view;
+      }catch(_err){
+        if(seq!==this._moduleSeq)return;
+        this.loadGraph().then(()=>{if(this._graphLoaded&&seq===this._moduleSeq)this.selectModule(id);});
+        return;
+      }
+    }
+    if(seq!==this._moduleSeq||this._graphLoaded){ if(seq===this._moduleSeq)this.selectModule(id); return; }
+    this.selectedModule=id; this._cand=null; this._nb=[]; this._nIdx=null;
+    this.buildOverview();
+    this.view={cx:0,cy:0,k:0.95}; this._vt=null;
+    this.setState({loading:false,selectedId:null,selectedClusterId:null,selectedTrail:[],mode:'overview',inspectorOpen:false,listPage:0});
+    this.prefetchGraph();
+  }
+  // Level-1 cards from a module projection: the same block shape buildClusterOverview produces.
+  moduleViewBlocks(view){
+    this.overviewEdges=(view&&view.edges||[]).map(e=>({...e}));
+    return (view&&view.clusters||[]).map(c=>{
+      const kinds=new Map(Object.entries(c.kinds||{}));
+      const topKind=[...kinds.entries()].sort((a,b)=>b[1]-a[1])[0]?.[0]||'symbol';
+      return {...c,kinds,topKind,muted:false,topMembers:c.topMembers||[],x:0,y:0,w:0,h:0};
+    });
   }
   clearModule(){
     if(!this.vizModules) return;
@@ -1570,7 +1667,11 @@ class Component extends DCLogic {
 
   clusterProjection(clusterId=this.state.selectedClusterId,kind=this.state.selectedClusterKind,showContext=this.state.clusterContext,promotedId=null){
     if(!clusterId) return null;
-    return KCGraphModel.clusterProjection({clusterId,kind,showContext,promotedId,coreCap:200,contextCap:60},this.nodes,this.edges,this.byId,this.graphIndexes);
+    const memo=this._clusterProjectionMemo;
+    if(memo&&memo.clusterId===clusterId&&memo.kind===kind&&memo.showContext===showContext&&memo.promotedId===promotedId&&memo.indexes===this.graphIndexes)return memo.projection;
+    const projection=KCGraphModel.clusterProjection({clusterId,kind,showContext,promotedId,coreCap:200,contextCap:60},this.nodes,this.edges,this.byId,this.graphIndexes);
+    this._clusterProjectionMemo={clusterId,kind,showContext,promotedId,indexes:this.graphIndexes,projection};
+    return projection;
   }
 
   searchProjection(query=this.state.query){
@@ -1580,7 +1681,31 @@ class Component extends DCLogic {
     return this._searchProjection;
   }
 
+  // The visible set is a pure function of this key plus the loaded graph, yet draw, the minimap,
+  // hit-testing and the physics step each asked for it every frame. On a large repository that
+  // re-walked hub nodes' incident edges several times per frame, so it is memoized per frame key.
+  visibleKey(){ const s=this.state; return [(s.query||'').trim(),s.selectedId||'',s.selectedClusterId||'',s.selectedClusterKind||'',s.clusterContext?1:0,s.focusDepth||1,this.selectedModule||'',this.largeGraph?1:0].join('\u0001'); }
+  visibleFrame(){
+    const key=this.visibleKey(), memo=this._visibleFrame;
+    if(memo&&memo.key===key&&memo.nodesRef===this.nodes&&memo.edgesRef===this.edges&&memo.indexes===this.graphIndexes)return memo;
+    const nodes=this.computeVisibleNodes();
+    this._visibleFrame={key,nodesRef:this.nodes,edgesRef:this.edges,indexes:this.graphIndexes,nodes,ids:null,edges:null};
+    return this._visibleFrame;
+  }
+  visibleNodes(){ return this.visibleFrame().nodes; }
+  visibleIdSet(){ const frame=this.visibleFrame(); return frame.ids||(frame.ids=new Set(frame.nodes.map(n=>n.id))); }
+  /** Edges among the visible nodes (memoized), or among an explicit id set when one is given. */
   visibleEdges(visibleIds){
+    if(visibleIds)return this.computeVisibleEdges(visibleIds);
+    const frame=this.visibleFrame();
+    return frame.edges||(frame.edges=this.computeVisibleEdges(this.visibleIdSet()));
+  }
+  clusterById(id){
+    if(this._clusterIndexFor!==this.clusters){ this._clusterIndexFor=this.clusters; this._clusterIndex=new Map(this.clusters.map(c=>[c.id,c])); }
+    return this._clusterIndex.get(id);
+  }
+
+  computeVisibleEdges(visibleIds){
     const q=(this.state.query||'').trim();
     if(q&&!this.state.selectedId&&!this.state.selectedClusterId)return this.searchProjection(q).edgeIndexes.map(i=>this.edges[i]).filter(Boolean);
     if(this.state.selectedClusterId && !this.state.selectedId){
@@ -1591,7 +1716,7 @@ class Component extends DCLogic {
     return indexes.map(i=>this.edges[i]).filter(Boolean);
   }
 
-  visibleNodes(){
+  computeVisibleNodes(){
     const q=(this.state.query||'').trim();
     if(q&&!this.state.selectedId&&!this.state.selectedClusterId)return [...this.searchProjection(q).nodeIds].map(id=>this.byId[id]).filter(Boolean);
     if(this.state.selectedClusterId && !this.state.selectedId){
@@ -1779,15 +1904,16 @@ class Component extends DCLogic {
       return;
     }
     const visible = this.visibleNodes();
-    const visibleIds = new Set(visible.map(n=>n.id));
     const focused=!!(sel && this.state.mode==='focus' && !this.state.blast && !q && this._focusLayout);
     const crossEdges=focused?new Set(this._focusLayout.crossEdgeIndexes.map(index=>this.edges[index])):null;
-    const activeEdges=focused?[...this._focusLayout.crossEdgeIndexes,...this._focusLayout.backboneEdgeIndexes].map(index=>this.edges[index]).filter(Boolean):this.visibleEdges(visibleIds);
+    const activeEdges=focused?[...this._focusLayout.crossEdgeIndexes,...this._focusLayout.backboneEdgeIndexes].map(index=>this.edges[index]).filter(Boolean):this.visibleEdges();
     const clusterProjection=this.state.selectedClusterId&&!sel?this.clusterProjection():null;
     const clusterContextIds=new Set(clusterProjection?clusterProjection.contextIds:[]);
     const compactPreview=this.largeGraph&&!sel&&!clusterProjection&&!q&&k<0.9;
     // cluster blobs
-    for(const c of focused?[]:this.clusters){ const mem=visible.filter(n=>n.cluster===c.id&&!hid[n.kind]); if(mem.length<1)continue; let cx=0,cy=0; mem.forEach(n=>{cx+=n.x;cy+=n.y;}); cx/=mem.length; cy/=mem.length; let rad=0; mem.forEach(n=>{rad=Math.max(rad,Math.hypot(n.x-cx,n.y-cy)+n.r);}); rad+=26;
+    const visibleByCluster=new Map();
+    if(!focused)for(const n of visible){ if(hid[n.kind])continue; const list=visibleByCluster.get(n.cluster); if(list)list.push(n); else visibleByCluster.set(n.cluster,[n]); }
+    for(const c of focused?[]:this.clusters){ const mem=visibleByCluster.get(c.id); if(!mem)continue; let cx=0,cy=0; mem.forEach(n=>{cx+=n.x;cy+=n.y;}); cx/=mem.length; cy/=mem.length; let rad=0; mem.forEach(n=>{rad=Math.max(rad,Math.hypot(n.x-cx,n.y-cy)+n.r);}); rad+=26;
       const [sx,sy]=this.w2s(cx,cy); const sr=rad*k; const grd=ctx.createRadialGradient(sx,sy,sr*0.2,sx,sy,sr); const a=th.name==='dark'?0.16:0.13; grd.addColorStop(0,KCGraphModel.hex(c.color,a)); grd.addColorStop(1,KCGraphModel.hex(c.color,0)); ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(sx,sy,sr,0,7); ctx.fill();
       // label
       if(!compactPreview){ctx.font='600 '+Math.max(10,11*Math.min(k,1.3))+"px 'IBM Plex Sans', system-ui, sans-serif"; ctx.fillStyle=KCGraphModel.hex(c.color,0.92); ctx.textAlign='center'; ctx.textBaseline='middle'; const dim=sel&&hl&&!mem.some(n=>hl.set.has(n.id)); ctx.globalAlpha=dim?0.25:1; ctx.fillText(c.label.toUpperCase(),sx,sy-sr-2); ctx.globalAlpha=1;} }
@@ -1934,7 +2060,7 @@ class Component extends DCLogic {
   }
   drawCompactLabels(ctx,visible,hid,th){
     const groups=new Map();
-    for(const n of visible){if(hid[n.kind])continue; const group=groups.get(n.cluster)||{nodes:[],cluster:this.clusters.find(c=>c.id===n.cluster)};group.nodes.push(n);groups.set(n.cluster,group);}
+    for(const n of visible){if(hid[n.kind])continue; const group=groups.get(n.cluster)||{nodes:[],cluster:this.clusterById(n.cluster)};group.nodes.push(n);groups.set(n.cluster,group);}
     const placed=[];
     for(const group of [...groups.values()].sort((a,b)=>b.nodes.length-a.nodes.length).slice(0,14)){
       const c=group.cluster;if(!c)continue;
@@ -2017,7 +2143,7 @@ class Component extends DCLogic {
     const nodes=this.visibleNodes();if(!nodes.length)return;
     const x0=Math.min(...nodes.map(n=>n.x)),x1=Math.max(...nodes.map(n=>n.x)),y0=Math.min(...nodes.map(n=>n.y)),y1=Math.max(...nodes.map(n=>n.y));
     const s=Math.min((w-14)/Math.max(1,x1-x0),(h-14)/Math.max(1,y1-y0)),ox=(w-(x1-x0)*s)/2-x0*s,oy=(h-(y1-y0)*s)/2-y0*s;
-    const edges=this.state.selectedId&&this._focusLayout&&!this.state.blast?this._focusLayout.edgeIndexes.map(index=>this.edges[index]).filter(Boolean):this.visibleEdges(new Set(nodes.map(n=>n.id)));
+    const edges=this.state.selectedId&&this._focusLayout&&!this.state.blast?this._focusLayout.edgeIndexes.map(index=>this.edges[index]).filter(Boolean):this.visibleEdges();
     for(const edge of edges){const a=this.byId[edge.src],b=this.byId[edge.dst];if(!a||!b)continue;ctx.strokeStyle='rgba(203,213,225,.2)';ctx.lineWidth=.7;ctx.beginPath();ctx.moveTo(a.x*s+ox,a.y*s+oy);ctx.lineTo(b.x*s+ox,b.y*s+oy);ctx.stroke();}
     for(const node of nodes){ctx.fillStyle=KCGraphModel.hex(this.KIND[node.kind]||'#8aa8ff',node.id===this.state.selectedId?1:.7);ctx.beginPath();ctx.arc(node.x*s+ox,node.y*s+oy,node.id===this.state.selectedId?3:1.7,0,7);ctx.fill();}
   }
@@ -2094,7 +2220,7 @@ class Component extends DCLogic {
   // whether the previous node had been expanded to 2-hop; expansion is a per-node choice, not a
   // sticky mode. arrangeNodeFocus is passed depth=1 explicitly so it doesn't read the (about to be
   // stale) previous state.focusDepth before setState lands.
-  select(id,returnClusterId=null){ if(!this.byId[id]) return; const n=this.byId[id]; const originCluster=returnClusterId||(!this.state.selectedId?this.state.selectedClusterId:null)||this.state.clusterReturnId; this._cand=null; this._nb=[...new Set(this.archAdj[id]||[])]; this._nIdx=null; this.arrangeNodeFocus(id,1);
+  select(id,returnClusterId=null){ if(!this._graphLoaded){ this.loadGraph().then(()=>{if(this._graphLoaded)this.select(id,returnClusterId);}); return; } if(!this.byId[id]) return; const n=this.byId[id]; const originCluster=returnClusterId||(!this.state.selectedId?this.state.selectedClusterId:null)||this.state.clusterReturnId; this._cand=null; this._nb=[...new Set(this.archAdj[id]||[])]; this._nIdx=null; this.arrangeNodeFocus(id,1);
     const trail=[...(this.state.selectedTrail||[]).filter(t=>t.id!==id),{id,label:n.qualified||n.label||id}].slice(-4);
     this.setState({selectedId:id, selectedClusterId:n.cluster, clusterReturnId:originCluster, selectedTrail:trail, mode:'focus', focusDepth:1, inspectorOpen:true, listPage:0}); this.loadSource(id); this.reheat(0.08); }
   /** Reveal the next actual architectural hop, retaining a bounded, connected subset. */
@@ -2106,7 +2232,7 @@ class Component extends DCLogic {
     this.reheat(0.3);
   }
   toggleFocusDepth(){ this.setFocusDepth((this.state.focusDepth||1)+1); }
-  selectCluster(id){ if(!this.clusters.some(c=>c.id===id)) return; this._cand=null; this._nb=[]; this._nIdx=null; this.arrangeClusterFocus(id,null,false); this.setState({selectedId:null, selectedClusterId:id, selectedClusterKind:null, clusterContext:false, clusterReturnId:null, selectedTrail:[], sourcePreview:null, mode:'focus', inspectorOpen:true, listPage:0}); this.reheat(0.35); }
+  selectCluster(id){ if(!this._graphLoaded){ this.loadGraph().then(()=>{if(this._graphLoaded)this.selectCluster(id);}); return; } if(!this.clusters.some(c=>c.id===id)) return; this._cand=null; this._nb=[]; this._nIdx=null; this.arrangeClusterFocus(id,null,false); this.setState({selectedId:null, selectedClusterId:id, selectedClusterKind:null, clusterContext:false, clusterReturnId:null, selectedTrail:[], sourcePreview:null, mode:'focus', inspectorOpen:true, listPage:0}); this.reheat(0.35); }
   setClusterKind(kind){ const id=this.state.selectedClusterId; if(!id)return; this.arrangeClusterFocus(id,kind,this.state.clusterContext); this.setState({selectedClusterKind:kind}); this.reheat(0.25); }
   toggleClusterContext(){ const id=this.state.selectedClusterId; if(!id)return; const next=!this.state.clusterContext; this.arrangeClusterFocus(id,this.state.selectedClusterKind,next); this.setState({clusterContext:next}); this.reheat(0.25); }
   returnToCluster(){ const id=this.state.clusterReturnId; if(!id||!this.overviewById[id])return; this.arrangeClusterFocus(id,this.state.selectedClusterKind,false); this.setState({selectedId:null,selectedClusterId:id,clusterContext:false,clusterReturnId:null,selectedTrail:[],sourcePreview:null,mode:'focus',inspectorOpen:true}); this.reheat(0.25); }
@@ -2537,8 +2663,8 @@ class Component extends DCLogic {
   toggleTheme(){ const next=this.state.theme==='dark'?'light':'dark'; this._themeChosen=true; try{ window.localStorage.setItem(this.THEME_KEY,next); }catch(_e){} this.setState({theme:next}); }
   toggleBlast(){ this.setState(s=>({blast:!s.blast})); this.reheat(0.2); }
   showOverview(){ if(!this.overview.length)return; this.setState({mode:'overview', blast:false, selectedId:null, selectedClusterId:null, selectedClusterKind:null, clusterContext:false, clusterReturnId:null, selectedTrail:[], sourcePreview:null, inspectorOpen:false}); }
-  showFocus(){ if(this.state.selectedId){ this.arrangeNodeFocus(this.state.selectedId); this.setState({mode:'focus',blast:false}); this.reheat(0.08); return; } this.setState({mode:'focus',blast:false}); setTimeout(()=>this.fit(),0); this.reheat(0.25); }
-  showBlast(){ if(this.state.mode==='overview')this.setState({mode:'focus',blast:true});else this.setState({blast:true}); this.reheat(.2); }
+  showFocus(){ if(!this._graphLoaded){this.loadGraph().then(()=>{if(this._graphLoaded)this.showFocus();});return;} if(this.state.selectedId){ this.arrangeNodeFocus(this.state.selectedId); this.setState({mode:'focus',blast:false}); this.reheat(0.08); return; } this.setState({mode:'focus',blast:false}); setTimeout(()=>this.fit(),0); this.reheat(0.25); }
+  showBlast(){ if(!this._graphLoaded){this.loadGraph().then(()=>{if(this._graphLoaded)this.showBlast();});return;} if(this.state.mode==='overview')this.setState({mode:'focus',blast:true});else this.setState({blast:true}); this.reheat(.2); }
   toggleHelp(){ if(this.state.helpOpen){ this.closeHelp(); return; } this.setState({helpOpen:true}); this.keepFocus('[data-kc-help-close]',25); }
   closeHelp(){ this.setState({helpOpen:false},()=>this.restoreFocus(null,'[data-kc-help-trigger]')); }
   toggleInspector(){ if(this.state.inspectorOpen){this.closeInspector();return;} this.setState({inspectorOpen:true}); }
@@ -2574,7 +2700,7 @@ class Component extends DCLogic {
   explorerSummary(searchProjection){ const s=this.state; const empty={rows:[],page:0,pageCount:1,graphNote:'',truncated:false};
     if(s.selectedId&&this.byId[s.selectedId]) return {...empty,scope:s.blast?'blast':'focus',total:null};
     if(searchProjection){ const total=(searchProjection.allMatchIds||[]).reduce((n,id)=>{ const node=this.byId[id]; return node&&!s.hidden[node.kind]?n+1:n; },0); return {...empty,scope:'search',total}; }
-    return {...empty,scope:s.selectedClusterId?'cluster':(this.selectedModule?'module':'overview'),total:this.nodes.length?null:0}; }
+    return {...empty,scope:s.selectedClusterId?'cluster':(this.selectedModule?'module':'overview'),total:this.nodes.length?null:(this.vizModules&&this.vizModules.length?this.vizModules.length:0)}; }
   explorerProjection(){
     const s=this.state;
     const key=[s.query,s.selectedId,s.selectedClusterId,this.selectedModule,s.blast,s.focusDepth,this.overviewOverflow,JSON.stringify(s.hidden)].join('|');
@@ -2615,6 +2741,7 @@ class Component extends DCLogic {
   resultPage(delta){ this.setState(s=>({listPage:Math.max(0,s.listPage+delta)}),()=>{if(this.resultListRef.current)this.resultListRef.current.scrollTop=0;}); }
   onSearch(e){
     const query=e.target.value;
+    if(query.trim()&&!this._graphLoaded){this.setState({query,loading:true});this.loadGraph().then(()=>{if(this._graphLoaded)this.onSearch({target:{value:this.searchRef.current?this.searchRef.current.value:query}});});return;}
     this.selectedModule=null;
     this._searchProjection=null;
     this.setState({query,mode:query.trim()?'focus':(this.overview.length?'overview':'focus'),selectedId:null,selectedClusterId:null,selectedClusterKind:null,clusterContext:false,clusterReturnId:null,selectedTrail:[],sourcePreview:null,inspectorOpen:false,listPage:0},()=>{
@@ -2778,8 +2905,8 @@ class Component extends DCLogic {
     const inspectorOpen=this.state.inspectorOpen;
     const compact=!!this.state.compact; const drawerOpen=compact&&!!this.state.railDrawerOpen; const railExpanded=compact?drawerOpen:!!this.state.railOpen;
      const blastOn=this.state.blast;
-     const overviewOn=this.state.mode==='overview'&&this.overview.length>0;
-     const focusOn=!overviewOn;
+     const overviewOn=this.state.mode==='overview';
+     const focusOn=this.state.mode==='focus';
     // Focus empty-state: large repo, focus mode, nothing selected and no search — show the "how to
     // start" hint. Small graphs default to focus with nodes already visible, so no hint there.
     const focusEmpty = this.largeGraph && focusOn && !this.state.selectedId && !this.state.selectedClusterId && !(this.state.query||'').trim() && !this.visibleNodes().some(n=>!this.state.hidden[n.kind]);
@@ -2793,7 +2920,7 @@ class Component extends DCLogic {
     const searchStatus=searchProjection?(explorer.total?explorer.total+' code graph match'+(explorer.total===1?'':'es'):'No code graph matches'):null;
      const searchStatusColor=searchProjection&&explorer.total===0?'var(--kc-text-risk)':t.sub;
     const resultEmptyMessage=this.state.error?'The code graph could not load: '+this.state.error:
-      this.nodes.length===0?'The code graph index is empty.':
+      this.nodes.length===0&&!(this.vizModules&&this.vizModules.length)?'The code graph index is empty.':
       explorer.scope==='blast'?'No reverse dependencies were discovered for this symbol.':
       explorer.scope==='focus'?'No architectural neighbors were discovered at this depth.':
       explorer.scope==='cluster'?'No indexed symbols in this cluster under current filters.':
@@ -2806,7 +2933,7 @@ class Component extends DCLogic {
     const stageSecondary=selectedModule?this.formatRailLabel(selectedModule.label||selectedModule.id):(selectedBlock?this.formatRailLabel(selectedBlock.label||selectedBlock.id):(focusOn?'Focus':null));
     const stageTertiary=selectedNode?(selectedNode.qualified||selectedNode.label||selectedNode.id):null;
     const badgeData=this.state.memData;
-    const memoryBadge=badgeData&&badgeData.views?String(badgeData.views.needsReview):(badgeData&&badgeData.counts?String((badgeData.counts.stale||0)+(badgeData.counts.moved||0)):'•');
+    const memoryBadge=badgeData&&badgeData.views?String(badgeData.views.needsReview):(badgeData&&badgeData.counts?String((badgeData.counts.stale||0)+(badgeData.counts.moved||0)):null);
      const tOn=this.state.tour; const ts=this.TOUR[this.state.tourStep]||{title:'No tour available',text:'This project has no indexed symbols to tour yet.'}; const isLast=this.state.tourStep>=this.TOUR.length-1; const isFirst=this.state.tourStep<=0;
     // ── memory ledger view model (G5.4) ── the /memory.json projection is already display-shaped;
     // this only adds chrome (colors, chips, handlers) and the lazy per-record detail sub-view.
@@ -2875,8 +3002,8 @@ class Component extends DCLogic {
           {key:'active',label:'Active',count:(hs.active&&hs.active.count)||0,color:'var(--kc-text-positive)',help:'Open the claims agents can recall now',onGo:openHomeAction('active')},
           {key:'pending',label:'Pending',count:(hs.pending&&hs.pending.count)||0,color:'var(--kc-text-review)',help:'Review pending outcomes',onGo:openHomeAction('pending')},
           {key:'needsReview',label:'Needs review',count:(hs.needsReview&&hs.needsReview.count)||0,color:'var(--kc-text-risk)',help:'Open the claims that need review, with the reason for each',onGo:openHomeAction('needsReview')},
-          {key:'history',label:'History',count:(hs.history&&hs.history.count)||0,color:'var(--kc-text-secondary)',help:'Open the full append-only ledger',onGo:openHomeAction('history')},
-          {key:'resume',label:'Resumable work',count:(hs.resume&&hs.resume.count)||0,color:'var(--kc-text-interactive)',help:'Continue, finish or cancel saved work',onGo:openHomeAction('resume')}],
+          {key:'history',label:'Claim history',count:(hs.history&&hs.history.count)||0,color:'var(--kc-text-secondary)',help:'Open the full append-only claim ledger',onGo:openHomeAction('history')},
+          {key:'resume',label:'Work history',count:(hs.resume&&hs.resume.choices&&hs.resume.choices.length)||0,color:'var(--kc-text-interactive)',help:'Continue active work or inspect finished work',onGo:openHomeAction('resume')}],
         overlapNote:'Active and Needs review can overlap: a claim with degraded evidence stays usable, with caution, and still asks for review.',
         health:KCMemoryViewProjection.healthSignals(hh,rec),
         nextAction:mh.nextAction||'Capture a reusable outcome.'}:null;
@@ -2947,19 +3074,22 @@ class Component extends DCLogic {
           recheckLabel:this.state.memRechecking?'Re-checking…':'Re-check against the code',
           onProfile:(e)=>this.setState({memProfile:e.target.value}) };
       }else if(actionKind==='resume'){
-        homeAction={title:'Resumable work', detail:'Saved work, active first. Open one to continue it, mark it done, or cancel it. Stale = no checkpoint for two weeks or more; nothing closes on its own.'};
+        homeAction={title:'Work history', detail:'Saved work, active first; finished and cancelled work stays available to inspect. Stale = no checkpoint for two weeks or more.'};
         const allBriefs=(hs.resume&&hs.resume.choices)||[];
         const isClosed=(c)=>c.status==='completed'||c.status==='cancelled';
         const briefs=allBriefs.filter((c)=>!isClosed(c)).sort((a,b)=>(a.stale?1:0)-(b.stale?1:0));
-        const closedCount=allBriefs.length-briefs.length;
-        const choices=briefs.map((c)=>({
+        const closedBriefs=allBriefs.filter(isClosed).sort((a,b)=>String(b.lastActivity||'').localeCompare(String(a.lastActivity||'')));
+        const closedCount=closedBriefs.length;
+        const asChoice=(c)=>({
           title:(c.interpretation&&c.interpretation.outcome)||c.original||c.intakeId,
           staleLabel:c.stale?('stale · idle '+c.idleDays+'d'):null,
           activityLabel:'last activity '+String(c.lastActivity||'').slice(0,10)+(typeof c.idleDays==='number'&&!c.stale?(' · '+c.idleDays+'d ago'):''),
           intakeId:c.intakeId, status:c.status, phase:c.phase, nextSafeAction:c.nextSafeAction||null, lastActivity:c.lastActivity,
           cautions:[].concat(c.repositoryDrift?['the repository moved since the saved checkpoint']:[])
             .concat(c.blockers||[]).concat((c.conflicts||[]).map((cf)=>'conflicting '+cf.field)).join(' · ')||null,
-          onOpen:()=>this.loadIntakeDetail(c.intakeId) }));
+          onOpen:()=>this.loadIntakeDetail(c.intakeId) });
+        const activeChoices=briefs.map(asChoice);
+        const closedChoices=closedBriefs.map(asChoice);
         const st=this.state.memIntake; let intake=null;
         if(st&&st.status==='loading') intake={loading:true};
         else if(st&&st.status==='error') intake={error:st.message};
@@ -2983,9 +3113,8 @@ class Component extends DCLogic {
             onInputNext:(e)=>this.setState({memResumeNext:e.target.value}) };
         }
         const staleWork=(hs.resume&&hs.resume.staleCount)||0;
-        resumeView={ choices, intake, empty:choices.length===0, notice:this.state.memResumeNotice,
-          summary:'resumable '+((hs.resume&&hs.resume.count)||0)+' · stale '+staleWork+' · closed '+closedCount,
-          closedLabel:closedCount?(closedCount+' finished or cancelled item'+(closedCount===1?'':'s')+' kept in history.'):null };
+        resumeView={ activeChoices, closedChoices, activeEmpty:activeChoices.length===0, closedEmpty:closedChoices.length===0, intake, notice:this.state.memResumeNotice,
+          summary:'resumable '+((hs.resume&&hs.resume.count)||0)+' · stale '+staleWork+' · closed '+closedCount };
       }
       let detail=null;
       if(memDetailState){
@@ -3097,9 +3226,9 @@ class Component extends DCLogic {
       graphEmpty:presentation==='graph'&&!this.state.loading&&!this.state.error&&explorer.total===0&&(explorer.scope==='search'||this.nodes.length===0),
       inspectorClass:inspectorOpen?'':'kc-inspector-closed', inspectorEmpty:inspectorOpen&&!sel, inspectorDetail:inspectorOpen&&!!sel,
       inspectorExpanded:inspectorOpen?'true':'false', inspectorToggleLabel:inspectorOpen?'Hide inspector':'Open inspector',
-       railNodeCount:this.nodes.length.toLocaleString(), railEdgeCount:this.edges.length.toLocaleString(), railModuleCount:String(railSource.length),
+       railNodeCount:(this.graphStats?.codeNodes??this.nodes.filter(n=>n.origin!=='semantic'&&n.origin!=='memory').length).toLocaleString(), railEdgeCount:(this.graphStats?.codeEdges??this.edges.filter(e=>e.origin!=='semantic'&&e.origin!=='memory').length).toLocaleString(), railModuleCount:String(railSource.length),
         stageSecondary, stageTertiary, stageOverflowOn:this.overviewOverflow>0, stageOverflowLabel:'+'+this.overviewOverflow+' more modules', memoryBadge, helpOpen:this.state.helpOpen, sourceOpen:this.state.sourceOpen, sourceCaret:this.state.sourceOpen?'▾':'▸', sourceExpanded:this.state.sourceOpen?'true':'false',
-       statusLabel:(this.state.mode==='overview'?'Architecture overview':'Focused graph')+' · '+railSource.length+' modules · '+this.nodes.length+' nodes',
+       statusLabel:(this.state.mode==='overview'?'Architecture overview':'Focused graph')+' · '+railSource.length+' modules · '+(this.graphStats?.codeNodes??this.nodes.length).toLocaleString()+' code nodes · '+(this.graphStats?.semanticNodes??0).toLocaleString()+' semantic'+(typeof this.graphStats?.memoryNodes==='number'?' · '+this.graphStats.memoryNodes.toLocaleString()+' memory':''),
        statusHint:'Drag to pan · Scroll to zoom · Fit to reset · M memory · Esc back',
       railToggleIcon:compact?(drawerOpen?'×':'☰'):(this.state.railOpen?'‹':'›'), railToggleLabel:compact?(drawerOpen?'Close navigation':'Open navigation'):(this.state.railOpen?'Collapse navigation':'Expand navigation'),
       // Interim text alternative until the textual List presentation (deferred Phase 3) exists.

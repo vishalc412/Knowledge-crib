@@ -16,30 +16,37 @@
     'produces',
   ]);
 
-  function uniquePush(map, key, value) {
-    let list = map[key];
-    if (!list) {
-      list = [];
-      map[key] = list;
+  // Lists stay arrays (callers iterate and index them); a Set per key answers "already present?"
+  // in O(1). A list scan per insert was quadratic in the largest cluster — seconds on a real repo.
+  function uniquePush(map, seen, key, value) {
+    let set = seen.get(key);
+    if (!set) {
+      set = new Set(map[key]);
+      seen.set(key, set);
     }
-    if (!list.includes(value)) list.push(value);
+    if (set.has(value)) return;
+    set.add(value);
+    if (!map[key]) map[key] = [];
+    map[key].push(value);
   }
 
   function buildIndexes(nodes, edges) {
     const membersByCluster = Object.create(null);
     const incidentByNode = Object.create(null);
     const archAdj = Object.create(null);
+    const seenMembers = new Map();
+    const seenArch = new Map();
     for (const node of nodes) {
       incidentByNode[node.id] = [];
       archAdj[node.id] = [];
-      if (node.cluster) uniquePush(membersByCluster, node.cluster, node.id);
+      if (node.cluster) uniquePush(membersByCluster, seenMembers, node.cluster, node.id);
     }
     edges.forEach((edge, index) => {
       if (incidentByNode[edge.src]) incidentByNode[edge.src].push(index);
       if (incidentByNode[edge.dst]) incidentByNode[edge.dst].push(index);
       if (ARCHITECTURAL_RELS.has(edge.rel)) {
-        if (archAdj[edge.src]) uniquePush(archAdj, edge.src, edge.dst);
-        if (archAdj[edge.dst]) uniquePush(archAdj, edge.dst, edge.src);
+        if (archAdj[edge.src]) uniquePush(archAdj, seenArch, edge.src, edge.dst);
+        if (archAdj[edge.dst]) uniquePush(archAdj, seenArch, edge.dst, edge.src);
       }
     });
     return { membersByCluster, incidentByNode, archAdj };

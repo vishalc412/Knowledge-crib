@@ -22,6 +22,9 @@ function sym(path: string, qname: string, line: number, extra: Partial<Node> = {
     ...extra,
   };
 }
+function file(path: string): Node {
+  return { id: idFor({ kind: 'file', path }), kind: 'file', file: path, hash: contentHash(path) };
+}
 function edge(src: string, dst: string, rel: Edge['rel']): Edge {
   return {
     id: edgeId(src, dst, rel),
@@ -70,6 +73,62 @@ describe('buildFunctionalMap', () => {
     expect(byId.get('module:packages/cli')?.name).toBe('cli');
     expect(byId.get('module:packages/core')?.counts.symbols).toBe(1);
     expect(byId.get('module:packages/cli')?.counts.symbols).toBe(1);
+  });
+
+  it('owns Java and nested JavaScript under their indexed Gradle project while retaining other workspace packages', () => {
+    dir = mkdtempSync(join(tmpdir(), 'crib-fm-polyglot-'));
+    const soul = newSoul();
+    soul.getManifest().meta = {
+      workspace: {
+        tool: 'npm',
+        packages: [
+          { name: 'ftc-web', rel: 'FTCCloud/src/main/javascript' },
+          { name: 'core', rel: 'packages/core' },
+          { name: 'cli', rel: 'packages/cli' },
+        ],
+      },
+    };
+    soul.putNodes([
+      file('FTCCloud/build.gradle.kts'),
+      sym('FTCCloud/src/main/java/org/ftc/Server.java', 'Server.start', 1),
+      sym('FTCCloud/src/main/javascript/app.ts', 'app.start', 1),
+      sym('packages/core/src/core.ts', 'core.run', 1),
+      sym('packages/cli/src/cli.ts', 'cli.run', 1),
+    ]);
+    soul.commit();
+
+    const modules = new Map(buildFunctionalMap(soul).modules.map((m) => [m.pathPrefix, m]));
+    expect(modules.get('FTCCloud')?.counts.symbols).toBe(2);
+    expect(modules.get('FTCCloud')?.name).toBe('FTCCloud');
+    expect(modules.has('FTCCloud/src/main/javascript')).toBe(false);
+    expect(modules.get('packages/core')?.counts.symbols).toBe(1);
+    expect(modules.get('packages/cli')?.counts.symbols).toBe(1);
+  });
+
+  it('keeps two nested workspace packages distinct beneath one Gradle project', () => {
+    dir = mkdtempSync(join(tmpdir(), 'crib-fm-polyglot-many-'));
+    const soul = newSoul();
+    soul.getManifest().meta = {
+      workspace: {
+        tool: 'npm',
+        packages: [
+          { name: 'web', rel: 'FTCCloud/web' },
+          { name: 'admin', rel: 'FTCCloud/admin' },
+        ],
+      },
+    };
+    soul.putNodes([
+      file('FTCCloud/build.gradle.kts'),
+      sym('FTCCloud/src/main/java/Server.java', 'Server.start', 1),
+      sym('FTCCloud/web/src/app.ts', 'web.start', 1),
+      sym('FTCCloud/admin/src/app.ts', 'admin.start', 1),
+    ]);
+    soul.commit();
+
+    const modules = new Map(buildFunctionalMap(soul).modules.map((m) => [m.pathPrefix, m]));
+    expect(modules.get('FTCCloud')?.counts.symbols).toBe(1);
+    expect(modules.get('FTCCloud/web')?.counts.symbols).toBe(1);
+    expect(modules.get('FTCCloud/admin')?.counts.symbols).toBe(1);
   });
 
   it('falls back to directory prefixes when no workspace is stamped', () => {

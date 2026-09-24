@@ -127,6 +127,10 @@ export interface IndexStore {
   neighbors(id: string, rel?: Rel, dir?: Dir): Edge[];
   shortestPath(from: string, to: string, maxHops?: number): PathResult;
   capabilities(): IndexCapabilities;
+  /** The `manifest.generation.extracted` the code projection matches, when the backend records it. */
+  codeGeneration?(): number | undefined;
+  /** Mark the code projection current at `extracted` (after an incremental delta is applied). */
+  recordCodeGeneration?(extracted: number): void;
   /** release the underlying handle (sqlite connection). */
   close(): void;
 }

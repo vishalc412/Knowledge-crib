@@ -182,7 +182,7 @@ test.describe
     test('resuming the saved intake records the decision and closes the detail', async ({
       page,
     }) => {
-      await openMemoryView(page, 'Continue, finish or cancel saved work');
+      await openMemoryView(page, 'Continue active work or inspect finished work');
 
       // The choice card shows the intake and its next safe action.
       const choice = page.locator(`[data-kc-mem-choice="${backend.intakeId}"]`);
@@ -218,7 +218,7 @@ test.describe
     });
 
     test('a duplicate resume is idempotent, never a second event', async ({ page }) => {
-      await openMemoryView(page, 'Continue, finish or cancel saved work');
+      await openMemoryView(page, 'Continue active work or inspect finished work');
 
       // Re-open the detail — its latest checkpoint is now the recorded resume.
       const choice = page.locator(`[data-kc-mem-choice="${backend.intakeId}"]`);
@@ -236,7 +236,7 @@ test.describe
     test('a resume against a moved intake answers 409, re-bases, then succeeds', async ({
       page,
     }) => {
-      await openMemoryView(page, 'Continue, finish or cancel saved work');
+      await openMemoryView(page, 'Continue active work or inspect finished work');
 
       const choice = page.locator(`[data-kc-mem-choice="${backend.intakeId}"]`);
       await choice.click();
@@ -263,7 +263,7 @@ test.describe
     });
 
     test('Escape closes the panel and restores focus to the trigger', async ({ page }) => {
-      await openMemoryView(page, 'Continue, finish or cancel saved work');
+      await openMemoryView(page, 'Continue active work or inspect finished work');
       await expect(page.locator('[data-kc-mem-resume-list]')).toBeVisible();
 
       await page.keyboard.press('Escape');
@@ -472,7 +472,9 @@ test.describe
       // 4. Continue the saved work in the same session — back on Memory home, where the tiles live.
       await page.locator('[data-kc-mem-view-back]').click();
       await page
-        .locator('[data-kc-memory-home-action][title="Continue, finish or cancel saved work"]')
+        .locator(
+          '[data-kc-memory-home-action][title="Continue active work or inspect finished work"]',
+        )
         .click();
       const choice = page.locator(`[data-kc-mem-choice="${intakeId}"]`);
       await expect(choice).toBeVisible({ timeout: 20_000 });

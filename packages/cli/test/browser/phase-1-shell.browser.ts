@@ -123,7 +123,8 @@ test('the canvas paints from the active theme tokens', async ({ page }) => {
       .first()
       .evaluate((canvas) => {
         const context = (canvas as HTMLCanvasElement).getContext('2d')!;
-        return Array.from(context.getImageData(2, 2, 1, 1).data.slice(0, 3));
+        // Away from the canvas dot grid: overview layout can place a dot at (2, 2).
+        return Array.from(context.getImageData(8, 8, 1, 1).data.slice(0, 3));
       });
   await expect.poll(cornerPixel).toEqual([12, 15, 22]);
   await page.locator('[data-kc-theme-toggle]').click();

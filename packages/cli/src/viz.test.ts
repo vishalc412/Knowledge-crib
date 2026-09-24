@@ -179,9 +179,11 @@ describe('crib viz — buildVizGraph (DC runtime contract)', () => {
 
   it('wires the UI to fetch /overview.json and render module cards (null-guarded)', () => {
     const html = readFileSync(join(vizAssetsDir(), 'index.html'), 'utf8');
-    // parallel fetch with null-degrade so an old server keeps working
+    // overview first, with a graph-only fallback so an old server keeps working; the full graph
+    // and module drill-ins are fetched on demand
     expect(html).toContain("fetch('/overview.json')");
-    expect(html).toContain('.catch(() => null)');
+    expect(html).toContain('// Older viz servers serve graph.json alone.');
+    expect(html).toContain("fetch('/overview/module.json?id='");
     expect(html).toContain('this.vizModules');
     // module-card path + back affordance
     expect(html).toContain('buildModuleOverview');

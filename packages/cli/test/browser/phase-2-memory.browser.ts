@@ -133,7 +133,7 @@ test('the Work tile counts resumable work and labels stale and closed work apart
 }) => {
   await openHome(page);
   const tile = page.locator('[data-kc-memory-home-action="resume"]');
-  await expect(tile).toContainText('Resumable work');
+  await expect(tile).toContainText('Work history');
   await tile.click();
   await expect(page.locator('[data-kc-mem-work-summary]')).toHaveText(
     /^resumable \d+ · stale \d+ · closed \d+$/,

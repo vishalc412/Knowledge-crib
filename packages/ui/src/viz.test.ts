@@ -11,7 +11,7 @@ import {
 import { contentHash, edgeId, idFor } from '@knowledge-crib/soul-schema';
 import type { Edge, Node } from '@knowledge-crib/soul-schema';
 import { afterEach, describe, expect, it } from 'vitest';
-import { buildVizGraph, buildVizOverview } from './viz.js';
+import { buildVizGraph, buildVizOverview, createVizModuleViews } from './viz.js';
 
 let dir: string | undefined;
 
@@ -48,6 +48,25 @@ afterEach(() => {
 });
 
 describe('buildVizGraph', () => {
+  it('describes a Java statement as code, not SQL', () => {
+    dir = mkdtempSync(join(tmpdir(), 'crib-ui-statement-'));
+    const soul = new SoulStore(join(dir, '.crib'), {
+      manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }),
+    });
+    soul.load();
+    const statement: Node = {
+      id: 'stmt:src/main/java/Example.java@L4',
+      kind: 'statement',
+      file: 'src/main/java/Example.java',
+      lang: 'java',
+      expr: 'count++',
+      hash: contentHash('count++'),
+    };
+    soul.putNodes([statement]);
+    soul.commit('2026-01-01T00:00:00.000Z');
+    expect(buildVizGraph(soul).nodes[0]?.data.summary).toBe('Statement: count++');
+  });
+
   it('builds a deterministic graph with clusters, derived symbol kinds, and framework metadata', () => {
     dir = mkdtempSync(join(tmpdir(), 'crib-ui-viz-'));
     const soul = new SoulStore(join(dir, '.crib'), {
@@ -79,7 +98,18 @@ describe('buildVizGraph', () => {
 
     const graph = buildVizGraph(soul);
 
-    expect(graph.stats).toEqual({ nodes: 2, edges: 2, clusters: 1, primaryNodes: 2 });
+    expect(graph.stats).toEqual({
+      nodes: 2,
+      edges: 2,
+      clusters: 1,
+      primaryNodes: 2,
+      codeNodes: 2,
+      semanticNodes: 0,
+      memoryNodes: 0,
+      codeEdges: 2,
+      semanticEdges: 0,
+      memoryEdges: 0,
+    });
     expect(graph.clusters[0]).toMatchObject({
       id: 'cluster:api',
       label: 'API',
@@ -175,6 +205,64 @@ describe('buildVizGraph — importance/tier ranking (declutter)', () => {
   });
 });
 
+describe('createVizModuleViews — module drill-in without the full graph', () => {
+  it('projects one module into ranked cluster cards and intra-module cluster edges', () => {
+    dir = mkdtempSync(join(tmpdir(), 'crib-ui-module-view-'));
+    const soul = new SoulStore(join(dir, '.crib'), {
+      manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }),
+    });
+    soul.load();
+    const a1 = sym('app/svc.ts', 'Svc.run', 1);
+    const a2 = sym('app/svc.ts', 'Svc.stop', 5);
+    const a3 = sym('app/util.ts', 'Util.log', 1, { type: 'function' });
+    const b1 = sym('lib/core.ts', 'Core.go', 1);
+    const cluster = (id: string, members: Node[]): Node => ({
+      id,
+      kind: 'cluster',
+      label: id.slice('cluster:'.length),
+      members: members.map((m) => m.id),
+      hash: contentHash(id),
+    });
+    const svc = cluster('cluster:svc', [a1, a2]);
+    const util = cluster('cluster:util', [a3]);
+    const lib = cluster('cluster:lib', [b1]);
+    soul.putNodes([svc, util, lib, a1, a2, a3, b1]);
+    soul.putEdges([
+      edge(a1.id, svc.id, 'member-of'),
+      edge(a2.id, svc.id, 'member-of'),
+      edge(a3.id, util.id, 'member-of'),
+      edge(b1.id, lib.id, 'member-of'),
+      edge(a1.id, a3.id, 'calls'),
+      edge(a2.id, a3.id, 'imports'),
+      edge(a1.id, b1.id, 'calls'),
+    ]);
+    soul.commit('2026-01-01T00:00:00.000Z');
+
+    const graph = buildVizGraph(soul);
+    const overview = buildVizOverview(soul);
+    const app = overview.modules.find((m) => m.pathPrefix === 'app');
+    expect(app).toBeDefined();
+    const views = createVizModuleViews(graph, overview);
+    const view = views(app!.id);
+
+    expect(view?.moduleId).toBe(app!.id);
+    expect(view?.clusters.map((c) => c.id).sort()).toEqual(['cluster:svc', 'cluster:util']);
+    const svcCard = view!.clusters.find((c) => c.id === 'cluster:svc')!;
+    expect(svcCard).toMatchObject({ label: 'svc', count: 2, kinds: { method: 2 } });
+    expect(svcCard.topMembers.map((m) => m.label).sort()).toEqual(['Svc.run', 'Svc.stop']);
+    // Undirected degree over edges whose endpoints are both graph nodes, like the browser's: the
+    // member-of edges point at cluster ids (not graph nodes), so a1 has 2 and a2 has 1.
+    expect(svcCard.degree).toBe(3);
+    const importance = view!.clusters.map((c) => c.importance);
+    expect([...importance].sort((x, y) => y - x)).toEqual(importance);
+    expect(view!.edges).toHaveLength(1);
+    expect(view!.edges[0]).toMatchObject({ count: 2 });
+    expect(['calls', 'imports']).toContain(view!.edges[0]!.rel);
+    expect(views(app!.id)).toBe(view);
+    expect(views('module:nope')).toBeUndefined();
+  });
+});
+
 describe('buildVizOverview + LLM cluster label preference (outcome F + E)', () => {
   it('buildVizOverview is deterministic and segments the soul into modules', () => {
     dir = mkdtempSync(join(tmpdir(), 'crib-ui-ov-'));
@@ -191,6 +279,13 @@ describe('buildVizOverview + LLM cluster label preference (outcome F + E)', () =
     const first = buildVizOverview(soul);
     const second = buildVizOverview(soul);
     expect(first.modules.length).toBeGreaterThan(0);
+    expect(first.stats).toEqual({
+      codeNodes: 2,
+      codeEdges: 1,
+      semanticNodes: 0,
+      semanticEdges: 0,
+      clusters: 0,
+    });
     expect(first.modules.every((m) => m.color && typeof m.name === 'string')).toBe(true);
     expect(JSON.stringify(first)).toBe(JSON.stringify(second));
   });
@@ -359,6 +454,12 @@ describe('buildVizGraph — memory overlay (W3)', () => {
     // stats reflect the merged graph: 1 soul symbol + 2 mem nodes; 1 soul edge + 2 mem edges.
     expect(graph.stats.nodes).toBe(3);
     expect(graph.stats.edges).toBe(3);
+    expect(graph.stats).toMatchObject({
+      codeNodes: 1,
+      memoryNodes: 2,
+      codeEdges: 1,
+      memoryEdges: 2,
+    });
   });
 
   it('omits memory nodes/edges when no memory composite is passed (byte-identical to before)', () => {
