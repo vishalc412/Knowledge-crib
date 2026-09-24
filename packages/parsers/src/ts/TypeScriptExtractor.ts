@@ -12,6 +12,7 @@ import type { Edge, Node } from '@knowledge-crib/soul-schema';
 import ts from 'typescript';
 import { EXPR_MAX_CHARS, clampExpr } from '../types.js';
 import type { Capabilities, ExtractCtx, ExtractResult, Extractor, FileMeta } from '../types.js';
+import { isEmbeddedScriptPath, maskToEmbeddedScripts } from './embedded-scripts.js';
 import { extractExpressRoutes } from './express.js';
 import { extractHttpClients } from './http-client.js';
 import { extractNestSemantics } from './nest.js';
@@ -38,7 +39,9 @@ export class TypeScriptExtractor implements Extractor {
   private static readonly EXTS = ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs'];
 
   supports(file: FileMeta): boolean {
-    return TypeScriptExtractor.EXTS.some((e) => file.path.endsWith(e));
+    return (
+      TypeScriptExtractor.EXTS.some((e) => file.path.endsWith(e)) || isEmbeddedScriptPath(file.path)
+    );
   }
 
   /** TS-family exts tag `lang: 'typescript'`; JS-family exts tag `lang: 'javascript'`. */
@@ -56,19 +59,45 @@ export class TypeScriptExtractor implements Extractor {
   }
 
   async extract(file: FileMeta, ctx: ExtractCtx): Promise<ExtractResult> {
-    const text = await ctx.readText();
+    const raw = await ctx.readText();
     const fileId = ctx.idFor('file', { path: file.path });
+    // Markup files carry code only inside <script> blocks (and Astro frontmatter). Parse just that,
+    // at its original offsets, so spans point at the real lines of the .html/.vue/.svelte file.
+    let text = raw;
+    let embeddedTs: boolean | undefined;
+    if (isEmbeddedScriptPath(file.path)) {
+      const masked = maskToEmbeddedScripts(file.path, raw);
+      if (masked.blocks === 0) return { nodes: [], edges: [] };
+      text = masked.text;
+      embeddedTs = masked.typescript;
+    }
     try {
-      return this.parse(file.path, fileId, text, ctx);
+      return this.parse(file.path, fileId, text, ctx, embeddedTs);
     } catch {
       // Degrade: a parse failure yields no symbols, never throws the pipeline.
       return { nodes: [], edges: [] };
     }
   }
 
-  private parse(path: string, fileId: string, text: string, ctx: ExtractCtx): ExtractResult {
-    const lang = TypeScriptExtractor.langFor(path);
-    const scriptKind = TypeScriptExtractor.scriptKindFor(path);
+  private parse(
+    path: string,
+    fileId: string,
+    text: string,
+    ctx: ExtractCtx,
+    embeddedTs?: boolean,
+  ): ExtractResult {
+    const lang =
+      embeddedTs === undefined
+        ? TypeScriptExtractor.langFor(path)
+        : embeddedTs
+          ? 'typescript'
+          : 'javascript';
+    const scriptKind =
+      embeddedTs === undefined
+        ? TypeScriptExtractor.scriptKindFor(path)
+        : embeddedTs
+          ? ts.ScriptKind.TS
+          : ts.ScriptKind.JS;
     const sf = ts.createSourceFile(
       path,
       text,

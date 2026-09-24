@@ -194,6 +194,11 @@ export interface VcsAdapter {
    * blind to a second edit inside an already-dirty file.
    */
   contentDigestFor?(root: string, paths: string[]): string;
+  /**
+   * Commits touching each repo-relative file over recent history. OPTIONAL: without it `query`
+   * ranks by text alone. Files that change often are where the next change usually lands too.
+   */
+  fileChurn?(root: string): Map<string, number>;
 }
 
 /**
@@ -544,6 +549,49 @@ const PUBLIC_VERBS = new Set<string>([
   'memoryIntakeShare',
   'memoryImplementations',
 ]);
+
+/**
+ * A signature as an agent needs it: one line, no comments. Extractors capture the declaration's
+ * text span, which for a parameter object can include JSDoc and line comments across a dozen lines
+ * (MemoryApi.handoff's "signature" was ~180 tokens of prose) — repeated in every caller and callee.
+ */
+export function compactSignature(signature: string): string {
+  const flat = signature
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .replace(/\/\/[^\n]*/g, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/([({[<]) /g, '$1')
+    .replace(/ ([)}\]>,;])/g, '$1')
+    .trim();
+  return flat.length > SIGNATURE_MAX_CHARS ? `${flat.slice(0, SIGNATURE_MAX_CHARS - 1)}…` : flat;
+}
+
+const SIGNATURE_MAX_CHARS = 240;
+
+/**
+ * One page of each list: `limit` rows from `offset`, plus where the next page starts. Without a
+ * `limit` the lists pass through whole (CLI and internal callers that need everything).
+ */
+function pageLists<T extends Record<string, unknown[]>>(
+  lists: T,
+  limitArg: number | undefined,
+  offsetArg: number | undefined,
+): {
+  paged: T;
+  page?: { offset: number; limit: number; truncated: boolean; nextOffset?: number };
+} {
+  if (limitArg === undefined) return { paged: lists };
+  const limit = Math.max(1, Math.floor(limitArg));
+  const offset = Math.max(0, Math.floor(offsetArg ?? 0));
+  const longest = Math.max(0, ...Object.values(lists).map((v) => v.length));
+  const truncated = offset + limit < longest;
+  return {
+    paged: Object.fromEntries(
+      Object.entries(lists).map(([k, v]) => [k, v.slice(offset, offset + limit)]),
+    ) as T,
+    page: { offset, limit, truncated, ...(truncated ? { nextOffset: offset + limit } : {}) },
+  };
+}
 
 export class Verbs {
   private readonly llm: EnrichmentStore;
@@ -1457,11 +1505,13 @@ export class Verbs {
     const q = rewriteQuery(args.q, this.aliases);
     // Over-fetch by one to detect whether the BM25 result set was capped (honest `truncated` flag)
     // without an extra count query; we slice back to `limit` after the overflow check.
+    const fileWeights = this.fileWeights();
     const rawHits = this.codeIndex().query({
       text: q,
       ...(kinds ? { kinds } : {}),
       limit: limit + 1,
       offset,
+      ...(fileWeights ? { fileWeights } : {}),
     });
     const bm25Truncated = rawHits.length > limit;
     const hits0 = bm25Truncated ? rawHits.slice(0, limit) : rawHits;
@@ -2133,7 +2183,7 @@ export class Verbs {
         ...(node?.name ? { name: node.name } : {}),
         ...(node?.kind ? { kind: node.kind } : {}),
         ...(node?.file ? { file: node.file } : {}),
-        ...(node?.signature ? { signature: node.signature } : {}),
+        ...(node?.signature ? { signature: compactSignature(node.signature) } : {}),
         callers: affected.map((a) => ({ id: a.id, risk: a.risk })),
       };
       if (affected.length === 0) {
@@ -2184,7 +2234,10 @@ export class Verbs {
     return this.applyIfHash(args, result);
   }
 
-  detectChanges(args: { since?: string }): Record<string, unknown> {
+  detectChanges(args: { since?: string; limit?: number; offset?: number }): Record<
+    string,
+    unknown
+  > {
     const vcs = this.deps.vcs;
     const manifest = this.deps.soul.getManifest();
     const since = args.since ?? manifest.stats.incrementalSince ?? manifest.repo.vcsHead;
@@ -2268,13 +2321,21 @@ export class Verbs {
         : since === head
           ? 'no commits since the anchor and a clean working tree — the commit range is empty by construction, not surveyed'
           : undefined;
+    // A broad change touches thousands of nodes and edges (~212k tokens on one working tree here);
+    // with `limit` the two graph lists are paged and `counts` reports their full sizes.
+    const { paged, page } = pageLists({ changedSymbols, removedEdges }, args.limit, args.offset);
     return {
       since,
       head,
       changedPaths,
       uncommittedPaths,
-      changedSymbols,
-      removedEdges,
+      ...paged,
+      ...(page
+        ? {
+            page,
+            counts: { changedSymbols: changedSymbols.length, removedEdges: removedEdges.length },
+          }
+        : {}),
       ...(note ? { note } : {}),
     };
   }
@@ -2326,7 +2387,14 @@ export class Verbs {
    *     symbol in the soul: a call into a missing asset. Oracle built-in packages (`DBMS_*`/`UTL_*`/
    *     `APEX_*`/…) are flagged `builtin:true`, never silently hidden.
    */
-  gaps(args: { extractedOnly?: boolean; includeBuiltins?: boolean } = {}): Record<string, unknown> {
+  gaps(
+    args: {
+      extractedOnly?: boolean;
+      includeBuiltins?: boolean;
+      limit?: number;
+      offset?: number;
+    } = {},
+  ): Record<string, unknown> {
     const soul = this.deps.soul;
     const idx = this.deps.index;
     const keep = (e: Edge): boolean => !args.extractedOnly || e.provenance === 'EXTRACTED';
@@ -2516,12 +2584,23 @@ export class Verbs {
       countByFileCategory(unresolvedInjects),
     ]);
 
+    // Each list can run to thousands of rows (this repository: 6,509 unresolved call sites, ~450k
+    // tokens), which no agent context can hold. `summary` always counts the whole of every list.
+    const { paged, page } = pageLists(
+      {
+        unimplemented,
+        packageSpecsWithoutBody,
+        unresolvedCallSites,
+        controllersWithoutRoutes,
+        unresolvedInjects,
+      },
+      args.limit,
+      args.offset,
+    );
+
     return {
-      unimplemented,
-      packageSpecsWithoutBody,
-      unresolvedCallSites,
-      controllersWithoutRoutes,
-      unresolvedInjects,
+      ...paged,
+      ...(page ? { page } : {}),
       summary: {
         unimplemented: unimplemented.length,
         packageSpecsWithoutBody: packageSpecsWithoutBody.length,
@@ -2637,7 +2716,7 @@ export class Verbs {
       id,
       ...(n.name ? { name: n.name } : {}),
       ...(n.qualifiedName ? { qualifiedName: n.qualifiedName } : {}),
-      ...(n.signature ? { signature: n.signature } : {}),
+      ...(n.signature ? { signature: compactSignature(n.signature) } : {}),
       ...(n.type ? { type: n.type } : {}),
       ...(n.file ? { file: n.file } : {}),
       ...(n.span ? { line: n.span.start } : {}),
@@ -4386,6 +4465,36 @@ export class Verbs {
     return affected.filter((a) => !a.id.startsWith('doc:')).slice(0, 10);
   }
 
+  /**
+   * Normalised commit counts per file (log-scaled to [0, 1]), cached per HEAD so a long-lived server
+   * reads git history once per commit rather than per query. Undefined when the adapter cannot
+   * supply history (no git, tests), in which case ranking is text-only.
+   */
+  private fileWeights(): ReadonlyMap<string, number> | undefined {
+    const vcs = this.deps.vcs;
+    if (!vcs?.fileChurn || process.env.KCRIB_FILE_PRIOR === 'off') return undefined;
+    let head: string;
+    try {
+      head = vcs.currentHead(this.deps.repoRoot);
+    } catch {
+      return undefined;
+    }
+    if (this.fileWeightCache?.head === head) return this.fileWeightCache.weights;
+    let churn: Map<string, number>;
+    try {
+      churn = vcs.fileChurn(this.deps.repoRoot);
+    } catch {
+      return undefined;
+    }
+    const max = Math.max(0, ...churn.values());
+    const weights = new Map<string, number>();
+    if (max > 0) for (const [f, c] of churn) weights.set(f, Math.log1p(c) / Math.log1p(max));
+    this.fileWeightCache = { head, weights };
+    return weights;
+  }
+
+  private fileWeightCache: { head: string; weights: ReadonlyMap<string, number> } | undefined;
+
   private pendingNoticeFor(query: string, limit: number): Record<string, unknown> {
     const staged = this.pendingCandidates(query, limit).length;
     if (staged === 0) return {};
@@ -5031,7 +5140,7 @@ export class Verbs {
     if (n.type) out.type = n.type;
     if (n.name) out.name = n.name;
     if (n.qualifiedName) out.qualifiedName = n.qualifiedName;
-    if (n.signature) out.signature = n.signature;
+    if (n.signature) out.signature = compactSignature(n.signature);
     if (n.lang) out.lang = n.lang;
     if (n.file) out.file = n.file;
     if (n.span) out.span = n.span;
@@ -5313,7 +5422,8 @@ function askToMarkdown(result: Record<string, unknown>): string {
       parts.push('');
       if (node.file) parts.push(`- **file:** ${node.file}`);
       if (node.kind) parts.push(`- **kind:** ${node.kind}`);
-      if (node.signature) parts.push(`- **signature:** \`${node.signature}\``);
+      if (node.signature)
+        parts.push(`- **signature:** \`${compactSignature(String(node.signature))}\``);
       parts.push('');
 
       const src = (ctx?.source as { text?: string } | undefined)?.text;

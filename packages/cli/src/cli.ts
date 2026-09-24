@@ -857,6 +857,9 @@ async function cmdMaterialize(args: string[], ctx?: CmdCtx): Promise<number> {
   });
 }
 
+/** How far back `query`'s file prior reads history: enough to see which files are hot, bounded. */
+const CHURN_COMMITS = 2000;
+
 /** Real VCS adapter backed by the pipeline's git helpers; injected into the MCP verbs for serve. */
 class CliVcsAdapter implements VcsAdapter {
   currentHead(root: string): string {
@@ -872,6 +875,24 @@ class CliVcsAdapter implements VcsAdapter {
   // list its `uncommittedChanges` returned, so CLI and MCP compute one contract, not two.
   contentDigestFor(root: string, paths: string[]): string {
     return contentDigestForPaths(root, paths);
+  }
+  fileChurn(root: string): Map<string, number> {
+    const out = execFileSync(
+      'git',
+      ['log', '--format=', '--name-only', '-n', String(CHURN_COMMITS), 'HEAD', '--'],
+      {
+        cwd: root,
+        encoding: 'utf8',
+        maxBuffer: 256 * 1024 * 1024,
+        stdio: ['ignore', 'pipe', 'ignore'],
+      },
+    );
+    const counts = new Map<string, number>();
+    for (const line of out.split('\n')) {
+      const file = line.trim();
+      if (file) counts.set(file, (counts.get(file) ?? 0) + 1);
+    }
+    return counts;
   }
   currentBranch(root: string): string | undefined {
     try {
@@ -1382,7 +1403,12 @@ async function cmdQuery(args: string[], ctx?: CmdCtx): Promise<number> {
   // `query` is a TEXT retrieval verb, so it is one of the two commands that may pay for the vector
   // channel when the index has one.
   const index = await upgradeIndexToVectors(rt, lexical);
-  const verbs = new Verbs({ soul: rt.soul, index, repoRoot: resolved.repoRoot });
+  const verbs = new Verbs({
+    soul: rt.soul,
+    index,
+    repoRoot: resolved.repoRoot,
+    vcs: new CliVcsAdapter(),
+  });
   process.stdout.write(
     `${JSON.stringify(
       verbs.query({
@@ -2425,7 +2451,13 @@ async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
     const pins = coordinator
       ? { retain: () => coordinator.retain(), release: () => coordinator.release() }
       : undefined;
-    const daemon = await serveHttp(verbs, { ...(port ? { port } : {}), ...(pins ? { pins } : {}) });
+    const daemon = await serveHttp(verbs, {
+      version: readProductVersion(
+        resolve(dirname(fileURLToPath(import.meta.url)), '..', 'package.json'),
+      ),
+      ...(port ? { port } : {}),
+      ...(pins ? { pins } : {}),
+    });
     process.stderr.write(
       `knowledge-crib MCP daemon on http://127.0.0.1:${daemon.port} — ${stats.nodes} nodes, ${stats.edges} edges ready (shared by every connected agent)\n`,
     );
@@ -2451,7 +2483,7 @@ async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
     // WP4.5 — same pin wiring as the HTTP daemon: stdio requests drain before a bundle swap lands.
     await serveStdio(
       verbs,
-      undefined,
+      readProductVersion(resolve(dirname(fileURLToPath(import.meta.url)), '..', 'package.json')),
       coordinator
         ? { retain: () => coordinator.retain(), release: () => coordinator.release() }
         : undefined,
@@ -4350,6 +4382,20 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
   // Serialized once: the full graph is 100+ MB on a large repository, and re-stringifying it for
   // every request cost the same again each time the browser asked.
   let graphBody: string | undefined;
+  // The graph is large and highly repetitive JSON (62 MB for a 52k-node repository, ~10x smaller
+  // gzipped), and the viewer blocks on it; compress once and reuse for every request.
+  let graphGzip: Promise<Buffer> | undefined;
+  const graphGzipped = async (): Promise<Buffer> => {
+    graphBody ??= JSON.stringify(graph);
+    if (!graphGzip) {
+      const { gzip } = await import('node:zlib');
+      const body = graphBody;
+      graphGzip = new Promise((resolveGz, rejectGz) =>
+        gzip(body, { level: 6 }, (err, buf) => (err ? rejectGz(err) : resolveGz(buf))),
+      );
+    }
+    return graphGzip;
+  };
   const assets = vizAssetsDir();
   const memoryApi = memoryDeps
     ? createMemoryApi(rt.soul, rt.repoRoot, resolved.cribDir, memoryDeps)
@@ -4379,7 +4425,20 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
       const requestUrl = new URL(req.url ?? '/', 'http://127.0.0.1');
       if (requestUrl.pathname === '/graph.json') {
         graphBody ??= JSON.stringify(graph);
-        res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
+        if (/\bgzip\b/.test(String(req.headers['accept-encoding'] ?? ''))) {
+          const gz = await graphGzipped();
+          res.writeHead(200, {
+            'content-type': 'application/json; charset=utf-8',
+            'content-encoding': 'gzip',
+            vary: 'accept-encoding',
+          });
+          res.end(gz);
+          return;
+        }
+        res.writeHead(200, {
+          'content-type': 'application/json; charset=utf-8',
+          vary: 'accept-encoding',
+        });
         res.end(graphBody);
         return;
       }
@@ -4868,6 +4927,11 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
   });
 
   await new Promise<void>((q) => server.listen(port, '127.0.0.1', q));
+  // Warm the compressed graph off the request path (zlib runs on the thread pool), so the first
+  // viewer load does not wait for it. A failure only means that request compresses on demand.
+  void graphGzipped().catch(() => {
+    graphGzip = undefined;
+  });
   const addr = server.address();
   const actualPort = typeof addr === 'object' && addr ? addr.port : port;
   const url = `http://127.0.0.1:${actualPort}/`;
@@ -4897,7 +4961,13 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
       openerArgs = [url];
     }
     try {
-      spawn(opener, openerArgs, { stdio: 'ignore', detached: true }).unref();
+      const child = spawn(opener, openerArgs, { stdio: 'ignore', detached: true });
+      // A missing opener (no xdg-open on a server or container) is reported as an async 'error'
+      // event, not a throw; unhandled, it killed the server that had just started.
+      child.on('error', () => {
+        process.stderr.write(`could not open a browser (${opener}); open ${url} yourself\n`);
+      });
+      child.unref();
     } catch {
       // ignore — the URL is printed above.
     }
