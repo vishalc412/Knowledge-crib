@@ -182,6 +182,15 @@ async function startSupervisor(s: {
   expect(await outcome).toBe('started');
 }
 
+/**
+ * On Windows libuv puts forked children in a kill-on-close job object, so SIGKILLing the supervisor
+ * also terminates its child: the "orphan finishes its work" premise only exists elsewhere. The
+ * safety properties (nothing staged, successor republishes) are asserted on every platform.
+ */
+const CHILD_OUTLIVES_SUPERVISOR = process.platform !== 'win32';
+/** Windows CI runners stall timers by hundreds of ms; scale the lease timings, keep the property. */
+const TIME_SCALE = process.platform === 'win32' ? 5 : 1;
+
 describe('freshness supervisor/child split — real processes', () => {
   it('WP5.1: heartbeats THROUGH child work — the lease outlives the run, a second worker is refused, and the forked result publishes', async () => {
     const root = registeredRoot();
@@ -190,18 +199,18 @@ describe('freshness supervisor/child split — real processes', () => {
     // the child's run (800ms) far exceeds the lease TTL (300ms): before WP5, this supervisor was
     // invisible from TTL-onward (blocked loop, no heartbeat) and needed a 10-minute busy grace.
     const fixtureUrl = pathToFileURL(
-      writeRevalidateFixture({ sleepMs: 800, generation: 'gen-from-forked-child' }),
+      writeRevalidateFixture({ sleepMs: 800 * TIME_SCALE, generation: 'gen-from-forked-child' }),
     ).href;
-    const s = forkSupervisor(dir, fixtureUrl, { heartbeatMs: 50, leaseTtlMs: 300 });
+    const s = forkSupervisor(dir, fixtureUrl, { heartbeatMs: 50, leaseTtlMs: 300 * TIME_SCALE });
     await startSupervisor(s);
 
     // past the TTL, mid-run: the heartbeat is FRESH (the loop is free — the WP5.1 property)
     await vi.waitFor(() => expect(readWorkerState(env)?.activeTask?.id).toBe(taskId), {
       timeout: 5_000,
     });
-    await new Promise((r) => setTimeout(r, 450));
+    await new Promise((r) => setTimeout(r, 450 * TIME_SCALE));
     const state = readWorkerState(env)!;
-    expect(Date.now() - Date.parse(state.heartbeatAt)).toBeLessThan(300);
+    expect(Date.now() - Date.parse(state.heartbeatAt)).toBeLessThan(300 * TIME_SCALE);
     // ...so a second worker is refused for the whole window — no takeover, no duplicate run
     const second = new FreshnessWorker({
       env,
@@ -247,8 +256,13 @@ describe('freshness supervisor/child split — real processes', () => {
     });
 
     // the grandchild finishes its sleep (proving it reached the orphan check) and exits WITHOUT
-    // staging: no staged file, no publication — a dead supervisor commissions nothing.
-    await vi.waitFor(() => expect(existsSync(doneMarker)).toBe(true), { timeout: 10_000 });
+    // staging: no staged file, no publication — a dead supervisor commissions nothing. Where the OS
+    // kills the child with its supervisor there is no orphan; outlast its run and check the same.
+    if (CHILD_OUTLIVES_SUPERVISOR) {
+      await vi.waitFor(() => expect(existsSync(doneMarker)).toBe(true), { timeout: 10_000 });
+    } else {
+      await new Promise((r) => setTimeout(r, 1_500));
+    }
     await new Promise((r) => setTimeout(r, 400)); // let the child's exit land on disk state
     expect(readStagedResult(env, taskId)).toBeUndefined();
     expect(readPublishedGeneration(root, env)).toBeUndefined();
@@ -299,7 +313,9 @@ describe('freshness supervisor/child split — real processes', () => {
       expect(readFreshnessQueue(env).pending).toHaveLength(0);
       expect(readFreshnessQueue(env).dead).toHaveLength(0);
       // the killed owner's run DID its work — it just never got to stage or publish
-      await vi.waitFor(() => expect(existsSync(doneMarker)).toBe(true), { timeout: 10_000 });
+      if (CHILD_OUTLIVES_SUPERVISOR) {
+        await vi.waitFor(() => expect(existsSync(doneMarker)).toBe(true), { timeout: 10_000 });
+      }
     } finally {
       await successor.stop();
     }
