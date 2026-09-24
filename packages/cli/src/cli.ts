@@ -168,6 +168,7 @@ import {
   isMemoryRecordVersioned,
   isTeamTrustedRecord,
   keyFingerprint,
+  keyfileProtectionVerifiable,
   loadPolicy,
   loadPolicyJson,
   loadSyncState,
@@ -204,6 +205,7 @@ import {
   teamStoreRoot,
   tombstoneLocalForTeamPromotion,
   trustedRefOf,
+  unverifiableKeyfileError,
   verifyDistillDecision,
   verifyMemoryBackup,
   verifySnapshot,
@@ -7650,7 +7652,10 @@ async function cmdMemoryInitSync(args: string[], ctx?: CmdCtx): Promise<number> 
   try {
     if (genKey) {
       // --gen-key mints 32 random bytes into a 0600 keyfile (randomness never feeds an id/hash).
+      // Refused BEFORE writing where a keyfile's protection cannot be verified (Windows): the
+      // resolve below would refuse it anyway, and key material left on disk is worse than none.
       const target = keyFileFlag ?? join(memoryHome(env), 'sync-key');
+      if (!keyfileProtectionVerifiable()) throw unverifiableKeyfileError(target);
       writeFileSync(target, genSyncKey(), { mode: 0o600 });
       key = resolveSyncKey({ keyFile: target, env: envForExplicitKeyFile(env) }).key;
       keySource = 'keyfile';
@@ -7995,6 +8000,7 @@ async function cmdMemorySync(args: string[], ctx?: CmdCtx): Promise<number> {
     try {
       if (genKey) {
         const target = keyFileFlag ?? join(memoryHome(env), 'sync-key');
+        if (!keyfileProtectionVerifiable()) throw unverifiableKeyfileError(target);
         writeFileSync(target, genSyncKey(), { mode: 0o600 });
         newKey = resolveSyncKey({ keyFile: target, env: envForExplicitKeyFile(env) }).key;
         newKeyFile = target;

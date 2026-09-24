@@ -1568,25 +1568,30 @@ export class MemoryStore {
       );
     }
     this.withLock(() => {
+      // G3.1: a cleared root takes the generation sidecar (and, for the local root, the FTS
+      // snapshot dir) with it. The reset notice goes out BEFORE the delete: its listener closes the
+      // snapshot's SQLite handle and removes the snapshot files, and on Windows an open database
+      // cannot be deleted — notified after, the delete itself failed with EBUSY (measured on the
+      // Windows CI cells, 2026-09-24). The generation it carries is the one the sidecar reads once
+      // the root is gone, {0, ''}, stated directly because the file still exists at this moment. It
+      // can never match a recorded snapshot generation, and a subsequent write mints a fresh nonce —
+      // so cross-process readers still converge on "rebuild".
+      const listener = this.ftsListener;
+      if (listener) {
+        try {
+          listener({
+            role: this.init.role,
+            upserted: [],
+            removed: [],
+            reset: true,
+            generation: { gen: 0, nonce: '' },
+          });
+        } catch {
+          // fail-open — the snapshot's next open reconciles via the (new) generation
+        }
+      }
       if (existsSync(this.init.rootDir))
         rmSync(this.init.rootDir, { recursive: true, force: true });
-      // G3.1: a cleared root takes the generation sidecar (and, for the local root, the FTS
-      // snapshot dir) with it. Notify WITHOUT re-bumping: the sidecar reads {0, ''} after the
-      // delete, which can never match a recorded snapshot generation, and a subsequent write mints
-      // a fresh nonce — so cross-process readers converge on "rebuild" from either path.
-      const listener = this.ftsListener;
-      if (!listener) return;
-      try {
-        listener({
-          role: this.init.role,
-          upserted: [],
-          removed: [],
-          reset: true,
-          generation: this.readFtsGeneration(),
-        });
-      } catch {
-        // fail-open — the snapshot's next open reconciles via the (new) generation
-      }
     });
   }
 
