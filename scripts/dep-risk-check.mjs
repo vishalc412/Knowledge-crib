@@ -115,6 +115,8 @@ function readAudit() {
       encoding: 'utf8',
       maxBuffer: 64 * 1024 * 1024,
       stdio: ['ignore', 'pipe', 'ignore'],
+      // corepack ships as a .cmd shim on Windows, which execFileSync cannot launch without a shell.
+      shell: process.platform === 'win32',
     });
     return { source, doc: JSON.parse(stdout) };
   } catch (error) {
@@ -143,6 +145,7 @@ function readDependencySplit() {
           encoding: 'utf8',
           maxBuffer: 64 * 1024 * 1024,
           stdio: ['ignore', 'pipe', 'ignore'],
+          shell: process.platform === 'win32',
         }),
       );
     }

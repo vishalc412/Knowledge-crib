@@ -202,6 +202,8 @@ function readInventory() {
       encoding: 'utf8',
       maxBuffer: 64 * 1024 * 1024,
       stdio: ['ignore', 'pipe', 'ignore'],
+      // corepack ships as a .cmd shim on Windows, which execFileSync cannot launch without a shell.
+      shell: process.platform === 'win32',
     });
     return { source: 'pnpm licenses list --json', doc: JSON.parse(stdout) };
   } catch (error) {
