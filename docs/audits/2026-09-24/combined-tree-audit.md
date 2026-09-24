@@ -81,16 +81,53 @@ None of these could appear on either line alone.
 | `biome check .` (746 files) | pass |
 | unit: ui 69, memory 1188, core 432, pipeline 286, parsers 506, soul-schema 18, cli 670 + 1 new | pass |
 | unit: mcp 490/490 | tests pass; exit 1 on the `onTaskUpdate` worker-IPC timeout, register item B11 (pre-existing, load-sensitive; this merge touches nothing in `packages/mcp`) |
-| browser (Playwright, real isolated backend) | see the PR description for the final run |
+| browser (Playwright, real isolated backend) | 157/157 |
 | `boundaries-check`, `credential-check`, `license-check`, `security:check`, `pack:check` 8/8 | pass |
 | `installer:test`, `release:metadata`, `ui:gate:test`, `boundaries-check.test` | pass |
 | `ui:gate` | UNAVAILABLE (by design): the independent WCAG 2.2 AA assessment, the task study and a CI `checks.json` are outside the implementation team |
 
-## 5. Still open, and not closable by this branch
+## 5. CI on the combined tree, and the standing `rerank:check` red
+
+Hosted CI on PR #73 ran the full release gate on this tree:
+- Every step before `rerank:check` passed: build, every package suite, Biome, and the boundaries,
+  credential and license gates.
+- `rerank:check` failed with exactly the numbers the evidence register records for `Master` (§4.4):
+  hybrid MRR 0.6839, rerank 0.6703, Δ −1.36pp.
+- The installers passed on macOS and Windows (Node 22 and 24). `crib memory check` passed.
+
+The cross-platform matrix was **skipped**, because `verify-matrix` had a bare `needs: release-gate`.
+
+**Workflow fixes on this branch** (pinned by `scripts/ci-workflow.test.mjs`, which fails on the old files):
+- `verify-matrix` now runs with `if: ${{ !cancelled() }}`. A red gate no longer blinds the other
+  platforms (register §4.5).
+- `ci.yml`, `beta-installers.yml` and `crib-soul-refresh.yml` now also name `Master` in their push
+  triggers. GitHub branch filters are case-sensitive, so none of these workflows had ever run on a
+  merge to the default branch (register §4.4).
+
+**What the investigation of `rerank:check` established:**
+- **It is deterministic on today's code.** Three separate processes extracted byte-identical edge
+  sets, and CI matches local runs to the digit. The red is a real ranking result: the M2.2
+  structural prior (centrality × stereotype × kind) loses 1.36pp MRR against plain RRF across the
+  nine fixtures. It is worst on csharp (−11.7pp) and java (−9.1pp).
+- **On older code, the outcome depended on the environment**, which is why a first `git bisect`
+  (d8edfb81 good → Master bad) named a scripts-only commit. At `19fa1e3c` the gate **passes** with
+  `git blame` available (Δ +0.10pp) and **fails** without it (Δ −0.39pp). The centrality signal
+  counts every edge, including the `owned-by` edges the M3.1 ownership layer derives from
+  `git blame` of the repository that contains the fixtures. So the gate's input includes VCS
+  authorship, and a hermetic run and an in-checkout run can disagree. On today's code, removing
+  blame makes the result worse (−2.40pp), so ownership edges do not explain the current red.
+- **Not changed here.** The fix is a ranking decision: retune or retire the structural prior, and
+  decide whether centrality should count `owned-by`/`member-of`. It needs its own evaluation on the
+  code-retrieval bench, not a fit to about 40 conceptual queries in one gate. The register already
+  treats it as pre-existing and outside the program.
+
+## 6. Still open, and not closable by this branch
 
 - The independent WCAG 2.2 AA assessment and retest (Phase 6), and the task study (Phases 5 and 6).
   The assessor brief is `docs/audits/2026-09-23/a11y/assessor-protocol.md`.
 - The owner's decision on MPL-2.0 for dev tooling (item 3).
+- The `rerank:check` ranking decision (§5).
 - `crib detect_changes` was not run. The knowledge-crib MCP server failed to connect in this
-  session, and this worktree has no index of its own. The review above rests on the diff, the
+  session, the globally linked `crib` binary crashes on a missing module in its sibling checkout,
+  and this worktree has no index of its own. The review above rests on the diff, the
   conflict-by-conflict reading and the test suites, not on the graph.
