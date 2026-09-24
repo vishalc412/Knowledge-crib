@@ -857,6 +857,9 @@ async function cmdMaterialize(args: string[], ctx?: CmdCtx): Promise<number> {
   });
 }
 
+/** How far back `query`'s file prior reads history: enough to see which files are hot, bounded. */
+const CHURN_COMMITS = 2000;
+
 /** Real VCS adapter backed by the pipeline's git helpers; injected into the MCP verbs for serve. */
 class CliVcsAdapter implements VcsAdapter {
   currentHead(root: string): string {
@@ -872,6 +875,24 @@ class CliVcsAdapter implements VcsAdapter {
   // list its `uncommittedChanges` returned, so CLI and MCP compute one contract, not two.
   contentDigestFor(root: string, paths: string[]): string {
     return contentDigestForPaths(root, paths);
+  }
+  fileChurn(root: string): Map<string, number> {
+    const out = execFileSync(
+      'git',
+      ['log', '--format=', '--name-only', '-n', String(CHURN_COMMITS), 'HEAD', '--'],
+      {
+        cwd: root,
+        encoding: 'utf8',
+        maxBuffer: 256 * 1024 * 1024,
+        stdio: ['ignore', 'pipe', 'ignore'],
+      },
+    );
+    const counts = new Map<string, number>();
+    for (const line of out.split('\n')) {
+      const file = line.trim();
+      if (file) counts.set(file, (counts.get(file) ?? 0) + 1);
+    }
+    return counts;
   }
   currentBranch(root: string): string | undefined {
     try {
@@ -1382,7 +1403,12 @@ async function cmdQuery(args: string[], ctx?: CmdCtx): Promise<number> {
   // `query` is a TEXT retrieval verb, so it is one of the two commands that may pay for the vector
   // channel when the index has one.
   const index = await upgradeIndexToVectors(rt, lexical);
-  const verbs = new Verbs({ soul: rt.soul, index, repoRoot: resolved.repoRoot });
+  const verbs = new Verbs({
+    soul: rt.soul,
+    index,
+    repoRoot: resolved.repoRoot,
+    vcs: new CliVcsAdapter(),
+  });
   process.stdout.write(
     `${JSON.stringify(
       verbs.query({

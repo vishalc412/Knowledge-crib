@@ -978,3 +978,41 @@ describe('SqliteIndexStore.query — identifier queries resolve through the symb
     idx.close();
   });
 });
+
+describe('SqliteIndexStore.query — per-file prior', () => {
+  it('lifts a hit in a frequently changed file, and changes nothing without weights', () => {
+    const idx = new SqliteIndexStore();
+    idx.buildFromSoul(store, dir);
+    const plain = idx
+      .query({ text: 'session token issue login', kinds: ['symbol'] })
+      .map((h) => h.id);
+    expect(
+      idx
+        .query({ text: 'session token issue login', kinds: ['symbol'], fileWeights: new Map() })
+        .map((h) => h.id),
+    ).toEqual(plain);
+    const last = plain.at(-1)!;
+    const lastFile = [controller, login, issue].find((n) => n.id === last)!.file!;
+    const boosted = idx
+      .query({
+        text: 'session token issue login',
+        kinds: ['symbol'],
+        fileWeights: new Map([[lastFile, 1]]),
+      })
+      .map((h) => h.id);
+    expect(boosted.indexOf(last)).toBeLessThan(plain.indexOf(last));
+    expect(new Set(boosted)).toEqual(new Set(plain));
+    idx.close();
+  });
+
+  it('keeps an exact symbol-name match first whatever the weights', () => {
+    const idx = new SqliteIndexStore();
+    idx.buildFromSoul(store, dir);
+    const hits = idx.query({
+      text: 'TokenService.issue',
+      fileWeights: new Map([['src/http/Controller.ts', 1]]),
+    });
+    expect(hits[0]?.id).toBe(issue.id);
+    idx.close();
+  });
+});

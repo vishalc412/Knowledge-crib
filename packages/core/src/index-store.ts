@@ -63,6 +63,12 @@ export interface HybridQuery {
    * prior is a model-free multiplier that reorders within the fused set; it cannot invent relevance.
    */
   rerank?: boolean;
+  /**
+   * Per-file prior in [0, 1] (e.g. normalised commit counts). When present, ranked results are
+   * re-sorted by text rank boosted by their file's weight; exact symbol-name matches stay first.
+   * A file absent from the map has weight 0. Absent or empty map: ranking is unchanged.
+   */
+  fileWeights?: ReadonlyMap<string, number>;
 }
 
 export interface Hit {

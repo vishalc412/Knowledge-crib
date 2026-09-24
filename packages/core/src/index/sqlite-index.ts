@@ -187,6 +187,10 @@ interface NameRow {
 /** "buildHandoff", "Verbs.gaps", "Foo::bar", "Pkg#Proc" — one identifier path, no spaces. */
 const IDENTIFIER_QUERY = /^[A-Za-z_$][\w$]*(?:(?:\.|::|#)[A-Za-z_$][\w$]*)*$/;
 const EXACT_NAME_MAX = 20;
+/** File-prior reranking (see fileWeightedQuery). Chosen a priori, not tuned to one benchmark. */
+const FILE_PRIOR_POOL = 60;
+const FILE_PRIOR_RANK_K = 10;
+const FILE_PRIOR_BOOST = 1;
 const TEST_PATH = /(^|\/)(test|tests|__tests__|spec|fixtures?)(\/|$)|\.(test|spec)\.[a-z]+$/i;
 
 function isTestPath(file: string | null): boolean {
@@ -499,6 +503,35 @@ export class SqliteIndexStore implements IndexStore {
   }
 
   private rankedQuery(q: HybridQuery): Hit[] {
+    if (q.fileWeights && q.fileWeights.size > 0) return this.fileWeightedQuery(q, q.fileWeights);
+    return this.textRankedQuery(q);
+  }
+
+  /**
+   * Text ranking boosted by a per-file prior. Rank-based, so it behaves the same whether the text
+   * channel is BM25 (lower is better) or fused (higher is better): score = 1/(K + rank) × (1 + B·w).
+   * A file with the maximum weight can lift a hit roughly to the rank where its score doubles; a
+   * weightless file keeps its text rank. Ties keep text order.
+   */
+  private fileWeightedQuery(q: HybridQuery, weights: ReadonlyMap<string, number>): Hit[] {
+    const limit = q.limit ?? 10;
+    const offset = q.offset ?? 0;
+    const pool = this.textRankedQuery({
+      ...q,
+      limit: Math.max((offset + limit) * 4, FILE_PRIOR_POOL),
+      offset: 0,
+    });
+    const scored = pool.map((h, rank) => {
+      const w = Math.min(1, Math.max(0, (h.file ? weights.get(h.file) : undefined) ?? 0));
+      return { h, rank, s: (1 / (FILE_PRIOR_RANK_K + rank)) * (1 + FILE_PRIOR_BOOST * w) };
+    });
+    scored.sort((a, b) => b.s - a.s || a.rank - b.rank);
+    return scored
+      .slice(offset, offset + limit)
+      .map(({ h, s }) => ({ ...h, score: round5(-s * 1000) }));
+  }
+
+  private textRankedQuery(q: HybridQuery): Hit[] {
     const limit = q.limit ?? 10;
     const offset = q.offset ?? 0;
     const wantSemantic = q.semantic !== false && this.builtEmbedderId !== null;

@@ -194,6 +194,11 @@ export interface VcsAdapter {
    * blind to a second edit inside an already-dirty file.
    */
   contentDigestFor?(root: string, paths: string[]): string;
+  /**
+   * Commits touching each repo-relative file over recent history. OPTIONAL: without it `query`
+   * ranks by text alone. Files that change often are where the next change usually lands too.
+   */
+  fileChurn?(root: string): Map<string, number>;
 }
 
 /**
@@ -1500,11 +1505,13 @@ export class Verbs {
     const q = rewriteQuery(args.q, this.aliases);
     // Over-fetch by one to detect whether the BM25 result set was capped (honest `truncated` flag)
     // without an extra count query; we slice back to `limit` after the overflow check.
+    const fileWeights = this.fileWeights();
     const rawHits = this.codeIndex().query({
       text: q,
       ...(kinds ? { kinds } : {}),
       limit: limit + 1,
       offset,
+      ...(fileWeights ? { fileWeights } : {}),
     });
     const bm25Truncated = rawHits.length > limit;
     const hits0 = bm25Truncated ? rawHits.slice(0, limit) : rawHits;
@@ -4457,6 +4464,36 @@ export class Verbs {
     const affected = (up.affected as Array<{ id: string; risk: string }> | undefined) ?? [];
     return affected.filter((a) => !a.id.startsWith('doc:')).slice(0, 10);
   }
+
+  /**
+   * Normalised commit counts per file (log-scaled to [0, 1]), cached per HEAD so a long-lived server
+   * reads git history once per commit rather than per query. Undefined when the adapter cannot
+   * supply history (no git, tests), in which case ranking is text-only.
+   */
+  private fileWeights(): ReadonlyMap<string, number> | undefined {
+    const vcs = this.deps.vcs;
+    if (!vcs?.fileChurn || process.env.KCRIB_FILE_PRIOR === 'off') return undefined;
+    let head: string;
+    try {
+      head = vcs.currentHead(this.deps.repoRoot);
+    } catch {
+      return undefined;
+    }
+    if (this.fileWeightCache?.head === head) return this.fileWeightCache.weights;
+    let churn: Map<string, number>;
+    try {
+      churn = vcs.fileChurn(this.deps.repoRoot);
+    } catch {
+      return undefined;
+    }
+    const max = Math.max(0, ...churn.values());
+    const weights = new Map<string, number>();
+    if (max > 0) for (const [f, c] of churn) weights.set(f, Math.log1p(c) / Math.log1p(max));
+    this.fileWeightCache = { head, weights };
+    return weights;
+  }
+
+  private fileWeightCache: { head: string; weights: ReadonlyMap<string, number> } | undefined;
 
   private pendingNoticeFor(query: string, limit: number): Record<string, unknown> {
     const staged = this.pendingCandidates(query, limit).length;
