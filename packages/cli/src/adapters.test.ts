@@ -169,6 +169,21 @@ describe('neutralProtocolBody — vendor-neutral contract', () => {
     expect(body).toMatch(/a `note` QUALIFIES the report/i);
     expect(body).toContain('`uncommittedPaths`');
   });
+
+  it('closes out every completed task — record it, then delta-index and enrich', () => {
+    const body = neutralProtocolBody();
+    // A finished transaction is never left unrecorded and the graph is never left stale: the
+    // close-out rule is what turns a one-off session into a durable substrate.
+    expect(body).toContain('### 10. Close out every completed task');
+    expect(body).toContain('`crib intake complete`');
+    expect(body).toContain('`crib memory propose`');
+    expect(body).toContain('`crib update .`');
+    expect(body).toContain('`crib enrich --auto`');
+    expect(body).toMatch(/never left unrecorded/i);
+    expect(body).toMatch(/graph is never left stale/i);
+    // Enrichment is opt-in — the close-out must not present its absence as a failure.
+    expect(body).toMatch(/its absence is a state, not an error/i);
+  });
 });
 
 describe('neutralProtocolBody — no third-party coupling', () => {

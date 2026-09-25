@@ -125,7 +125,7 @@ export const ADAPTER_END = '<!-- crib:end -->';
  *  makes Cursor inject the rule into every session, matching the AGENTS.md-always-loaded contract. */
 export const CURSOR_FRONTMATTER = [
   '---',
-  'description: Knowledge-crib agent protocol — recall via brief, record reusable learnings with evidence, never self-evaluate; analyse impact before editing and graph changes before committing.',
+  'description: Knowledge-crib agent protocol — recall via brief, record reusable learnings with evidence, never self-evaluate; analyse impact before editing and graph changes before committing; close out every completed task and refresh the graph.',
   'globs: "**/*"',
   'alwaysApply: true',
   '---',
@@ -138,8 +138,9 @@ export const CURSOR_FRONTMATTER = [
  * record-only-reusable-learnings rule, the admissible-evidence/no-self-evaluation rule, and the
  * non-destructive rule (memory is not in this file). Exported so tests assert it without re-deriving.
  *
- * It covers BOTH halves of the server: the memory protocol (§1-4) and the code-intelligence protocol
- * (§5-7). The code-intelligence half exists so a repository indexed by crib does not have to borrow a
+ * It covers BOTH halves of the server: the memory protocol (§1-5) and the code-intelligence protocol
+ * (§6-9), tied together by the close-out rule (§10) — a completed task is recorded (intake + memory)
+ * and the graph is delta-indexed and enriched so it matches the tree. The code-intelligence half exists so a repository indexed by crib does not have to borrow a
  * third-party tool's instruction block to get "analyse impact before you edit" discipline — crib
  * serves `impact`, `detect_changes`, `query`, `context`, `rename` and `explain` itself, so the rules
  * name crib's own verbs and, more importantly, crib's own HONESTY signals. Those signals differ from
@@ -156,6 +157,7 @@ export function neutralProtocolBody(): string {
     '- **Every session starts here.** Restore durable work (§1) and recall (§2) BEFORE planning, reading files, or editing. Do not rebuild project understanding by re-reading the tree when the graph already holds it.',
     '- **Structural questions go to the graph first.** `query`, `context`, `impact`, `review`, `explain` and `detect_changes` come before grep and before opening files (§6–§9). Read specific files only for what the graph cannot answer, and say which part that was.',
     '- **Every reusable learning is recorded here** (§3) with admissible evidence (§4). A learning that lives only in a transcript is lost at the end of the session.',
+    '- **Every completed task is closed out** (§10): the intake is completed, what the task taught is recorded with evidence, and the delta is indexed and enriched. A finished transaction is never left unrecorded; the graph is never left stale.',
     '- **No substitute and no side-store.** Do not use another memory, RAG, or code-context tool in place of this one for this repository, and do not keep private project knowledge outside it. One substrate is what makes every agent and every IDE read and write the same memory.',
     '- **Mandatory is not the same as infallible.** The honesty signals in §6–§9 still govern. Crib reports what it can see; it never certifies that an edit is safe. An empty result, a `truncated` walk, or a `note`-qualified report is a limit of the index — never an all-clear.',
     '',
@@ -214,6 +216,17 @@ export function neutralProtocolBody(): string {
     '- Rename through `rename({ from, to })` — it plans across the call graph and is dry-run by default; apply only with the returned `planId`. Never rename with find-and-replace.',
     '- `explain({ id })` reports taint/dataflow findings for one callable. `status({ op: "gaps" })` reports what the graph does NOT cover — read it before claiming coverage.',
     '- If the index is stale, refresh it with `crib index` (or `crib update`). A stale graph answers confidently and wrongly.',
+    '',
+    '## Knowledge-crib session close-out protocol',
+    '',
+    'A completed task is not done when the code lands — it is done when it is recorded and the graph matches the tree. This is the half agents skip first, and it is what keeps the next session from starting blind.',
+    '',
+    '### 10. Close out every completed task — record it, then refresh the graph',
+    '- Complete the intake (`crib intake complete`; `crib intake cancel` if the work is abandoned) so no finished transaction is left unrecorded, and checkpoint first (`crib intake checkpoint`) if boundaries were crossed since the last one (§1).',
+    '- Capture what the task taught as a memory per §3-§4 (`memory_observe`, or `crib memory propose`) — admissible evidence, reusable learnings only. A learning that lives only in a transcript is lost at the end of the session.',
+    '- Delta-index the change so the graph matches the tree: `crib update .` after it lands, and `--dirty` to sweep uncommitted working-tree edits without advancing the VCS anchor (§9 staleness rule).',
+    '- Refresh the semantic layer when enrichment is configured: `crib enrich --auto` (or `crib enrich --next` to inspect the queue first). Enrichment is opt-in — its absence is a state, not an error; do not block close-out on it.',
+    '- Verify before calling the loop closed: `crib status . --dirty` shows what is still pending index, and `detect_changes` (§7) is the pre-commit check that pairs with this close-out.',
   ].join('\n');
 }
 
