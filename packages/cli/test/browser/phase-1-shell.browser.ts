@@ -98,7 +98,7 @@ test('mobile inspector and Help close by keyboard and return focus', async ({ pa
 
 test('the graph has a page heading and a persistent search label', async ({ page }) => {
   await page.goto(backend.url);
-  await expect(page.getByRole('heading', { level: 1, name: 'Knowledge graph' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Knowledge-Crib' })).toBeVisible();
   await expect(page.getByRole('textbox', { name: 'Search graph' })).toBeVisible();
 });
 
