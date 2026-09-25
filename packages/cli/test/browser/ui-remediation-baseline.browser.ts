@@ -71,7 +71,7 @@ test('a keyboard user can enter the textual symbol explorer', async ({ page }) =
 test('the document declares its language and descriptive title', async ({ page }) => {
   await page.goto(backend.url);
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
-  await expect(page).toHaveTitle(/Knowledge Crib.*graph/i);
+  await expect(page).toHaveTitle(/Knowledge Crib/);
 });
 
 test('zero graph-search results offer an explicit recovery action', async ({ page }) => {

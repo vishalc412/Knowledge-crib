@@ -35,7 +35,7 @@ Legend:
 | 2.2.2 Pause, Stop, Hide | Not evaluated | The canvas layout animates briefly as it settles. The assessor should confirm it stops within 5 s and honours reduced motion |
 | 2.3.1 Three Flashes | Supports (provisional) | No flashing content |
 | 2.4.1 Bypass Blocks | Supports (provisional) | `header`, `main` and labelled `aside` landmarks |
-| 2.4.2 Page Titled | Supports (provisional) | "Knowledge Crib — Knowledge graph" |
+| 2.4.2 Page Titled | Supports (provisional) | "Knowledge Crib" |
 | 2.4.3 Focus Order | Supports (provisional) | Visual order; modal containment and return (A11Y-007, A11Y-008) |
 | 2.4.4 Link Purpose (In Context) | N/A | Controls are buttons; no links |
 | 2.5.1 Pointer Gestures | Supports (provisional) | Wheel and pinch zoom have button equivalents |
